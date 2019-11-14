@@ -1,0 +1,13 @@
+.eggs/
+.mypy_cache
+build/
+.python-version
+
+.ipynb_checkpoints
+.cache/
+*.swp
+.DS_Store
+*.pyc
+*.pyo
+__pycache__
+.coverage
