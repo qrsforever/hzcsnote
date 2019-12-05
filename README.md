@@ -1,11 +1,7 @@
 # 框架平台笔记
 
-IP: 117.51.156.111 (gamma)
+## PORT
 
-## cv
-
-URL: `http://gamma:8338/tree?`  CODE: `123456`
-
-## nlp
-
-URL: `http://gamma:8348/tree?`  CODE: `123456`
+|端口|服务|描述|
+|:---:|:---|:---|
+| 8500 | Consul | 服务监控和数据中心 |
