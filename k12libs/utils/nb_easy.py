@@ -104,39 +104,69 @@ def k12ai_del_data(key, http=False):
         client.kv.delete(key, recurse=True)
         return 'success'
 
-def k12ai_get_error_data(datakey, num):
+def k12ai_get_error_data(datakey, num=1):
     return k12ai_get_data('%s/error' % datakey, num)
 
-def k12ai_get_metrics_data(datakey, num):
+def k12ai_get_metrics_data(datakey, num=1):
     return k12ai_get_data('%s/metrics' % datakey, num)
+
+def k12ai_get_result_data(datakey, num=1):
+    return k12ai_get_data('%s/result' % datakey, num)
 
 def k12ai_post_cv_request(uri, op, user, uuid, params=None):
     if not params:
         params = '{}'
-    data = '''{
+    if isinstance(params, dict):
+        params = json.dumps(params)
+    data = json.loads('''{
         "op":"%s",
         "user": "%s",
         "service_name": "k12cv",
         "service_uuid": "%s",
         "service_params": %s
-    }''' % (op, user, uuid, json.dumps(params))
+    }''' % (op, user, uuid, params))
     api = 'http://%s:%d/%s' % (host, port, uri)
     key = 'framework/%s/%s/%s' % (user, uuid, op)
-    return requests.post(url=api, json=json.loads(data)).text, key
+    return {'req': data,
+            'res': json.loads(requests.post(url=api, json=data).text),
+            'key': key}
 
 def k12ai_post_nlp_request(uri, op, user, uuid, params=None):
     if not params:
         params = '{}'
-    data = '''{
+    if isinstance(params, dict):
+        params = json.dumps(params)
+    data = json.loads('''{
         "op":"%s",
         "user": "%s",
         "service_name": "k12nlp",
         "service_uuid": "%s",
         "service_params": %s
-    }''' % (op, user, uuid, json.dumps(params))
+    }''' % (op, user, uuid, params))
     api = 'http://%s:%d/%s' % (host, port, uri)
     key = 'framework/%s/%s/%s' % (user, uuid, op)
-    return requests.post(url=api, json=json.loads(data)).text, key
+    return {'req': data,
+            'res': json.loads(requests.post(url=api, json=data).text),
+            'key': key}
+
+def k12ai_post_platform_request(uri, op, user, uuid, params=None, isasync=False):
+    if not params:
+        params = '{}'
+    if isinstance(params, dict):
+        params = json.dumps(params)
+    data = json.loads('''{
+        "op":"%s",
+        "user": "%s",
+        "service_name": "k12platform",
+        "service_uuid": "%s",
+        "service_params": %s,
+        "async": %s
+    }''' % (op, user, uuid, params, 'true' if isasync else 'false'))
+    api = 'http://%s:%d/%s' % (host, port, uri)
+    key = 'platform/%s/%s/%s' % (user, uuid, op)
+    return {'req': data,
+            'res': json.loads(requests.post(url=api, json=data).text),
+            'key': key}
 
 def k12ai_json_load(path):
     if not os.path.exists(path):
