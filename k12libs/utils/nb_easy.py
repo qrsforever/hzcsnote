@@ -48,6 +48,13 @@ def k12ai_print(text):
         return
     return _print_json(text)
 
+def k12ai_get_topdir():
+    return  os.path.abspath(
+                os.path.dirname(os.path.abspath(__file__)) + '../../..')
+
+def k12ai_get_app_dir(svr):
+    return os.path.join(k12ai_get_topdir(), svr, 'app')
+
 def k12ai_post_request(uri, data):
     api = 'http://%s:%d/%s' % (host, port, uri)
     if isinstance(data, str):
