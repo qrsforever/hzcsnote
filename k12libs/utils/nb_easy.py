@@ -16,7 +16,7 @@ import time
 import socket
 
 def get_host_ip():
-    ip=''
+    ip = ''
     try:
         s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         s.connect(('8.8.8.8',80))
@@ -26,7 +26,7 @@ def get_host_ip():
     return ip
 
 def get_net_ip():
-    result = os.popen('curl -s http://txt.go.sohu.com/ip/soip| grep -P -o -i "(\d+\.\d+.\d+.\d+)"', 'r')
+    result = os.popen('curl -s http://txt.go.sohu.com/ip/soip| grep -P -o -i "(\d+\.\d+.\d+.\d+)"', 'r') # noqa
     if result:
         return result.read().strip('\n')
     return None
@@ -37,23 +37,23 @@ port = 8119
 consul_addr = get_net_ip()
 consul_port = 8500
 
-def _print_json(text):
+def _print_json(text, indent):
     if isinstance(text, str):
-        print(json.dumps(json.loads(text), indent=4))
+        print(json.dumps(json.loads(text), indent=indent, ensure_ascii=False))
     else:
-        print(json.dumps(text, indent=4))
+        print(json.dumps(text, indent=indent, ensure_ascii=False))
 
-def k12ai_print(text):
+def k12ai_print(text, indent=4):
     if not text:
         return
-    return _print_json(text)
+    return _print_json(text, indent)
 
-def k12ai_get_topdir():
-    return  os.path.abspath(
+def k12ai_get_top_dir():
+    return os.path.abspath(
                 os.path.dirname(os.path.abspath(__file__)) + '../../..')
 
 def k12ai_get_app_dir(svr):
-    return os.path.join(k12ai_get_topdir(), svr, 'app')
+    return os.path.join(k12ai_get_top_dir(), svr, 'app')
 
 def k12ai_post_request(uri, data):
     api = 'http://%s:%d/%s' % (host, port, uri)
