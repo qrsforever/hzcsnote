@@ -9,13 +9,13 @@
 # @date 2019-12-18 19:55:57
 
 
-import ipywidgets as widgets
 from IPython.display import clear_output
 from IPython.core.display import display
-from ipywidgets import (HTML, Text, BoundedIntText,
+from ipywidgets import (HTML, Text, BoundedIntText, Output,
                         BoundedFloatText, Box, HBox, VBox, Dropdown,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
 import json
+import pprint
 
 def _widget_add_child(widget, wdgs):
     if not isinstance(wdgs, list):
@@ -29,10 +29,7 @@ def k12widget(method):
         root, observes, cb = method(self, *args, **kwargs)
 
         def _on_value_change(change, cb):
-            if self.debug:
-                with self.out:
-                    clear_output()
-                    print(change)
+            self._output(change)
             if cb:
                 cb(change)
 
@@ -42,52 +39,58 @@ def k12widget(method):
     return _widget
 
 class K12WidgetGenerator():
-    def __init__(self, lan = 'en', debug=True):
-        self.debug = debug
-        self.out = widgets.Output(layout={'border': '1px solid black'})
+    def __init__(self, lan = 'en', debug=False):
+        self.out = Output(layout={'border': '1px solid black'})
         self.output = False
+        self.wid_widget_map = {}
+        self.wid_value_map = {}
         self.lan = lan
         self.basic_types = ['int', 'float', 'bool', 'string', 'string-enum']
-        self.wids_map = {}
-        self.vlo = Layout(
-            width='auto',
-            align_items='stretch',
-            justify_content='flex-start',
-            margin='3px 3px 3px 3px',
-            # border='solid 1px red',
-        )
-        self.hlo = Layout(
-            width='100%',
-            flex_flow='row wrap',
-            align_items='stretch',
-            justify_content='flex-start',
-            margin='3px 0px 3px 0px',
-            # border='solid 1px blue',
-        )
+
         self.style = {
-            # 'description_width': 'initial',
-            'description_width': '120px',
-        }
+                # 'description_width': 'initial',
+                'description_width': '120px',
+                }
+
+        self.vlo = Layout(
+                width='auto',
+                align_items='stretch',
+                justify_content='flex-start',
+                margin='3px 3px 3px 3px',
+                )
+        if debug:
+            self.vlo.border = 'solid 3px red'
+
+        self.hlo = Layout(
+                width='100%',
+                flex_flow='row wrap',
+                align_items='stretch',
+                justify_content='flex-start',
+                margin='3px 0px 3px 0px',
+                )
+        if debug:
+            self.hlo.border = 'solid 3px blue'
+
+        self.page_layout = Layout(
+                display='flex',
+                width='100%',
+                )
+        if debug:
+            self.page_layout.border = 'solid 3px black'
 
         self.tab_layout = Layout(
-            display='flex',
-            width='100%',
-        )
+                display='flex',
+                width='99%',
+                )
+        if debug:
+            self.tab_layout.border = 'solid 3px yellow'
 
         self.accordion_layout = Layout(
-            display='inline-flex',
-            # justify_content='flex-start',
-            # align_items='stretch',
-            width='99%'
-        )
-
-        self.box_layout = Layout(
-            display='flex',
-            flex_flow='row wrap',
-            align_items='stretch',
-            justify_content='flex-start',
-            width='100%'
-        )
+                display='flex',
+                width='99%',
+                )
+        if debug:
+            self.accordion_layout.border = 'solid 3px green'
 
     def _print(self, *args, **kwargs):
         if self.debug:
@@ -97,74 +100,71 @@ class K12WidgetGenerator():
         if self.output:
             with self.out:
                 clear_output()
-                print(*args, **kwargs)
+                pprint.pprint(*args, **kwargs)
 
     def Output(self, flag = False):
         self.output = flag
 
+    def _wid_map(self, wid, widget, value):
+        widget.id = wid
+        self.wid_widget_map[wid] = widget
+        self.wid_value_map[wid] = value
+
     @k12widget
     def Bool(self, wid, *args, **kwargs):
-        self.wids_map[wid] = Checkbox(*args, **kwargs)
+        wdg = Checkbox(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._output('布尔控件可以用在除了page节点的任意其他非叶子节点中')
-            self._print("Checkbox here")
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+
+        return wdg, [wdg], _value_change
 
     @k12widget
     def Int(self, wid, *args, **kwargs):
-        self.wids_map[wid] = BoundedIntText(*args, **kwargs)
+        wdg = BoundedIntText(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._output('''整型控件可以用在除了page节点的任意其他非叶子节点中
-            属性:
-              default : [O]默认值
-                  min : [O]最小值
-                  max : [O]最大值
-                width : [O]控件宽度 (当有特殊要求时,可以设置)
-                    ''')
-            self._print("BoundedIntText here")
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+
+        return wdg, [wdg], _value_change
 
     @k12widget
     def Float(self, wid, *args, **kwargs):
-        self.wids_map[wid] = BoundedFloatText(*args, **kwargs)
+        wdg = BoundedFloatText(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._output('''浮点型控件可以用在除了page节点的任意其他非叶子节点中
-            属性:
-              default : [O]默认值
-                  min : [O]最小值
-                  max : [O]最大值
-                width : [O]控件宽度 (当有特殊要求时,可以设置)
-                    ''')
-            self._print("BoundedFloatText here")
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+        return wdg, [wdg], _value_change
 
     @k12widget
     def String(self, wid, *args, **kwargs):
-        self.wids_map[wid] = Text(*args, **kwargs)
+        wdg = Text(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._output('文本控件可以用在除了page节点的任意其他非叶子节点中')
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+        return wdg, [wdg], _value_change
 
     @k12widget
     def Array(self, wid, *args, **kwargs):
-        self.wids_map[wid] = Text(*args, **kwargs)
+        wdg = Text(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._print("IntArray here")
-            self._print(json.loads(change['new']))
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+        return wdg, [wdg], _value_change
 
     @k12widget
     def StringEnum(self, wid, *args, **kwargs):
-        self.wids_map[wid] = Dropdown(*args, **kwargs)
+        wdg = Dropdown(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
 
         def _value_change(change):
-            self._print("StringEnum here")
-        return self.wids_map[wid], [self.wids_map[wid]], _value_change
+            pass
+        return wdg, [wdg], _value_change
 
     @k12widget
     def BoolTrigger(self, wid, *args, **kwargs):
@@ -172,45 +172,35 @@ class K12WidgetGenerator():
         parent_box.trigger_box = VBox(layout = self.vlo)
 
         wdg = Checkbox(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
         wdg.parent_box = parent_box
 
-        def _switch_widget(wdg, value):
-            if value:
+        def _value_change(change):
+            wdg = change['owner']
+            val = change['new']
+            if val:
                 trigger_box = wdg.parent_box.trigger_box
                 wdg.parent_box.children = [wdg] + list(trigger_box.children)
             else:
                 wdg.parent_box.children = [wdg]
-
-        def _value_change(change):
-            self._print("BoolTrigger here")
-            wdg = change['owner']
-            val = change['new']
-            _switch_widget(wdg, val)
-        _switch_widget(wdg, wdg.value)
         return parent_box, [wdg], _value_change
 
     @k12widget
     def StringEnumTrigger(self, wid, *args, **kwargs):
         parent_box = VBox(layout = self.vlo)
         wdg = Dropdown(*args, **kwargs)
+        self._wid_map(wid, wdg, wdg.value)
         wdg.parent_box = parent_box
         parent_box.trigger_box = {
                 value: VBox(layout = self.vlo) for _, value in wdg.options
-        }
-
-        def _switch_widget(wdg, value):
-            trigger_box = wdg.parent_box.trigger_box[value]
-            wdg.parent_box.children = [wdg] + list(trigger_box.children)
-            # wdg.parent_box.children = [wdg, wdg.parent_box.trigger_box[value]]
+                }
 
         def _value_change(change):
-            self._print("StringEnumTrigger here")
             wdg = change['owner']
             val = change['new']
-            _switch_widget(wdg, val)
-        _switch_widget(wdg, wdg.value)
+            trigger_box = wdg.parent_box.trigger_box[val]
+            wdg.parent_box.children = [wdg] + list(trigger_box.children)
         return parent_box, [wdg], _value_change
-
 
     @k12widget
     def StringEnumGroupTrigger(self, wid, options, groups):
@@ -232,7 +222,6 @@ class K12WidgetGenerator():
         parent_box.children = (options_hbox, dynamic_hbox)
 
         def _value_change(change):
-            self._print("StringEnumGroupTrigger here")
             wdg = change['owner']
             val = change['new']
             parent_box = wdg.parent_box
@@ -250,26 +239,20 @@ class K12WidgetGenerator():
     def Navigation(self, wid, *args, **kwargs):
         parent_box = VBox(layout = self.vlo)
         wdg = ToggleButtons(*args, **kwargs)
+        print(wid, wdg.value)
+        self._wid_map(wid, wdg, wdg.value)
         wdg.parent_box = parent_box
         trigger_box = {}
-        for name in wdg.options:
-            trigger_box[name] = VBox(layout = self.vlo)
+        for _, value in wdg.options:
+            trigger_box[value] = VBox(layout = self.vlo)
         wdg.parent_box.trigger_box = trigger_box
 
-        def _switch_widget(wdg, value):
-            parent_box = wdg.parent_box
-            trigger_box = parent_box.trigger_box[value]
-            parent_box.children = [wdg, trigger_box]
-
         def _value_change(change):
-            
-            self._output('''导航按钮可以用在tab和accordion节点下面, 作用和accordion相似,只是展示形式不同
-                    ''')
-            self._print("ObjectEnumTrigger here")
             wdg = change['owner']
             val = change['new']
-            _switch_widget(wdg, val)
-        _switch_widget(wdg, wdg.value)
+            parent_box = wdg.parent_box
+            trigger_box = parent_box.trigger_box[val]
+            parent_box.children = [wdg, trigger_box]
         return parent_box, [wdg], _value_change
 
     def _parse_config(self, widget, config):
@@ -279,19 +262,26 @@ class K12WidgetGenerator():
         _objs = config.get('objs', None) or {}
 
         if _type == 'page':
-            wdg = Tab(layout = self.tab_layout)
+            wdg = VBox(layout=Layout(
+                width='100%'))
             for obj in _objs:
                 self._parse_config(wdg, obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'tab':
-            if not isinstance(widget, Tab):
-                raise RuntimeError('Configure Error')
-            widget.set_title(len(widget.children), _name[self.lan])
+            for wdg in widget.children:
+                if isinstance(wdg, Tab):
+                    tab = wdg
+                    break
+            else:
+                tab = Tab(layout = self.tab_layout)
+                _widget_add_child(widget, tab)
+
+            tab.set_title(len(tab.children), _name[self.lan])
             wdg = VBox(layout = self.vlo)
             for obj in _objs:
                 self._parse_config(wdg, obj)
-            return _widget_add_child(widget, wdg)
+            return _widget_add_child(tab, wdg)
 
         elif _type == 'accordion':
             for wdg in widget.children:
@@ -309,19 +299,29 @@ class K12WidgetGenerator():
             return _widget_add_child(accord, wdg)
 
         elif _type == 'navigation':
-            default = config.get('default', 'none')
+            default = config.get('default', None)
             options = []
             for obj in _objs:
-                if obj.get('name', None):
-                    options.append(obj['name'][self.lan])
+                if (not obj.get('value', None)) or (not obj.get('name', None)):
+                    raise RuntimeError('Configure Error: no name and value')
+                options.append((obj['name'][self.lan], obj['value']))
             wdg = self.Navigation(
                 __id_,
                 options = options,
+                value = default,
                 description = _name[self.lan])
             for obj in _objs:
-                if obj.get('name', None):
-                    self._parse_config(wdg.trigger_box[obj['name'][self.lan]], obj)
+                self._parse_config(wdg.trigger_box[obj['value']], obj)
             return _widget_add_child(widget, wdg)
+
+        elif _type == 'output': # debug info
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
+            for obj in _objs:
+                self._parse_config(widget, obj)
+            self.Output(True)
+            return _widget_add_child(widget, self.out)
 
         elif _type == 'object':
             if _name:
@@ -331,14 +331,17 @@ class K12WidgetGenerator():
                 self._parse_config(widget, obj)
             return widget
 
-        elif _type == 'output': # debug info
-            self.Output(True)
-            if _name:
-                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
-                _widget_add_child(widget, wdg)
+        elif _type == 'H':
+            wdg = HBox(layout = self.hlo)
             for obj in _objs:
-                self._parse_config(widget, obj)
-            return _widget_add_child(widget, self.out)
+                self._parse_config(wdg, obj)
+            return _widget_add_child(widget, wdg)
+
+        elif _type == 'V':
+            wdg = VBox(layout = self.vlo)
+            for obj in _objs:
+                self._parse_config(wdg, obj)
+            return _widget_add_child(widget, wdg)
 
         elif _type == 'HV':
             wdg = VBox(
@@ -364,7 +367,7 @@ class K12WidgetGenerator():
         elif _type == 'int':
             default = config.get('default', 0)
             min = config.get('min', 0)
-            max = config.get('max', 100)
+            max = config.get('max', 100000)
             # width = config.get('width', 200)
             wdg = self.Int(
                 __id_,
@@ -374,6 +377,7 @@ class K12WidgetGenerator():
                 max = max,
                 step = 1,
                 # layout = Layout(width = '%dpx' % width),
+                continuous_update=False,
             )
             return _widget_add_child(widget, wdg)
 
@@ -390,6 +394,7 @@ class K12WidgetGenerator():
                 max = max,
                 step = 1.0,
                 # layout = Layout(width = '%dpx' % width),
+                continuous_update=False,
             )
             return _widget_add_child(widget, wdg)
 
@@ -401,15 +406,17 @@ class K12WidgetGenerator():
                 description = _name[self.lan],
                 value = default,
                 # layout = Layout(width = '%dpx' % width),
+                continuous_update=False,
             )
             return _widget_add_child(widget, wdg)
 
-        elif _type == 'int-array' or _type == 'float-array':
+        elif _type == 'int-array' or _type == 'float-array' or _type == 'string-array':
             default = config.get('default', '[]')
             wdg = self.Array(
                 __id_,
                 description = _name[self.lan],
                 value = json.dumps(default),
+                continuous_update=False,
             )
             return _widget_add_child(widget, wdg)
 
@@ -473,18 +480,20 @@ class K12WidgetGenerator():
             for obj in _objs:
                 self._parse_config(wdg.trigger_box[obj['value']], obj['trigger'])
 
-            description = widgets.HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+            description = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
             return _widget_add_child(widget, [description, wdg])
         else:
             for obj in _objs:
                 self._parse_config(widget, obj)
 
     def parse_schema(self, config):
-        page = Box(layout=Layout(width='100%'))
+        page = Box(layout=self.page_layout)
         self._parse_config(page, config)
-        # display(page, self.out)
         display(page)
         self.page = page
+        for key, val in self.wid_value_map.items():
+            print('---------', key, val)
+            self.wid_widget_map[key].value = val
 
 def k12ai_schema_parse(config, lan='en', debug=True):
     g = K12WidgetGenerator(lan, debug)
