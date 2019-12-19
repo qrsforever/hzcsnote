@@ -105,15 +105,14 @@ class K12WidgetGenerator():
     def Output(self, flag = False):
         self.output = flag
 
-    def _wid_map(self, wid, widget, value):
+    def _wid_map(self, wid, widget):
         widget.id = wid
         self.wid_widget_map[wid] = widget
-        self.wid_value_map[wid] = value
 
     @k12widget
     def Bool(self, wid, *args, **kwargs):
         wdg = Checkbox(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -123,7 +122,7 @@ class K12WidgetGenerator():
     @k12widget
     def Int(self, wid, *args, **kwargs):
         wdg = BoundedIntText(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -133,7 +132,7 @@ class K12WidgetGenerator():
     @k12widget
     def Float(self, wid, *args, **kwargs):
         wdg = BoundedFloatText(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -142,7 +141,7 @@ class K12WidgetGenerator():
     @k12widget
     def String(self, wid, *args, **kwargs):
         wdg = Text(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -151,7 +150,7 @@ class K12WidgetGenerator():
     @k12widget
     def Array(self, wid, *args, **kwargs):
         wdg = Text(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -160,7 +159,7 @@ class K12WidgetGenerator():
     @k12widget
     def StringEnum(self, wid, *args, **kwargs):
         wdg = Dropdown(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
 
         def _value_change(change):
             pass
@@ -168,38 +167,41 @@ class K12WidgetGenerator():
 
     @k12widget
     def BoolTrigger(self, wid, *args, **kwargs):
+        wdg = Checkbox(*args, **kwargs)
+        self._wid_map(wid, wdg)
         parent_box = VBox(layout = self.vlo)
         parent_box.trigger_box = VBox(layout = self.vlo)
-
-        wdg = Checkbox(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
         wdg.parent_box = parent_box
 
+        def _update_layout(wdg, val):
+            if val:
+                trigger_box = wdg.parent_box.trigger_box
+                wdg.parent_box.children = [wdg, trigger_box]
+            else:
+                wdg.parent_box.children = [wdg]
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
-            if val:
-                trigger_box = wdg.parent_box.trigger_box
-                wdg.parent_box.children = [wdg] + list(trigger_box.children)
-            else:
-                wdg.parent_box.children = [wdg]
+            _update_layout(wdg, val)
+        _update_layout(wdg, wdg.value)
         return parent_box, [wdg], _value_change
 
     @k12widget
     def StringEnumTrigger(self, wid, *args, **kwargs):
-        parent_box = VBox(layout = self.vlo)
         wdg = Dropdown(*args, **kwargs)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
+        parent_box = VBox(layout = self.vlo)
+        parent_box.trigger_box = {value: VBox(layout = self.vlo) for _, value in wdg.options}
         wdg.parent_box = parent_box
-        parent_box.trigger_box = {
-                value: VBox(layout = self.vlo) for _, value in wdg.options
-                }
 
+        def _update_layout(wdg, val):
+            trigger_box = wdg.parent_box.trigger_box[val]
+            wdg.parent_box.children = [wdg, trigger_box]
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
-            trigger_box = wdg.parent_box.trigger_box[val]
-            wdg.parent_box.children = [wdg] + list(trigger_box.children)
+            _update_layout(wdg, val)
+        _update_layout(wdg, wdg.value)
         return parent_box, [wdg], _value_change
 
     @k12widget
@@ -237,22 +239,22 @@ class K12WidgetGenerator():
 
     @k12widget
     def Navigation(self, wid, *args, **kwargs):
-        parent_box = VBox(layout = self.vlo)
         wdg = ToggleButtons(*args, **kwargs)
-        print(wid, wdg.value)
-        self._wid_map(wid, wdg, wdg.value)
+        self._wid_map(wid, wdg)
+        parent_box = VBox([wdg], layout = self.vlo)
+        parent_box.trigger_box = {value: VBox(layout = self.vlo) for _, value in wdg.options}
         wdg.parent_box = parent_box
-        trigger_box = {}
-        for _, value in wdg.options:
-            trigger_box[value] = VBox(layout = self.vlo)
-        wdg.parent_box.trigger_box = trigger_box
+
+        def _update_layout(wdg, val):
+            parent_box = wdg.parent_box
+            trigger_box = parent_box.trigger_box[val]
+            parent_box.children = [wdg, trigger_box]
 
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
-            parent_box = wdg.parent_box
-            trigger_box = parent_box.trigger_box[val]
-            parent_box.children = [wdg, trigger_box]
+            _update_layout(wdg, val)
+        _update_layout(wdg, wdg.value)
         return parent_box, [wdg], _value_change
 
     def _parse_config(self, widget, config):
@@ -491,9 +493,10 @@ class K12WidgetGenerator():
         self._parse_config(page, config)
         display(page)
         self.page = page
-        for key, val in self.wid_value_map.items():
-            print('---------', key, val)
-            self.wid_widget_map[key].value = val
+
+    def set_widget_value(self, wid_value_map):
+        if wid_value_map:
+            pass
 
 def k12ai_schema_parse(config, lan='en', debug=True):
     g = K12WidgetGenerator(lan, debug)
