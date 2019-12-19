@@ -10,7 +10,7 @@
 import json
 
 IC_MNIST_CONFIG = json.loads('''{
-    "dataset": "mnist",
+    "dataset": "default",
     "task": "cls",
     "method": "image_classifier",
     "data": {
@@ -41,7 +41,7 @@ IC_MNIST_CONFIG = json.loads('''{
     "train": {
         "batch_size": 32,
         "aug_trans": {
-            "trans_seq": [],
+            "trans_seq": []
         },
         "data_transformer": {
             "size_mode": "fix_size",
