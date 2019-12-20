@@ -10,7 +10,7 @@
 import json
 
 SSD_VOC_CONFIG = json.loads('''{
-    "dataset": "voc",
+    "dataset": "default",
     "task": "det",
     "method": "single_shot_detector",
     "data": {
