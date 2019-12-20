@@ -15,6 +15,9 @@ import consul
 import time
 import socket
 
+from IPython.display import display
+import ipywidgets as widgets
+
 def get_host_ip():
     ip = ''
     try:
@@ -47,6 +50,15 @@ def k12ai_print(text, indent=4):
     if not text:
         return
     return _print_json(text, indent)
+
+def k12ai_count_down(secs):
+    seq = list(range(secs))
+
+    def _time_down(seq):
+        seq.pop()
+        time.sleep(1)
+        return 0 == len(seq)
+    return lambda x=seq: _time_down(x)
 
 def k12ai_get_top_dir():
     return os.path.abspath(
@@ -119,6 +131,31 @@ def k12ai_get_metrics_data(datakey, num=1):
 
 def k12ai_get_result_data(datakey, num=1):
     return k12ai_get_data('%s/result' % datakey, num)
+
+def k12ai_out_data(key, contents, hook_func = None):
+    tab = widgets.Tab(layout={'width': '100%'})
+    children = [widgets.Output(layout={
+        'border': '1px solid black',
+        'min_height':
+        '200px'}
+        ) for name in contents]
+    tab = widgets.Tab()
+    tab.children = children
+    for i, title in enumerate(contents):
+        tab.set_title(i, title)
+    display(tab)
+
+    while True:
+        for i, title in enumerate(contents):
+            result = k12ai_get_data(key, title)
+            if result is not None:
+                with children[i]:
+                    children[i].clear_output()
+                    k12ai_print(result)
+        if not hook_func:
+            break
+        if hook_func():
+            break
 
 def k12ai_post_cv_request(uri, op, user, uuid, params=None):
     if not params:
