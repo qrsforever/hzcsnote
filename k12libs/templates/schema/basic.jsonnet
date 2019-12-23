@@ -4,77 +4,7 @@
 // @version 1.0
 // @date 2019-12-18 21:08
 
-local default_schema = {
-    bool(id): {
-        _id_: 'bool-' + id,
-        name: { en: 'Bool' + id, cn: '布尔-' + id },
-        type: 'bool',
-        default: true,
-    },
-
-    int(id): {
-        _id_: 'int-' + id,
-        name: { en: 'Int-' + id, cn: '整型-' + id },
-        type: 'int',
-        min: 0,
-        max: 120,
-        default: 100,
-    },
-
-    float(id): {
-        _id_: 'float-' + id,
-        name: { en: 'Float' + id, cn: '浮点-' + id },
-        type: 'float',
-        min: 0,
-        max: 300,
-        default: 200.0,
-    },
-
-    string(id): {
-        _id_: 'string-' + id,
-        name: { en: 'String-' + id, cn: '字符串-' + id },
-        type: 'value',
-        default: 'string',
-    },
-
-    string_enum(id): {
-        _id_: 'stringenum-' + id,
-        name: { en: 'StringEnum-' + id, cn: '字符串枚举-' + id },
-        type: 'string-enum',
-        objs: [
-            {
-                name: { en: 'Item-1', cn: self.en },
-                value: 'item1',
-            },
-            {
-                name: { en: 'Item-2', cn: self.en },
-                value: 'item2',
-            },
-        ],
-        default: 'item1',
-    },
-
-    int_array(id): {
-        _id_: 'intarray-' + id,
-        name: { en: 'IntArray-' + id, cn: '整型数组-' + id },
-        type: 'int-array',
-        default: [[1, 2], [3, 4]],
-    },
-
-    float_array(id): {
-        _id_: 'floatarray-' + id,
-        name: { en: 'FloatArray' + id, cn: '浮点数组-' + id },
-        type: 'float-array',
-        default: [1.0, 200.0],
-    },
-
-    string_array(id): {
-        _id_: 'stringarray-' + id,
-        name: { en: 'StringArray' + id, cn: '字符串数组-' + id },
-        type: 'string-array',
-        default: ['abc', 'xyz'],
-    },
-};
+local default_schema = import 'default.libsonnet';
 
 {
     description: |||
@@ -92,47 +22,41 @@ local default_schema = {
                     type: 'accordion',
                     objs: [
                         {  // 1
-                            _id_: 'tab1.accordion1.navigation1',
                             name: { en: 'navigation1', cn: '导航栏-1' },
                             type: 'navigation',
                             objs: [
                                 {
                                     name: { en: 'group1', cn: '选项卡-1' },
-                                    value: 'nav1-1',
                                     type: '_ignore_',
                                     objs: [
-                                        default_schema.bool('1'),
-                                        default_schema.int('1'),
-                                        default_schema.float('1'),
-                                        default_schema.string('1'),
+                                        default_schema.bool('a.b', '1'),
+                                        default_schema.int('a.b', '1'),
+                                        default_schema.float('a.b', '1'),
+                                        default_schema.string('a.b', '1'),
                                     ],
                                 },
                                 {
                                     name: { en: 'group2', cn: '选项卡-2' },
-                                    value: 'nav1-2',
                                     type: '_ignore_',
                                     objs: [
-                                        default_schema.bool('2'),
-                                        default_schema.int('2'),
-                                        default_schema.float('2'),
-                                        default_schema.string('2'),
+                                        default_schema.bool('a.c', '2'),
+                                        default_schema.int('a.c', '2'),
+                                        default_schema.float('a.c', '2'),
+                                        default_schema.string('a.c', '2'),
                                     ],  // objs
                                 },
                             ],  // objs
-                            default: 'nav1-1',
                         },
                         {  // 2
-                            _id_: 'tab1.accordion1.navigation2',
                             name: { en: 'navigation2', cn: '导航栏-2' },
                             type: 'navigation',
                             objs: [
                                 {  // 1
                                     name: { en: 'BoolTriggerTest', cn: '布尔触发测试' },
-                                    value: 'nav2-1',
                                     type: 'object',
                                     objs: [
                                         {
-                                            _id_: 'booltrigger001',
+                                            _id_: 'a.b.d.k12booltrigger',
                                             name: { en: 'Light', cn: '灯' },
                                             type: 'bool-trigger',
                                             objs: [
@@ -143,19 +67,19 @@ local default_schema = {
                                                         type: '_ignore_',
                                                         objs: [
                                                             {
-                                                                _id_: 'brightness001',
+                                                                _id_: 'a.b.d.trigger.brightness',
                                                                 name: { en: 'Brightness', cn: '亮度' },
                                                                 type: 'int',
                                                                 default: 100,
                                                             },
                                                             {
-                                                                _id_: 'colortemp',
+                                                                _id_: 'a.b.d.trigger.colortemp',
                                                                 name: { en: 'ColorTemp', cn: '色温' },
                                                                 type: 'float',
                                                                 default: 250.0,
                                                             },
                                                             {
-                                                                _id_: 'hue',
+                                                                _id_: 'a.b.d.trigger.hue',
                                                                 name: { en: 'HUE', cn: '饱和度' },
                                                                 type: 'float',
                                                                 default: 105.0,
@@ -176,11 +100,10 @@ local default_schema = {
                                 },  // end 1
                                 {  // 2
                                     name: { en: 'StringEnumTriggerTest', cn: '字符串枚举触发测试' },
-                                    value: 'nav2-2',
                                     type: 'object',
                                     objs: [
                                         {  // 1
-                                            _id_: 'stringenumtrigger001',
+                                            _id_: 'a.c.d.k12stringenum',
                                             name: { en: 'LightSelect', cn: '选择灯' },
                                             type: 'string-enum-trigger',
                                             objs: [
@@ -191,19 +114,19 @@ local default_schema = {
                                                         type: '_ignore_',
                                                         objs: [
                                                             {
-                                                                _id_: 'brightness002',
+                                                                _id_: 'a.c.d.t1.brightness',
                                                                 name: { en: 'Brightness', cn: '亮度' },
                                                                 type: 'int',
                                                                 default: 100,
                                                             },
                                                             {
-                                                                _id_: 'colortemp',
+                                                                _id_: 'a.c.d.t1.colortemp',
                                                                 name: { en: 'ColorTemp', cn: '色温' },
                                                                 type: 'float',
                                                                 default: 250.0,
                                                             },
                                                             {
-                                                                _id_: 'hue',
+                                                                _id_: 'a.c.d.t1.hue',
                                                                 name: { en: 'HUE', cn: '饱和度' },
                                                                 type: 'float',
                                                                 default: 105.0,
@@ -218,7 +141,7 @@ local default_schema = {
                                                         type: '_ignore_',
                                                         objs: [
                                                             {
-                                                                _id_: 'brightness003',
+                                                                _id_: 'a.c.d.t2.brightness',
                                                                 name: { en: 'Brightness', cn: '亮度' },
                                                                 type: 'int',
                                                                 default: 100,
@@ -232,7 +155,6 @@ local default_schema = {
                                     ],  // objs
                                 },  // end 2
                             ],  // objs
-                            default: 'nav2-1',
                         },
                     ],  // objs
                 },
@@ -240,10 +162,10 @@ local default_schema = {
                     name: { en: 'accordion2', cn: '折叠卡-2' },
                     type: 'accordion',
                     objs: [
-                        default_schema.bool('3'),
-                        default_schema.int('3'),
-                        default_schema.float('3'),
-                        default_schema.string('3'),
+                        default_schema.bool('x.y', '3'),
+                        default_schema.int('x.y', '3'),
+                        default_schema.float('x.y', '3'),
+                        default_schema.string('x.y', '3'),
                     ],
                 },
                 {
@@ -258,30 +180,26 @@ local default_schema = {
             type: 'tab',
             objs: [
                 {
-                    _id_: 'tab2.navigation3',
                     name: { en: 'navigation3', cn: '导航栏-2' },
                     type: 'navigation',
                     objs: [
                         {
                             name: { en: 'group1', cn: '选项卡-1' },
-                            value: 'nav3-1',
                             type: '_ignore_',
                             objs: [
-                                default_schema.bool('4'),
-                                default_schema.int('4'),
-                                default_schema.float('4'),
-                                default_schema.string('4'),
+                                default_schema.bool('x.y.z', '4'),
+                                default_schema.int('x.y.z', '4'),
+                                default_schema.float('x.y.z', '4'),
+                                default_schema.string('x.y.z', '4'),
                             ],  // objs
                         },
                         {
                             name: { en: 'group2', cn: '选项卡-2' },
-                            value: 'nav3-2',
                             type: '_ignore_',
                             objs: [
                             ],  // objs
                         },
                     ],
-                    default: 'nav3-1',
                 },
             ],
         },
@@ -289,23 +207,23 @@ local default_schema = {
             name: { en: 'tab3', cn: '页标签-3' },
             type: 'tab',
             objs: [
-                default_schema.bool('5'),
+                default_schema.bool('w', '5'),
                 {
                     type: 'H',
                     objs: [
-                        default_schema.int('5'),
-                        default_schema.float('5'),
-                        default_schema.string('5'),
-                        default_schema.string_enum('5'),
-                        default_schema.int_array('5'),
-                        default_schema.float_array('5'),
-                        default_schema.string_array('5'),
+                        default_schema.int('w', '5'),
+                        default_schema.float('w', '5'),
+                        default_schema.string('v', '5'),
+                        default_schema.string_enum('v', '5'),
+                        default_schema.int_array('w.x', '5'),
+                        default_schema.float_array('w.y', '5'),
+                        default_schema.string_array('w.y', '5'),
                     ],
                 },
             ],  // objs
         },
         {
-            name: { en: 'Debug Output', cn: '调试输出' },
+            name: { en: 'Debug Output', cn: '调试输出: ' },
             type: 'output',
             objs: [],
         },

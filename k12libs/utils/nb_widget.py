@@ -16,6 +16,8 @@ from ipywidgets import (HTML, Text, BoundedIntText, Output,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
 import json
 import pprint
+from pyhocon import ConfigFactory
+from pyhocon import HOCONConverter
 
 def _widget_add_child(widget, wdgs):
     if not isinstance(wdgs, list):
@@ -29,9 +31,13 @@ def k12widget(method):
         root, observes, cb = method(self, *args, **kwargs)
 
         def _on_value_change(change, cb):
-            self._output(change)
+            wdg = change['owner']
+            val = change['new']
+            if hasattr(wdg, 'id'):
+                self.wid_value_map[wdg.id] = val
             if cb:
                 cb(change)
+            self._output(1, change)
 
         for per in observes:
             per.observe(lambda change, cb = cb: _on_value_change(change, cb), 'value')
@@ -41,7 +47,7 @@ def k12widget(method):
 class K12WidgetGenerator():
     def __init__(self, lan = 'en', debug=False):
         self.out = Output(layout={'border': '1px solid black'})
-        self.output = False
+        self.output_type = 'none'
         self.wid_widget_map = {}
         self.wid_value_map = {}
         self.lan = lan
@@ -96,18 +102,47 @@ class K12WidgetGenerator():
         if self.debug:
             print(*args, **kwargs)
 
-    def _output(self, *args, **kwargs):
-        if self.output:
+    def _output(self, flag, *args, **kwargs):
+        if self.output_type == 'none':
+            return
+        if flag == 1:
             with self.out:
                 clear_output()
-                pprint.pprint(*args, **kwargs)
+                if self.output_type == 'change':
+                    pprint.pprint(*args, **kwargs)
+                elif self.output_type == 'idvalue':
+                    pprint.pprint(self.wid_value_map)
+                elif self.output_type == 'json':
+                    config = ConfigFactory.from_dict(self.wid_value_map)
+                    print(HOCONConverter.convert(config, 'json'))
 
-    def Output(self, flag = False):
-        self.output = flag
+    @k12widget
+    def Output(self, description):
+        wdg = ToggleButtons(
+                options=[('Widget Change ', 'change'), 
+                    ('ID Value ', 'idvalue'), ('Gen Json ', 'json')],
+                description=description,
+                disabled=False,
+                button_style='warning')
+
+        def _value_change(change):
+            self.output_type = change['new']
+
+        self.output_type = 'change'
+        return wdg, [wdg], _value_change
 
     def _wid_map(self, wid, widget):
         widget.id = wid
         self.wid_widget_map[wid] = widget
+
+    def _rm_sub_wid(self, widget):
+        if isinstance(widget, Box):
+            for child in widget.children:
+                self._rm_sub_wid(child)
+        else:
+            if hasattr(widget, 'id'):
+                if widget.id in self.wid_value_map.keys():
+                    del self.wid_value_map[widget.id]
 
     @k12widget
     def Bool(self, wid, *args, **kwargs):
@@ -153,7 +188,9 @@ class K12WidgetGenerator():
         self._wid_map(wid, wdg)
 
         def _value_change(change):
-            pass
+            wdg = change['owner']
+            val = change['new']
+            self.wid_value_map[wdg.id] = json.loads(val)
         return wdg, [wdg], _value_change
 
     @k12widget
@@ -178,7 +215,9 @@ class K12WidgetGenerator():
                 trigger_box = wdg.parent_box.trigger_box
                 wdg.parent_box.children = [wdg, trigger_box]
             else:
+                self._rm_sub_wid(wdg.parent_box.trigger_box)
                 wdg.parent_box.children = [wdg]
+
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
@@ -194,14 +233,18 @@ class K12WidgetGenerator():
         parent_box.trigger_box = {value: VBox(layout = self.vlo) for _, value in wdg.options}
         wdg.parent_box = parent_box
 
-        def _update_layout(wdg, val):
+        def _update_layout(wdg, val, old):
             trigger_box = wdg.parent_box.trigger_box[val]
             wdg.parent_box.children = [wdg, trigger_box]
+            if old:
+                self._rm_sub_wid(wdg.parent_box.trigger_box[old])
+
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
-            _update_layout(wdg, val)
-        _update_layout(wdg, wdg.value)
+            old = change['old']
+            _update_layout(wdg, val, old)
+        _update_layout(wdg, wdg.value, None)
         return parent_box, [wdg], _value_change
 
     @k12widget
@@ -236,26 +279,6 @@ class K12WidgetGenerator():
                 if trigger_box not in dynamic_box.children:
                     dynamic_box.children = list(dynamic_box.children) + [trigger_box]
         return parent_box, observes, _value_change
-
-    @k12widget
-    def Navigation(self, wid, *args, **kwargs):
-        wdg = ToggleButtons(*args, **kwargs)
-        self._wid_map(wid, wdg)
-        parent_box = VBox([wdg], layout = self.vlo)
-        parent_box.trigger_box = {value: VBox(layout = self.vlo) for _, value in wdg.options}
-        wdg.parent_box = parent_box
-
-        def _update_layout(wdg, val):
-            parent_box = wdg.parent_box
-            trigger_box = parent_box.trigger_box[val]
-            parent_box.children = [wdg, trigger_box]
-
-        def _value_change(change):
-            wdg = change['owner']
-            val = change['new']
-            _update_layout(wdg, val)
-        _update_layout(wdg, wdg.value)
-        return parent_box, [wdg], _value_change
 
     def _parse_config(self, widget, config):
         __id_ = config.get('_id_', None) or ''
@@ -302,28 +325,34 @@ class K12WidgetGenerator():
 
         elif _type == 'navigation':
             default = config.get('default', None)
-            options = []
-            for obj in _objs:
-                if (not obj.get('value', None)) or (not obj.get('name', None)):
-                    raise RuntimeError('Configure Error: no name and value')
-                options.append((obj['name'][self.lan], obj['value']))
-            wdg = self.Navigation(
-                __id_,
-                options = options,
-                value = default,
-                description = _name[self.lan])
-            for obj in _objs:
-                self._parse_config(wdg.trigger_box[obj['value']], obj)
+            options = [(obj['name'][self.lan], idx) for idx, obj in enumerate(_objs)]
+            if len(options) == 0:
+                raise RuntimeError('Configure Error: no options')
+            trigger_boxes = [VBox(layout = self.vlo) for _ in options]
+            tbtn = ToggleButtons(
+                    options=options,
+                    description = _name[self.lan])
+            wdg = VBox([tbtn, trigger_boxes[0]], layout = self.vlo)
+            wdg.trigger_boxes = trigger_boxes
+            tbtn.parent_box = wdg
+
+            def _value_change(change):
+                wdg = change['owner']
+                val = change['new']
+                parent_box = wdg.parent_box
+                trigger_box = parent_box.trigger_boxes[val]
+                parent_box.children = [wdg, trigger_box]
+
+            tbtn.observe(_value_change, 'value')
+            for idx, obj in enumerate(_objs):
+                self._parse_config(trigger_boxes[idx], obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'output': # debug info
-            if _name:
-                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
-                _widget_add_child(widget, wdg)
+            wdg = self.Output(_name[self.lan])
             for obj in _objs:
                 self._parse_config(widget, obj)
-            self.Output(True)
-            return _widget_add_child(widget, self.out)
+            return _widget_add_child(widget, [wdg, self.out])
 
         elif _type == 'object':
             if _name:
