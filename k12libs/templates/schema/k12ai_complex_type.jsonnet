@@ -4,6 +4,66 @@
 // @version 1.0
 // @date 2019-12-23 19:30
 
+local city_group_item(city, descr, flg=0) = {
+    _id_: '_js.k12.test.k12booltrigger.' + city,
+    name: { en: 'Talk' + city, cn: '评价' + descr },
+    type: 'bool-trigger',
+    objs: [
+        {
+            value: true,
+            trigger: {
+                type: '_ignore_',
+                objs: [
+                    {
+                        _id_: '_js_stringenumgroup.k12.test.' + city,
+                        name: { en: city, cn: descr },
+                        type: 'string-enum',
+                        objs: [
+                            {
+                                name: { en: 'Good', cn: '良好' },
+                                value: 'k12.test.stringenumgroup.good',
+                            },
+                            {
+                                name: { en: 'Bad', cn: '很差' },
+                                value: 'k12.test.stringenumgroup.bad',
+                            },
+                        ],
+                        default: 'k12.test.stringenumgroup.good',
+                    },
+                    {
+                        _id_: 'k12.test.stringenumgroup' + city + '.PM25',
+                        name: { en: 'PM2.5', cn: self.en },
+                        type: 'int',
+                        max: 500,
+                        min: 0,
+                        default: 400,
+                    },
+                    {
+                        _id_: 'k12.test.stringenumgroup' + city + '.AQI',
+                        name: { en: 'AQI', cn: self.en },
+                        type: 'float',
+                        default: 10.0,
+                    },
+                    if flg == 1 then {
+                        _id_: 'k12.test.stringenumgroup' + city + '.Humidity',
+                        name: { en: 'Humidity', cn: self.en },
+                        type: 'float',
+                        default: 10.0,
+                    } else {},
+                ],
+            },
+        },
+        {
+            name: { en: 'TurnOff', cn: '关灯' },
+            value: false,
+            trigger: {
+            },
+        },
+    ],
+    default: false,
+};
+
+
 {
     description: |||
         K12 Data Template Model for complex type
@@ -111,6 +171,21 @@
                         },
                     ],
                     default: 'hue',
+                },
+            ],
+        },
+        {
+            name: { en: 'StringEnumGroupTriggerTest', cn: '字符串枚举分组触发测试' },
+            type: 'H',
+            objs: [
+                {
+                    type: 'object',
+                    objs: [
+                        city_group_item('BeiJing', '北京', 1),
+                        city_group_item('ShangHai', '上海'),
+                        city_group_item('ShenZhen', '深圳', 1),
+                        city_group_item('TengZhou', '滕州'),
+                    ],
                 },
             ],
         },

@@ -38,12 +38,8 @@
     |        |       |              |         |                 |
     |        |       |              |         |                 |
     v        v       v              v         v                 +---> string-enum-trigger
-int[-array] bool  float[-array]  string   string-enum           |
-                                                                |
-                                                                +---> string-enum-array-trigger
-                                                                |
-                                                                |
-                                                                +---> string-enum-group-trigger
+int[-array] bool  float[-array]  string   string-enum            
+                                                                 
 
 ```
 

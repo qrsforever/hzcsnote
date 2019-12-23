@@ -247,39 +247,6 @@ class K12WidgetGenerator():
         _update_layout(wdg, wdg.value, None)
         return parent_box, [wdg], _value_change
 
-    @k12widget
-    def StringEnumGroupTrigger(self, wid, options, groups):
-        parent_box = VBox(layout = self.vlo)
-        parent_box.trigger_box = {}
-        options_hbox = HBox(layout = self.hlo)
-        dynamic_hbox = HBox(layout = self.hlo)
-        observes = []
-        for name, real in options:
-            dpd = Dropdown(options=groups,
-                           description=name,
-                           style = {'description_width': '150px'})
-            dpd.name = real
-            dpd.wid = wid + '.' + real
-            dpd.parent_box = parent_box
-            dpd.parent_box.trigger_box[real] = VBox(layout = self.vlo)
-            observes.append(dpd)
-        options_hbox.children = tuple(observes)
-        parent_box.children = (options_hbox, dynamic_hbox)
-
-        def _value_change(change):
-            wdg = change['owner']
-            val = change['new']
-            parent_box = wdg.parent_box
-            dynamic_box = parent_box.children[1]
-            trigger_box = parent_box.trigger_box[wdg.name]
-            if val == 'none':
-                if trigger_box in dynamic_box.children:
-                    dynamic_box.children = [w for w in dynamic_box.children if id(w) != id(trigger_box)]
-            else:
-                if trigger_box not in dynamic_box.children:
-                    dynamic_box.children = list(dynamic_box.children) + [trigger_box]
-        return parent_box, observes, _value_change
-
     def _parse_config(self, widget, config):
         __id_ = config.get('_id_', None) or ''
         _name = config.get('name', None)
@@ -363,18 +330,27 @@ class K12WidgetGenerator():
             return widget
 
         elif _type == 'H':
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
             wdg = HBox(layout = self.hlo)
             for obj in _objs:
                 self._parse_config(wdg, obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'V':
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
             wdg = VBox(layout = self.vlo)
             for obj in _objs:
                 self._parse_config(wdg, obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'HV':
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
             wdg = VBox(
                 [HBox(layout = self.hlo), HBox(layout = self.hlo)],
                 layout = self.vlo,
@@ -496,23 +472,6 @@ class K12WidgetGenerator():
         elif _type == 'string-enum-array-trigger':
             raise RuntimeError('not impl yet')
 
-        elif _type == 'string-enum-group-trigger':
-            options = []
-            groups = []
-            for obj in _objs:
-                options.append((obj['name'][self.lan], obj['value']))
-            for grp in config.get('groups'):
-                groups.append((grp['name'][self.lan], grp['value']))
-            wdg = self.StringEnumGroupTrigger(
-                __id_,
-                options,
-                groups,
-            )
-            for obj in _objs:
-                self._parse_config(wdg.trigger_box[obj['value']], obj['trigger'])
-
-            description = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
-            return _widget_add_child(widget, [description, wdg])
         else:
             for obj in _objs:
                 self._parse_config(widget, obj)
