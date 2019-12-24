@@ -4,6 +4,8 @@
 // @version 1.0
 // @date 2019-12-23 19:10
 
+local dataset_uri = 'http://116.85.5.40:8084/cv/mnist/imgs/test/';
+
 {
     bool(id, num): {
         _id_: id + '.k12bool',
@@ -33,7 +35,7 @@
     string(id, num): {
         _id_: id + '.k12string',
         name: { en: 'String-' + num, cn: '字符串-' + num },
-        type: 'value',
+        type: 'string',
         default: 'string',
     },
 
@@ -73,5 +75,27 @@
         name: { en: 'StringArray' + num, cn: '字符串数组-' + num },
         type: 'string-array',
         default: ['abc', 'xyz'],
+    },
+
+    image(id, num, link): {
+        _id_: id + '.k12image',
+        name: { en: 'MediaImage' + num, cn: '媒体图片-' + num },
+        type: 'image',
+        width: 60,
+        height: 60,
+        value: dataset_uri + link,
+    },
+
+    text(id, num): {
+        _id_: id + '.k12text',
+        name: { en: 'Text' + num, cn: '文本-' + num },
+        type: 'text',
+        width: 300,
+        height: 100,
+        default: |||
+            line-1
+            line-2
+            line-3
+        |||,
     },
 }

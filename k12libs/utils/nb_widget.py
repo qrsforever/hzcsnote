@@ -11,7 +11,7 @@
 
 from IPython.display import clear_output
 from IPython.core.display import display
-from ipywidgets import (HTML, Text, BoundedIntText, Output,
+from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea,
                         BoundedFloatText, Box, HBox, VBox, Dropdown,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
 import json
@@ -51,7 +51,9 @@ class K12WidgetGenerator():
         self.wid_widget_map = {}
         self.wid_value_map = {}
         self.lan = lan
-        self.basic_types = ['int', 'float', 'bool', 'string', 'string-enum']
+        self.basic_types = ['int', 'float', 'bool',
+                'string', 'int-array', 'float-array', 
+                'string-array', 'string-enum', 'image']
 
         self.style = {
                 # 'description_width': 'initial',
@@ -176,6 +178,15 @@ class K12WidgetGenerator():
     @k12widget
     def String(self, wid, *args, **kwargs):
         wdg = Text(*args, **kwargs)
+        self._wid_map(wid, wdg)
+
+        def _value_change(change):
+            pass
+        return wdg, [wdg], _value_change
+
+    @k12widget
+    def Text(self, wid, *args, **kwargs):
+        wdg = Textarea(*args, **kwargs)
         self._wid_map(wid, wdg)
 
         def _value_change(change):
@@ -415,6 +426,28 @@ class K12WidgetGenerator():
                 # layout = Layout(width = '%dpx' % width),
                 continuous_update=False,
             )
+            return _widget_add_child(widget, wdg)
+
+        elif _type == 'text':
+            default = config.get('default', 'none')
+            width = config.get('width', 200)
+            height = config.get('height', 200)
+            wdg = self.Text(
+                __id_,
+                description = _name[self.lan],
+                value = default,
+                layout = Layout(width='%dpx'%width, height='%dpx'%height),
+                continuous_update=False,
+            )
+            return _widget_add_child(widget, wdg)
+
+        elif _type == 'image':
+            value = config.get('value', None)
+            width = config.get('width', '100')
+            height = config.get('height', '100')
+            if not value:
+                raise RuntimeError('not set value')
+            wdg = HTML(value=f'<img src={value} width={width} height={height} alt={_name[self.lan]}>')
             return _widget_add_child(widget, wdg)
 
         elif _type == 'int-array' or _type == 'float-array' or _type == 'string-array':
