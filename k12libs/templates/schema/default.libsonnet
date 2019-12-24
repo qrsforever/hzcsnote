@@ -83,19 +83,20 @@ local dataset_uri = 'http://116.85.5.40:8084/cv/mnist/imgs/test/';
         type: 'image',
         width: 60,
         height: 60,
-        value: dataset_uri + link,
+        default: dataset_uri + link,
     },
 
-    text(id, num): {
+    text(id, num, txt=''): {
         _id_: id + '.k12text',
         name: { en: 'Text' + num, cn: '文本-' + num },
         type: 'text',
         width: 300,
-        height: 100,
-        default: |||
-            line-1
-            line-2
-            line-3
-        |||,
+        height: 120,
+        default: if std.length(txt) == 0 then
+            |||
+                line-1
+                line-2
+                line-3
+            ||| else txt,
     },
 }

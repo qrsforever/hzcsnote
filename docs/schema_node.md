@@ -30,10 +30,10 @@
                             +----------------+------------------+
                             |                    |              |
                             v                    |              v
-      link             <<basictype>>             v       <<complextype>>
-        ^                   |                  object           |
-        |                   |                                   |
-        |                   |                                   |
+      link     image   <<basictype>>   text      v       <<complextype>>
+        ^        ^          |           ^      object           |
+        |        |          |           |                       |
+        |        |          |           |                       |
     +--------+-------+------+-------+---------+                 +---> bool-trigger
     |        |       |              |         |                 |
     |        |       |              |         |                 |

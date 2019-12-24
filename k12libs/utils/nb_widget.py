@@ -52,7 +52,7 @@ class K12WidgetGenerator():
         self.wid_value_map = {}
         self.lan = lan
         self.basic_types = ['int', 'float', 'bool',
-                'string', 'int-array', 'float-array', 
+                'string', 'int-array', 'float-array',
                 'string-array', 'string-enum', 'image']
 
         self.style = {
@@ -121,7 +121,7 @@ class K12WidgetGenerator():
     @k12widget
     def Output(self, description):
         wdg = ToggleButtons(
-                options=[('Widget Change ', 'change'), 
+                options=[('Widget Change ', 'change'),
                     ('ID Value ', 'idvalue'), ('Gen Json ', 'json')],
                 description=description,
                 disabled=False,
@@ -302,14 +302,17 @@ class K12WidgetGenerator():
             return _widget_add_child(accord, wdg)
 
         elif _type == 'navigation':
-            default = config.get('default', None)
             options = [(obj['name'][self.lan], idx) for idx, obj in enumerate(_objs)]
             if len(options) == 0:
                 raise RuntimeError('Configure Error: no options')
             trigger_boxes = [VBox(layout = self.vlo) for _ in options]
-            tbtn = ToggleButtons(
-                    options=options,
-                    description = _name[self.lan])
+            if _name:
+                tbtn = ToggleButtons(
+                        options=options,
+                        description = _name[self.lan])
+            else:
+                tbtn = ToggleButtons(
+                        options=options)
             wdg = VBox([tbtn, trigger_boxes[0]], layout = self.vlo)
             wdg.trigger_boxes = trigger_boxes
             tbtn.parent_box = wdg
@@ -442,7 +445,7 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'image':
-            value = config.get('value', None)
+            value = config.get('default', None)
             width = config.get('width', '100')
             height = config.get('height', '100')
             if not value:
@@ -508,6 +511,7 @@ class K12WidgetGenerator():
         else:
             for obj in _objs:
                 self._parse_config(widget, obj)
+            return widget
 
     def parse_schema(self, config):
         page = Box(layout=self.page_layout)
