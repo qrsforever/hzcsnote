@@ -40,6 +40,10 @@ port = 8119
 consul_addr = get_net_ip()
 consul_port = 8500
 
+NBURL = 'http://{}:{}'.format(host, 8118) 
+AIURL = 'http://{}:{}'.format(host, 8119)
+SSURL = 'http://{}:{}'.format(host, 8500)
+
 def _print_json(text, indent):
     if isinstance(text, str):
         print(json.dumps(json.loads(text), indent=indent, ensure_ascii=False))
