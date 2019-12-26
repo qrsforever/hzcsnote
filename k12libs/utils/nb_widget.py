@@ -272,61 +272,47 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'tab':
-            for wdg in widget.children:
-                if isinstance(wdg, Tab):
-                    tab = wdg
-                    break
-            else:
-                tab = Tab(layout = self.tab_layout)
-                _widget_add_child(widget, tab)
-
-            tab.set_title(len(tab.children), _name[self.lan])
-            wdg = VBox(layout = self.vlo)
-            for obj in _objs:
-                self._parse_config(wdg, obj)
-            return _widget_add_child(tab, wdg)
+            wdg = Tab(layout = self.tab_layout)
+            for i, obj in enumerate(_objs):
+                wdg.set_title(i, obj['name'][self.lan])
+                box = VBox(layout = self.vlo)
+                for obj in obj['objs']:
+                    self._parse_config(box, obj)
+                _widget_add_child(wdg, box)
+            return _widget_add_child(widget, wdg)
 
         elif _type == 'accordion':
-            for wdg in widget.children:
-                if isinstance(wdg, Accordion):
-                    accord = wdg
-                    break
-            else:
-                accord = Accordion(layout = self.accordion_layout)
-                _widget_add_child(widget, accord)
-            accord.set_title(len(accord.children), _name[self.lan])
-
-            wdg = VBox(layout = self.vlo)
-            for obj in _objs:
-                self._parse_config(wdg, obj)
-            return _widget_add_child(accord, wdg)
+            wdg = Accordion(layout = self.accordion_layout)
+            for i, obj in enumerate(_objs):
+                wdg.set_title(i, obj['name'][self.lan])
+                box = VBox(layout = self.vlo)
+                for obj in obj['objs']:
+                    self._parse_config(box, obj)
+                _widget_add_child(wdg, box)
+            return _widget_add_child(widget, wdg)
 
         elif _type == 'navigation':
-            options = [(obj['name'][self.lan], idx) for idx, obj in enumerate(_objs)]
-            if len(options) == 0:
-                raise RuntimeError('Configure Error: no options')
-            trigger_boxes = [VBox(layout = self.vlo) for _ in options]
-            if _name:
-                tbtn = ToggleButtons(
-                        options=options,
-                        description = _name[self.lan])
-            else:
-                tbtn = ToggleButtons(
-                        options=options)
-            wdg = VBox([tbtn, trigger_boxes[0]], layout = self.vlo)
-            wdg.trigger_boxes = trigger_boxes
-            tbtn.parent_box = wdg
 
             def _value_change(change):
                 wdg = change['owner']
                 val = change['new']
                 parent_box = wdg.parent_box
-                trigger_box = parent_box.trigger_boxes[val]
+                trigger_box = parent_box.boxes[val]
                 parent_box.children = [wdg, trigger_box]
 
-            tbtn.observe(_value_change, 'value')
-            for idx, obj in enumerate(_objs):
-                self._parse_config(trigger_boxes[idx], obj)
+            wdg = VBox([ToggleButtons()], layout = self.vlo)
+            wdg.children[0].parent_box = wdg
+            wdg.children[0].observe(_value_change, 'value')
+            wdg.boxes = []
+            options = []
+            for i, obj in enumerate(_objs):
+                options.append((obj['name'][self.lan], i))
+                box = VBox(layout = self.vlo)
+                self._parse_config(box, obj)
+                wdg.boxes.append(box)
+            wdg.children[0].options = options
+            if _name:
+                wdg.children[0].description = _name[self.lan]
             return _widget_add_child(widget, wdg)
 
         elif _type == 'output': # debug info
