@@ -20,6 +20,7 @@ local default_schema = import 'default.libsonnet';
                 default_schema.int('k12.test.basic', '1'),
                 default_schema.float('k12.test.basic', '1'),
                 default_schema.string('k12.test.basic', '1'),
+                default_schema.string('k12.test.basic', '2', true),
                 default_schema.string_enum('k12.test.basic', '1'),
                 default_schema.int_array('k12.test.array', '1'),
                 default_schema.float_array('k12.test.array', '1'),

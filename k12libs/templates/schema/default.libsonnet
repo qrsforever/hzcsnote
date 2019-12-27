@@ -32,11 +32,12 @@ local dataset_uri = 'http://116.85.5.40:8084/cv/mnist/imgs/test/';
         default: 200.0,
     },
 
-    string(id, num): {
+    string(id, num, readonly=false): {
         _id_: id + '.k12string',
         name: { en: 'String-' + num, cn: '字符串-' + num },
         type: 'string',
         default: 'string',
+        readonly: readonly,
     },
 
     string_enum(id, num): {
