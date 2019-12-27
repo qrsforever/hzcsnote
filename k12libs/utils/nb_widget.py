@@ -58,14 +58,15 @@ class K12WidgetGenerator():
 
         self.style = {
                 # 'description_width': 'initial',
-                'description_width': '120px',
+                # 'description_width': '45%',
+                'description_width': '130px',
                 }
 
         self.vlo = Layout(
                 width='auto',
                 align_items='stretch',
                 justify_content='flex-start',
-                margin='3px 3px 3px 3px',
+                margin='5px 0px 5px 0px',
                 )
         if debug:
             self.vlo.border = 'solid 2px red'
@@ -75,7 +76,7 @@ class K12WidgetGenerator():
                 flex_flow='row wrap',
                 align_items='stretch',
                 justify_content='flex-start',
-                margin='3px 0px 3px 0px',
+                margin='5px 0px 5px 0px',
                 )
         if debug:
             self.hlo.border = 'solid 2px blue'
@@ -279,7 +280,7 @@ class K12WidgetGenerator():
         args = {}
         readonly = config.get('readonly', False)
         if readonly:
-            args['disable'] = True
+            args['disabled'] = True
         if _type in ['bool', 'int', 'float', 'string', 'text', 'string-enum',
                 'bool-trigger', 'string-enum-trigger']:
             default = config.get('default', None)
@@ -384,6 +385,7 @@ class K12WidgetGenerator():
                 __id_,
                 description = _name[self.lan],
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -394,6 +396,7 @@ class K12WidgetGenerator():
                 __id_,
                 description = _name[self.lan],
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -403,8 +406,8 @@ class K12WidgetGenerator():
             wdg = self.String(
                 __id_,
                 description = _name[self.lan],
-                disabled = readonly,
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -415,6 +418,7 @@ class K12WidgetGenerator():
                 __id_,
                 description = _name[self.lan],
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -436,6 +440,7 @@ class K12WidgetGenerator():
                 description = _name[self.lan],
                 value = json.dumps(default),
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -450,6 +455,7 @@ class K12WidgetGenerator():
                 options = options,
                 description = _name[self.lan],
                 layout = tlo,
+                style = self.style,
                 continuous_update=False,
                 **args,
             )
@@ -474,6 +480,7 @@ class K12WidgetGenerator():
                 options = options,
                 description = _name[self.lan],
                 layout = tlo,
+                style = self.style,
                 **args,
             )
             for obj in _objs:
