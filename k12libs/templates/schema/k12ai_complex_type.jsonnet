@@ -12,7 +12,6 @@ local city_group_item(city, descr, flg=0) = {
         {
             value: true,
             trigger: {
-                type: '_ignore_',
                 objs: [
                     {
                         _id_: '_js_stringenumgroup.k12.test.' + city,
@@ -84,7 +83,6 @@ local city_group_item(city, descr, flg=0) = {
                             name: { en: 'TurnOn', cn: '开灯' },
                             value: true,
                             trigger: {
-                                type: '_ignore_',
                                 objs: [
                                     {
                                         _id_: 'k12.test.booltrigger.brightness',
@@ -131,7 +129,6 @@ local city_group_item(city, descr, flg=0) = {
                             name: { en: 'Hue', cn: '飞利浦灯' },
                             value: 'hue',
                             trigger: {
-                                type: '_ignore_',
                                 objs: [
                                     {
                                         _id_: 'k12.test.stringenum.hue.brightness',
@@ -158,7 +155,6 @@ local city_group_item(city, descr, flg=0) = {
                             name: { en: 'Konke', cn: '控客灯' },
                             value: 'konke',
                             trigger: {
-                                type: '_ignore_',
                                 objs: [
                                     {
                                         _id_: 'k12.test.stringenum.konke.brightness',

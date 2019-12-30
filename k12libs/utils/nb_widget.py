@@ -361,12 +361,18 @@ class K12WidgetGenerator():
             return widget
 
         elif _type == 'H':
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
             wdg = HBox(layout = self.hlo)
             for obj in _objs:
                 self._parse_config(wdg, obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'V':
+            if _name:
+                wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
+                _widget_add_child(widget, wdg)
             wdg = VBox(layout = self.vlo)
             for obj in _objs:
                 self._parse_config(wdg, obj)
