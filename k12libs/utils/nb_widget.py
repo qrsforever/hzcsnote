@@ -66,7 +66,7 @@ class K12WidgetGenerator():
                 width='auto',
                 align_items='stretch',
                 justify_content='flex-start',
-                margin='5px 0px 5px 0px',
+                margin='3px 0px 3px 0px',
                 )
         if debug:
             self.vlo.border = 'solid 2px red'
@@ -76,7 +76,7 @@ class K12WidgetGenerator():
                 flex_flow='row wrap',
                 align_items='stretch',
                 justify_content='flex-start',
-                margin='5px 0px 5px 0px',
+                margin='3px 0px 3px 0px',
                 )
         if debug:
             self.hlo.border = 'solid 2px blue'
@@ -105,9 +105,31 @@ class K12WidgetGenerator():
         self.nav_layout = Layout(
                 display='flex',
                 width='99%',
-                margin='5px 0px 5px 0px',
+                margin='3px 0px 3px 0px',
                 border='1px solid black',
                 )
+
+    def get_all_kv(self):
+        kv_map = {}
+
+        def _get_kv(widget):
+            if isinstance(widget, Box):
+                for child in widget.children:
+                    _get_kv(child)
+            else:
+                if hasattr(widget, 'id') and hasattr(widget, 'value'):
+                    if hasattr(widget, 'switch_value'):
+                        kv_map[widget.id] = widget.switch_value(widget.value)
+                    else:
+                        kv_map[widget.id] = widget.value
+
+        _get_kv(self.page)
+        return kv_map
+
+    def get_all_json(self):
+        config = ConfigFactory.from_dict(self.get_all_kv())
+        config.pop('_k12')
+        return HOCONConverter.convert(config, 'json')
 
     def _output(self, flag, *args, **kwargs):
         if self.output_type == 'none':
@@ -122,12 +144,17 @@ class K12WidgetGenerator():
                 elif self.output_type == 'json':
                     config = ConfigFactory.from_dict(self.wid_value_map)
                     print(HOCONConverter.convert(config, 'json'))
+                elif self.output_type == 'idvalues':
+                    pprint.pprint(self.get_all_kv())
+                elif self.output_type == 'jsons':
+                    print(self.get_all_json())
 
     @k12widget
     def Output(self, description):
         wdg = ToggleButtons(
                 options=[('Widget Change ', 'change'),
-                    ('ID Value ', 'idvalue'), ('Gen Json ', 'json')],
+                    ('ID Value ', 'idvalue'), ('Gen Json ', 'json'),
+                    ('ID Values', 'idvalues'), ('Gen Jsons', 'jsons')],
                 description=description,
                 disabled=False,
                 button_style='warning')
@@ -202,11 +229,12 @@ class K12WidgetGenerator():
     def Array(self, wid, *args, **kwargs):
         wdg = Text(*args, **kwargs)
         self._wid_map(wid, wdg)
+        wdg.switch_value = lambda val: json.loads(val)
 
         def _value_change(change):
             wdg = change['owner']
             val = change['new']
-            self.wid_value_map[wdg.id] = json.loads(val)
+            self.wid_value_map[wdg.id] = wdg.switch_value(val)
         return wdg, _value_change
 
     @k12widget
@@ -296,8 +324,12 @@ class K12WidgetGenerator():
             max = config.get('max', None)
             if min:
                 args['min'] = min
+            else:
+                args['min'] = -999999
             if max:
                 args['max'] = max
+            else:
+                args['max'] = 999999
 
         if _type == 'page':
             wdg = VBox(layout=Layout(

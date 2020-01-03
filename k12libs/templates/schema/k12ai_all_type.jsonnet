@@ -143,7 +143,7 @@ local complex_schema = import 'k12ai_complex_type.jsonnet';
                                                                 default_schema.image('_js.image.k12.test.image', 9, '00009.jpg'),
                                                             ],
                                                         },
-                                                    ] + complex_schema.objs,
+                                                    ] + complex_schema.objs[0:3],
                                                 },
                                                 {
                                                     name: { en: 'accordion1-2', cn: '第二层折叠卡1-2(嵌套)' },

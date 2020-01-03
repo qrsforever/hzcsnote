@@ -83,6 +83,7 @@ local city_group_item(city, descr, flg=0) = {
                             name: { en: 'TurnOn', cn: '开灯' },
                             value: true,
                             trigger: {
+                                type: 'H',
                                 objs: [
                                     {
                                         _id_: 'k12.test.booltrigger.brightness',
@@ -93,7 +94,7 @@ local city_group_item(city, descr, flg=0) = {
                                     {
                                         _id_: 'k12.test.booltrigger.colortemp',
                                         name: { en: 'ColorTemp', cn: '色温' },
-                                        type: 'k12.test.booltrigger.float',
+                                        type: 'int',
                                         default: 250.0,
                                     },
                                     {
