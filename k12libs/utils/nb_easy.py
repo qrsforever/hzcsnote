@@ -74,9 +74,9 @@ def k12ai_get_app_dir(svr):
 def k12ai_post_request(uri, data):
     api = 'http://%s:%d/%s' % (host, port, uri)
     if isinstance(data, str):
-        return _print_json(requests.post(url=api, json=json.loads(data)).text)
+        return requests.post(url=api, json=json.loads(data)).text
     if isinstance(data, dict):
-        return _print_json(requests.post(url=api, json=data).text)
+        return requests.post(url=api, json=data).text
     return None
 
 def k12ai_get_data(key, subkey=None, num=1, waitcnt=1, http=False):
