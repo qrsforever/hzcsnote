@@ -19,11 +19,6 @@ IC_CIFAR10_CONFIG = json.loads('''{
         "image_tool": "pil",
         "input_mode": "RGB",
         "workers": 1,
-        "mean_value": [
-            124,
-            116,
-            104
-        ],
         "normalize": {
             "div_value": 255,
             "mean": [

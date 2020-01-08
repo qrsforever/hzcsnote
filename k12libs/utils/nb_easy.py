@@ -97,21 +97,24 @@ def k12ai_get_data(key, subkey=None, num=1, waitcnt=1, http=False):
     else:
         client = consul.Consul(consul_addr, consul_port)
         i = 0
-        while i < waitcnt: 
-            _, data = client.kv.get(key, recurse=True)
-            if not data:
-                i = i + 1
-                time.sleep(1)
-                continue
-            if len(data) < num:
-                num = len(data)
-            out = []
-            for item in data[-num:]:
-                out.append({
-                    'key': item['Key'],
-                    'value': json.loads(str(item['Value'], encoding='utf-8'))
-                    })
-            return out
+        try:
+            while i < waitcnt: 
+                _, data = client.kv.get(key, recurse=True)
+                if not data:
+                    i = i + 1
+                    time.sleep(1)
+                    continue
+                if len(data) < num:
+                    num = len(data)
+                out = []
+                for item in data[-num:]:
+                    out.append({
+                        'key': item['Key'],
+                        'value': json.loads(str(item['Value'], encoding='utf-8'))
+                        })
+                return out
+        except KeyboardInterrupt:
+            print("Interrupted!")
         return None
 
 def k12ai_del_data(key, http=False):
@@ -149,17 +152,20 @@ def k12ai_out_data(key, contents, hook_func = None):
         tab.set_title(i, title)
     display(tab)
 
-    while True:
-        for i, title in enumerate(contents):
-            result = k12ai_get_data(key, title)
-            if result is not None:
-                with children[i]:
-                    children[i].clear_output()
-                    k12ai_print(result)
-        if not hook_func:
-            break
-        if hook_func():
-            break
+    try:
+        while True:
+            for i, title in enumerate(contents):
+                result = k12ai_get_data(key, title)
+                if result is not None:
+                    with children[i]:
+                        children[i].clear_output()
+                        k12ai_print(result)
+            if not hook_func:
+                break
+            if hook_func():
+                break
+    except KeyboardInterrupt:
+        print("Interrupted!")
 
 def k12ai_post_cv_request(uri, op, user, uuid, params=None):
     if not params:

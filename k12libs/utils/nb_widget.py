@@ -251,16 +251,21 @@ class K12WidgetGenerator():
         wdg = Checkbox(*args, **kwargs)
         self._wid_map(wid, wdg)
         parent_box = VBox(layout = self.vlo)
-        parent_box.trigger_box = VBox(layout = self.vlo)
+        parent_box.trigger_box = {
+                'true': VBox(layout = self.vlo), 
+                'false': VBox(layout = self.vlo)}
+        parent_box.layout.margin = '3px 0px 6px 0px'
         wdg.parent_box = parent_box
 
         def _update_layout(wdg, val):
             if val:
-                trigger_box = wdg.parent_box.trigger_box
+                trigger_box = wdg.parent_box.trigger_box['true']
                 wdg.parent_box.children = [wdg, trigger_box]
+                self._rm_sub_wid(wdg.parent_box.trigger_box['false'])
             else:
-                self._rm_sub_wid(wdg.parent_box.trigger_box)
-                wdg.parent_box.children = [wdg]
+                trigger_box = wdg.parent_box.trigger_box['false']
+                wdg.parent_box.children = [wdg, trigger_box]
+                self._rm_sub_wid(wdg.parent_box.trigger_box['true'])
 
         def _value_change(change):
             wdg = change['owner']
@@ -509,8 +514,20 @@ class K12WidgetGenerator():
                 description = _name[self.lan],
                 **args,
                 )
+            # wdg.layout = self.vlo
             for obj in _objs:
-                self._parse_config(wdg.trigger_box, obj['trigger'])
+                trigger_obj = obj['trigger']
+                trigger_box = wdg.trigger_box['true' if obj['value'] else 'false']
+                # trigger_box.layout = self.vlo
+                # if hasattr(trigger_obj, 'type'):
+                #     if trigger_obj['type'] == 'H':
+                #         wdg.layout = self.hlo
+                #         trigger_box.layout = self.hlo
+                #     elif trigger_obj['type'] == 'V':
+                #         wdg.layout = self.vlo
+                #         trigger_box.layout = self.vlo
+
+                self._parse_config(trigger_box, trigger_obj)
             return _widget_add_child(widget, wdg)
 
         elif _type == 'string-enum-trigger':
