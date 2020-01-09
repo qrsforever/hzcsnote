@@ -57,9 +57,7 @@ class K12WidgetGenerator():
                 'string-array', 'string-enum', 'image']
 
         self.style = {
-                # 'description_width': 'initial',
-                # 'description_width': '45%',
-                'description_width': '130px',
+                'description_width': '130px', # 45% or 'initial'
                 }
 
         self.vlo = Layout(
@@ -114,8 +112,12 @@ class K12WidgetGenerator():
 
         def _get_kv(widget):
             if isinstance(widget, Box):
-                for child in widget.children:
-                    _get_kv(child)
+                if hasattr(widget, 'node_type') and widget.node_type == 'navigation':
+                    for child in widget.boxes:
+                        _get_kv(child)
+                else:
+                    for child in widget.children:
+                        _get_kv(child)
             else:
                 if hasattr(widget, 'id') and hasattr(widget, 'value'):
                     if hasattr(widget, 'switch_value'):
@@ -128,7 +130,7 @@ class K12WidgetGenerator():
 
     def get_all_json(self):
         config = ConfigFactory.from_dict(self.get_all_kv())
-        config.pop('_k12')
+        # config.pop('_k12')
         return HOCONConverter.convert(config, 'json')
 
     def _output(self, flag, *args, **kwargs):
@@ -373,6 +375,7 @@ class K12WidgetGenerator():
                 parent_box.children = [wdg, trigger_box]
 
             wdg = VBox([ToggleButtons()], layout = self.nav_layout)
+            wdg.node_type = 'navigation'
             wdg.children[0].parent_box = wdg
             wdg.children[0].observe(_value_change, 'value')
             wdg.boxes = []
@@ -423,6 +426,8 @@ class K12WidgetGenerator():
             wdg = self.Bool(
                     __id_,
                     description = _name[self.lan],
+                    layout = tlo,
+                    style = self.style,
                     **args
                     )
             return _widget_add_child(widget, wdg)

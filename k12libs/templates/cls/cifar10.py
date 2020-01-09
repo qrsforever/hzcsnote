@@ -90,31 +90,14 @@ IC_CIFAR10_CONFIG = json.loads('''{
     },
     "test": {
     },
-    "details": {
-        "name_seq": [
-            "plane",
-            "car",
-            "bird",
-            "cat",
-            "deer",
-            "dog",
-            "frog",
-            "horse",
-            "ship",
-            "truck"
-        ],
-        "color_list": [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0],
-                     [85, 255, 0], [0, 255, 0], [0, 255, 85], [0, 255, 170], [0, 255, 255],
-                     [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255], [170, 0, 255],
-                     [255, 0, 255], [255, 0, 170], [255, 0, 85], [255, 0, 170], [255, 0, 85]]
-    },
     "network": {
         "model_name": "cls_model",
-        "backbone": "vgg19",
-        "pooled_size": [
-            1,
-            1
-        ]
+        "backbone": "vgg19"
+        "distributed": true,
+        "gather": true,
+        "checkpoints_root": "/cache",
+        "checkpoints_dir": 'ckpts',
+        "checkpoints_name": 'cls_model_vgg19',
     },
     "solver": {
         "lr": {
