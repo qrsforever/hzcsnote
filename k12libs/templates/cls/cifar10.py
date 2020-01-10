@@ -15,7 +15,9 @@ IC_CIFAR10_CONFIG = json.loads('''{
     "method": "image_classifier",
     "data": {
         "num_classes": 10,
-        "data_dir": "/data/datasets/cv/cifar10",
+        "data_dir": "/datasets/cifar10",
+        "include_val": false,
+        "drop_last": false,
         "image_tool": "pil",
         "input_mode": "RGB",
         "workers": 1,
@@ -91,31 +93,33 @@ IC_CIFAR10_CONFIG = json.loads('''{
     "test": {
     },
     "network": {
-        "model_name": "cls_model",
-        "backbone": "vgg19"
+        "backbone": "vgg16",
+        "model_name": "base_model",
+        "norm_type": "batchnorm",
+        "syncbn": false,
         "distributed": true,
         "gather": true,
+        "resume_continue": false,
+        "resume_strict": false,
+        "resume_val": false,
+        "custom_model": false,
         "checkpoints_root": "/cache",
-        "checkpoints_dir": 'ckpts',
-        "checkpoints_name": 'cls_model_vgg19',
+        "checkpoints_name": "base_model_vgg16",
+        "checkpoints_dir": "ckpts"
     },
     "solver": {
         "lr": {
             "metric": "epoch",
-            "base_lr": 0.1,
+            "base_lr": 0.001,
             "lr_policy": "multistep",
-            "step": {
-                "gamma": 0.1,
-                "step_size": 30
-            },
             "multistep": {
-                "gamma": 0.1,
-                "stepvalue": [
-                    150,
-                    250,
-                    350
-                ]
-            }
+              "gamma": 0.1,
+              "stepvalue": [
+                90,
+                120
+              ]
+            },
+            "is_warm": false
         },
         "optim": {
             "optim_method": "sgd",

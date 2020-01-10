@@ -11,11 +11,13 @@ import os
 import base64
 import requests
 import json
+import _jsonnet
 import consul
 import time
 import socket
 
 from IPython.display import display
+from .nb_widget import K12WidgetGenerator
 import ipywidgets as widgets
 
 def get_host_ip():
@@ -229,3 +231,35 @@ def k12ai_json_load(path):
     with open(path, 'r') as f:
         str = json.load(f)
     return str
+
+def _on_project_confirm(wdg):
+    if not hasattr(wdg, 'context'):
+        return
+    g = wdg.context
+    params = g.get_all_kv()
+    g._output(params)
+    g.user = params.get('project.user', None)
+    g.uuid = params.get('project.uuid', None)
+    g.framework = params.get('project.framework', None)
+    g.task = params.get('project.task', None)
+    g.dataset = params.get('project.dataset', None)
+
+    if g.framework == 'k12cv':
+        schema = os.path.join(k12ai_get_top_dir(), 'cv/app', 'templates', 'schema/k12ai_cv.jsonnet')
+    elif g.framework == 'k12nlp':
+        schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
+    else:
+        return
+    g.parse_schema(json.loads(_jsonnet.evaluate_file(schema,
+        ext_vars={
+            'task': g.task,
+            'dataset_name': g.dataset})))
+
+def k12ai_run_project(lan='en', debug=True):
+    pro_schema = os.path.join(k12ai_get_top_dir(), 'k12libs/templates', 'projects.jsonnet')
+    btns_event = {
+            'project.confirm': _on_project_confirm,
+            }
+    g = K12WidgetGenerator(lan, debug, events=btns_event)
+    g.parse_schema(json.loads(_jsonnet.evaluate_file(pro_schema)))
+    return g.page

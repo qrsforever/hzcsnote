@@ -15,7 +15,7 @@ IC_MNIST_CONFIG = json.loads('''{
     "method": "image_classifier",
     "data": {
         "num_classes": 10,
-        "data_dir": "/data/datasets/cv/mnist",
+        "data_dir": "/datasets/mnist",
         "image_tool": "cv2",
         "input_mode": "BGR",
         "workers": 1,
@@ -64,13 +64,13 @@ IC_MNIST_CONFIG = json.loads('''{
     "test": {
     },
     "network": {
-        "model_name": "cls_model",
-        "backbone": "vgg19"
+        "model_name": "base_model",
+        "backbone": "vgg19",
         "distributed": true,
         "gather": true,
         "checkpoints_root": "/cache",
-        "checkpoints_dir": 'ckpts',
-        "checkpoints_name": 'cls_model_vgg19',
+        "checkpoints_dir": "ckpts",
+        "checkpoints_name": "base_model_vgg19"
     },
     "solver": {
         "lr": {
