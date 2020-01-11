@@ -8,11 +8,12 @@
 # @version 1.0
 # @date 2019-12-18 19:55:57
 
-# from IPython.core.display import display
+from IPython.core.display import display
 from IPython.display import clear_output
-from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea,
+from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress,
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
+from traitlets.utils.bunch import Bunch
 import json
 import pprint
 from pyhocon import ConfigFactory
@@ -45,9 +46,10 @@ def k12widget(method):
     return _widget
 
 class K12WidgetGenerator():
-    def __init__(self, lan = 'en', debug=False, events={}):
+    def __init__(self, lan = 'en', debug=False, events=None):
         self.page = Box()
         self.out = Output(layout={'border': '1px solid black', 'width': '100%'})
+        self.output_type = 'none'
         self.lan = lan
         self.debug = debug
         self.events = events
@@ -107,11 +109,10 @@ class K12WidgetGenerator():
                 )
 
         self.btn_layout = Layout(
-                margin='5px 0px 25px 145px'
+                margin='3px 0px 3px 0px',
                 )
-    
+
     def init_page(self):
-        self.output_type = 'none'
         self.wid_widget_map = {}
         self.wid_value_map = {}
 
@@ -141,13 +142,19 @@ class K12WidgetGenerator():
         # config.pop('_k12')
         return HOCONConverter.convert(config, 'json')
 
-    def _output(self, *args, **kwargs):
+    def _output(self, body, clear=1):
         if self.output_type == 'none':
             return
         with self.out:
-            clear_output()
+            if clear:
+                clear_output()
             if self.output_type == 'print':
-                pprint.pprint(*args, **kwargs)
+                if isinstance(body, Bunch):
+                    pprint.pprint(body)
+                elif isinstance(body, dict):
+                    print(json.dumps(body, indent=4, ensure_ascii=False))
+                else:
+                    print(body)
             elif self.output_type == 'kv':
                 pprint.pprint(self.wid_value_map)
             elif self.output_type == 'json':
@@ -259,7 +266,7 @@ class K12WidgetGenerator():
         self._wid_map(wid, wdg)
         parent_box = VBox(layout = self.vlo)
         parent_box.trigger_box = {
-                'true': VBox(layout = self.vlo), 
+                'true': VBox(layout = self.vlo),
                 'false': VBox(layout = self.vlo)}
         parent_box.layout.margin = '3px 0px 6px 0px'
         wdg.parent_box = parent_box
@@ -558,13 +565,33 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'button':
+            if self.events is None:
+                return
             wdg = Button(
                     description=_name[self.lan],
                     disabled=False,
-                    layout=self.btn_layout)
+                    button_style='danger',
+                    layout=Layout(margin='5px 0px 25px 145px'))
             wdg.context = self
-            if self.events.get('project.confirm', None):
-                wdg.on_click(self.events['project.confirm'])
+            wdg.on_click(self.events['project.confirm'])
+            return _widget_add_child(widget, wdg)
+
+        elif _type == 'iframe':
+            if __id_ == '_k12.iframe.train':
+                _start = Button(description='Start', button_style='success',)
+                _stop = Button(description='Stop', button_style='success',)
+                _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=100,
+                        bar_style='success', layout=Layout(width='60%'))
+
+                _drawit = Output(layout=Layout(width='100%'))
+
+                wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
+
+                if self.events:
+                    self.events['project.train.init'](self,
+                            _start, _stop, _progress, _drawit)
+            else:
+                return
             return _widget_add_child(widget, wdg)
 
         elif _type == 'string-enum-array-trigger':
@@ -587,4 +614,5 @@ class K12WidgetGenerator():
 def k12ai_schema_parse(config, lan='en', debug=True):
     g = K12WidgetGenerator(lan, debug)
     g.parse_schema(config)
-    return g.page
+    display(g.page)
+    return g

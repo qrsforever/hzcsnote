@@ -40,11 +40,13 @@ IC_MNIST_CONFIG = json.loads('''{
         },
         "data_transformer": {
             "size_mode": "fix_size",
+            "fit_stride": 1,
             "input_size": [
                 28,
                 28
             ],
-            "align_method": "only_pad"
+            "align_method": "only_pad",
+            "pad_mode": "random"
         }
     },
     "val": {

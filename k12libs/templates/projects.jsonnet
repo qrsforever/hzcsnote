@@ -55,7 +55,7 @@
                                                             value: 'cifar10',
                                                         },
                                                     ],
-                                                    default: self.objs[0].value,
+                                                    default: self.objs[1].value,
                                                 },
                                             ],
                                         },
@@ -97,7 +97,7 @@
         },
         {
             _id_: 'project.confirm',
-            name: { en: 'Confirm', cn: self.en },
+            name: { en: 'Gen Project Schema', cn: self.en },
             type: 'button',
         },
         {
