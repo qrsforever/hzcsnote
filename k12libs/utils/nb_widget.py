@@ -8,16 +8,17 @@
 # @version 1.0
 # @date 2019-12-18 19:55:57
 
-
-from IPython.display import clear_output
 from IPython.core.display import display
-from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea,
-                        BoundedFloatText, Box, HBox, VBox, Dropdown,
+from IPython.display import clear_output
+from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress,
+                        BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
+from traitlets.utils.bunch import Bunch
 import json
 import pprint
 from pyhocon import ConfigFactory
 from pyhocon import HOCONConverter
+
 
 def _widget_add_child(widget, wdgs):
     if not isinstance(wdgs, list):
@@ -39,19 +40,19 @@ def k12widget(method):
                 self.wid_value_map[wdg.id] = val
             if cb:
                 cb(change)
-            self._output(1, change)
+            self._output(change)
         wdg.observe(lambda change, cb = cb: _on_value_change(change, cb), 'value')
         return wdg.parent_box if hasattr(wdg, 'parent_box') else wdg
     return _widget
 
 class K12WidgetGenerator():
-    def __init__(self, lan = 'en', debug=False):
-        self.out = Output(layout={'border': '1px solid black'})
+    def __init__(self, lan = 'en', debug=False, events=None):
+        self.page = Box()
+        self.out = Output(layout={'border': '1px solid black', 'width': '100%'})
         self.output_type = 'none'
-        self.wid_widget_map = {}
-        self.wid_value_map = {}
         self.lan = lan
         self.debug = debug
+        self.events = events
         self.basic_types = ['int', 'float', 'bool',
                 'string', 'int-array', 'float-array',
                 'string-array', 'string-enum', 'image']
@@ -107,6 +108,14 @@ class K12WidgetGenerator():
                 border='1px solid black',
                 )
 
+        self.btn_layout = Layout(
+                margin='3px 0px 3px 0px',
+                )
+
+    def init_page(self):
+        self.wid_widget_map = {}
+        self.wid_value_map = {}
+
     def get_all_kv(self):
         kv_map = {}
 
@@ -133,30 +142,33 @@ class K12WidgetGenerator():
         # config.pop('_k12')
         return HOCONConverter.convert(config, 'json')
 
-    def _output(self, flag, *args, **kwargs):
+    def _output(self, body, clear=1):
         if self.output_type == 'none':
             return
-        if flag == 1:
-            with self.out:
+        with self.out:
+            if clear:
                 clear_output()
-                if self.output_type == 'change':
-                    pprint.pprint(*args, **kwargs)
-                elif self.output_type == 'idvalue':
-                    pprint.pprint(self.wid_value_map)
-                elif self.output_type == 'json':
-                    config = ConfigFactory.from_dict(self.wid_value_map)
-                    print(HOCONConverter.convert(config, 'json'))
-                elif self.output_type == 'idvalues':
-                    pprint.pprint(self.get_all_kv())
-                elif self.output_type == 'jsons':
-                    print(self.get_all_json())
+            if self.output_type == 'print':
+                if isinstance(body, Bunch):
+                    pprint.pprint(body)
+                elif isinstance(body, dict):
+                    print(json.dumps(body, indent=4, ensure_ascii=False))
+                else:
+                    print(body)
+            elif self.output_type == 'kv':
+                pprint.pprint(self.wid_value_map)
+            elif self.output_type == 'json':
+                config = ConfigFactory.from_dict(self.wid_value_map)
+                print(HOCONConverter.convert(config, 'json'))
+            elif self.output_type == 'kvs':
+                pprint.pprint(self.get_all_kv())
+            elif self.output_type == 'jsons':
+                print(self.get_all_json())
 
     @k12widget
-    def Output(self, description):
+    def Debug(self, description, options):
         wdg = ToggleButtons(
-                options=[('Widget Change ', 'change'),
-                    ('ID Value ', 'idvalue'), ('Gen Json ', 'json'),
-                    ('ID Values', 'idvalues'), ('Gen Jsons', 'jsons')],
+                options=options,
                 description=description,
                 disabled=False,
                 button_style='warning')
@@ -164,7 +176,7 @@ class K12WidgetGenerator():
         def _value_change(change):
             self.output_type = change['new']
 
-        self.output_type = 'change'
+        self.output_type = options[0][1]
         return wdg, _value_change
 
     def _wid_map(self, wid, widget):
@@ -254,7 +266,7 @@ class K12WidgetGenerator():
         self._wid_map(wid, wdg)
         parent_box = VBox(layout = self.vlo)
         parent_box.trigger_box = {
-                'true': VBox(layout = self.vlo), 
+                'true': VBox(layout = self.vlo),
                 'false': VBox(layout = self.vlo)}
         parent_box.layout.margin = '3px 0px 6px 0px'
         wdg.parent_box = parent_box
@@ -391,9 +403,10 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'output': # debug info
-            wdg = self.Output(_name[self.lan])
+            options = []
             for obj in _objs:
-                self._parse_config(widget, obj)
+                options.append((obj['name'], obj['value']))
+            wdg = self.Debug(_name[self.lan], options)
             return _widget_add_child(widget, [wdg, self.out])
 
         elif _type == 'object':
@@ -551,6 +564,36 @@ class K12WidgetGenerator():
                 self._parse_config(wdg.trigger_box[obj['value']], obj['trigger'])
             return _widget_add_child(widget, wdg)
 
+        elif _type == 'button':
+            if self.events is None:
+                return
+            wdg = Button(
+                    description=_name[self.lan],
+                    disabled=False,
+                    button_style='danger',
+                    layout=Layout(margin='5px 0px 25px 145px'))
+            wdg.context = self
+            wdg.on_click(self.events['project.confirm'])
+            return _widget_add_child(widget, wdg)
+
+        elif _type == 'iframe':
+            if __id_ == '_k12.iframe.train':
+                _start = Button(description='Start', button_style='success',)
+                _stop = Button(description='Stop', button_style='success',)
+                _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=100,
+                        bar_style='success', layout=Layout(width='60%'))
+
+                _drawit = Output(layout=Layout(width='100%'))
+
+                wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
+
+                if self.events:
+                    self.events['project.train.init'](self,
+                            _start, _stop, _progress, _drawit)
+            else:
+                return
+            return _widget_add_child(widget, wdg)
+
         elif _type == 'string-enum-array-trigger':
             raise RuntimeError('not impl yet')
 
@@ -560,16 +603,16 @@ class K12WidgetGenerator():
             return widget
 
     def parse_schema(self, config):
-        page = Box(layout=self.page_layout)
-        self._parse_config(page, config)
-        display(page)
-        self.page = page
-
-    def set_widget_value(self, wid_value_map):
-        if wid_value_map:
-            pass
+        if not isinstance(config, dict):
+            print('config is not dict')
+            return
+        self.init_page()
+        box = Box(layout=self.page_layout)
+        self._parse_config(box, config)
+        self.page.children = [box]
 
 def k12ai_schema_parse(config, lan='en', debug=True):
     g = K12WidgetGenerator(lan, debug)
     g.parse_schema(config)
+    display(g.page)
     return g

@@ -115,9 +115,22 @@ local default_schema = import 'default.libsonnet';
                     name: { en: 'tab3', cn: '页标签-3' },
                     objs: [
                         {
-                            type: 'H',
+                            type: 'V',
                             objs: [
-                                default_schema.text('_js.text.a.x', '6'),
+                                {
+                                    type: 'H',
+                                    objs: [
+                                        default_schema.int('_js.text.x.v', 'V1-H1'),
+                                        default_schema.int('_js.text.x.v', 'V1-H2'),
+                                    ],
+                                },
+                                {
+                                    type: 'H',
+                                    objs: [
+                                        default_schema.int('_js.text.x.v', 'V2-H1'),
+                                        default_schema.int('_js.text.x.v', 'V2-H2'),
+                                    ],
+                                },
                             ],
                         },
                     ],  // objs
