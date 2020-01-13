@@ -530,6 +530,7 @@ class K12WidgetGenerator():
             wdg = self.BoolTrigger(
                 __id_,
                 description = _name[self.lan],
+                layout = tlo,
                 **args,
                 )
             # wdg.layout = self.vlo
