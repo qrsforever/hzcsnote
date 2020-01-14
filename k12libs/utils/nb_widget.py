@@ -321,6 +321,8 @@ class K12WidgetGenerator():
         height = config.get('height', -1)
         if width > 0:
             tlo.width = '%dpx' % width
+        else:
+            tlo.max_width = '290px'
         if height > 0:
             tlo.height = '%dpx' % height
 

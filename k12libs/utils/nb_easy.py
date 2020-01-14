@@ -342,10 +342,11 @@ def _init_project_schema(context, params):
     context._output('----------Generate Project Schema (take a monment: 5s)--------------')
     context._output(params, 0)
 
-    context.user = params.get('project.user', None)
-    context.uuid = params.get('project.uuid', None)
+    context.user = params.get('project.user', '16601548608')
+    context.uuid = params.get('project.uuid', '123456')
     context.framework = params.get('project.framework', None)
     context.task = params.get('project.task', None)
+    context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
     context.tag = '%s_%s_%s' % (context.user, context.uuid, context.dataset)
     g_contexts[context.tag] = context
@@ -360,6 +361,7 @@ def _init_project_schema(context, params):
     context.parse_schema(json.loads(_jsonnet.evaluate_file(schema,
         ext_vars={
             'task': context.task,
+            'network': context.network,
             'dataset_name': context.dataset})))
 
 def _on_project_confirm(wdg):
@@ -472,7 +474,7 @@ def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit
         wdg_start.disabled = False
         wdg_stop.disabled = True
 
-def k12ai_run_project(lan='en', debug=True, framework=None, task=None, dataset=None):
+def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task=None, network=None, dataset=None):
     if framework is None:
         events = {
                 'project.confirm': _on_project_confirm,
@@ -490,11 +492,13 @@ def k12ai_run_project(lan='en', debug=True, framework=None, task=None, dataset=N
             task = 'cls' if framework == 'k12cv' else 'sa'
         if dataset is None:
             dataset = 'cifar10' if framework == 'k12cv' else 'sst'
+        if network is None:
+            network = 'base_model' if framework == 'k12cv' else 'basic_classifier'
         _init_project_schema(context, {
-            'project.user': '15801310416',
-            'project.uuid': dataset,
+            'project.uuid': uuid,
             'project.framework': framework,
             'project.task': task,
+            'project.network': network,
             'project.dataset': dataset
             })
     display(context.page)
