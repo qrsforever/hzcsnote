@@ -322,7 +322,7 @@ class K12WidgetGenerator():
         if width > 0:
             tlo.width = '%dpx' % width
         else:
-            tlo.max_width = '290px'
+            tlo.max_width = '280px'
         if height > 0:
             tlo.height = '%dpx' % height
 
@@ -583,10 +583,10 @@ class K12WidgetGenerator():
             if __id_ == '_k12.iframe.train':
                 _start = Button(description='Start', button_style='success',)
                 _stop = Button(description='Stop', button_style='success',)
-                _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=100,
+                _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=1,
                         bar_style='success', layout=Layout(width='60%'))
 
-                _drawit = Output(layout=Layout(width='100%'))
+                _drawit = Output(layout=Layout(width='100%', min_height='400px'))
 
                 wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
 
