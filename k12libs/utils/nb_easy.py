@@ -296,7 +296,8 @@ def _start_work_process(context):
                     contents = data[0]['value']['data']
                     epochs = contents.get('training_epochs', 0)
                     iters = contents.get('training_iters', 0)
-                    loss = contents.get('training_loss', 0)
+                    tloss = contents.get('training_loss', 0)
+                    vloss = contents.get('validation_loss', 0)
                     speed = contents.get('training_speed', 0)
                     acc = contents.get('training_accuracy', 0)
                     lrs = contents.get('lr', None)
@@ -314,20 +315,24 @@ def _start_work_process(context):
                     if context.train_progress.value == 1:
                         g_queue.put((tag, key, 2))
 
+                    context.train_progress.description = '%.2f%%' % (100 * context.train_progress.value)
+
                     with context.train_progress.drawit:
                         clear_output(wait=True)
-                        if loss > 0:
+                        if tloss > 0:
                             g_drawits[0, 0].set_xticks(())
                             g_drawits[0, 0].set_ylabel('Loss')
-                            g_drawits[0, 0].scatter([iters], [loss], color='k')
+                            g_drawits[0, 0].scatter([iters], [tloss], label='train loss', color='r', s=16, alpha=0.7)
+                            if vloss > 0:
+                                g_drawits[0, 0].scatter([iters], [vloss], label='val loss', color='b', s=16, alpha=0.7)
                         if speed > 0:
                             g_drawits[0, 1].set_xticks(())
                             g_drawits[0, 1].set_ylabel('Speed')
-                            g_drawits[0, 1].scatter([iters], [speed], color='k')
+                            g_drawits[0, 1].scatter([iters], [speed], color='k', s=16, alpha=0.7)
                         if acc > 0:
                             g_drawits[1, 0].set_xticks(())
                             g_drawits[1, 0].set_ylabel('ACC')
-                            g_drawits[1, 0].scatter([iters], [acc], color='k')
+                            g_drawits[1, 0].scatter([iters], [acc], color='k', s=16, alpha=0.7)
 
                         if lrs:
                             lr = 0
@@ -338,7 +343,7 @@ def _start_work_process(context):
                             if lr > 0:
                                 g_drawits[1, 1].set_xticks(())
                                 g_drawits[1, 1].set_ylabel('LR')
-                                g_drawits[1, 1].scatter([iters], [lr], color='k')
+                                g_drawits[1, 1].scatter([iters], [lr], color='k', s=16, alpha=0.7)
                         display(g_figure)
                         # plt.show()
 
