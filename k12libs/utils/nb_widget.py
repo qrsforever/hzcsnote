@@ -346,11 +346,11 @@ class K12WidgetGenerator():
             if min:
                 args['min'] = min
             else:
-                args['min'] = -999999
+                args['min'] = -2147483647
             if max:
                 args['max'] = max
             else:
-                args['max'] = 999999
+                args['max'] = 2147483647
 
         if _type == 'page':
             wdg = VBox(layout=Layout(

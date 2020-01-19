@@ -267,90 +267,47 @@ def _start_work_process(context):
                     for i in [0, 1]:
                         for j in [0, 1]:
                             g_drawits[i, j].cla()
-                    timeout = 1
-                else:
-                    context.train_progress.trainstart.disabled = False
-                    context.train_progress.trainstop.disabled = True
+                    timeout = 3
+                elif flag == 2:
                     timeout = 600
+                else:
+                    timeout = 300
             except Empty:
                 pass
-            except Exception:
-                continue
+            except AttributeError:
+                pass
 
             if not context or not key:
                 continue
 
-            try:
-                result = {}
-                data = k12ai_get_data(key, 'status', num=1, rm=True)
-                if data:
-                    result['status'] = data[0]['value']
-                data = k12ai_get_data(key, 'error', num=1, rm=True)
-                if data:
-                    result['error'] = data[0]['value']
-                    if result['error']['data']['code'] != 100000:
-                        g_queue.put((tag, key, 2))
-                data = k12ai_get_data(key, 'metrics', num=1, rm=True)
-                if data:
-                    result['metrics'] = data[0]['value']
-                    contents = data[0]['value']['data']
-                    epochs = contents.get('training_epochs', 0)
-                    iters = contents.get('training_iters', 0)
-                    tloss = contents.get('training_loss', 0)
-                    vloss = contents.get('validation_loss', 0)
-                    speed = contents.get('training_speed', 0)
-                    acc = contents.get('training_accuracy', 0)
-                    lrs = contents.get('lr', None)
-                    if context.max_epoch > 0:
-                        if epochs == context.max_epoch:
-                            context.train_progress.value = 1
-                        else:
-                            context.train_progress.value = epochs / context.max_epoch
-                    elif context.max_iters > 0:
-                        if iters == context.max_iters:
-                            context.train_progress.value = 1
-                        else:
-                            context.train_progress.value = iters / context.max_iters
+            result = {}
+            data = k12ai_get_data(key, 'status', num=1)
+            if data:
+                result['status'] = data[0]['value']
+            data = k12ai_get_data(key, 'error', num=1)
+            if data:
+                result['error'] = data[0]['value']
+                if result['error']['data']['code'] != 100000:
+                    context.train_progress.trainstart.disabled = False
+                    context.train_progress.trainstop.disabled = True
+                    timeout = 300
+            data = k12ai_get_data(key, 'metrics', num=1, rm=True)
+            if data:
+                result['metrics'] = data[0]['value']
+                contents = data[0]['value']['data']
+                context.train_progress.value = contents['training_epochs']
+                iters = contents['training_iters']
+                with context.train_progress.drawit:
+                    clear_output(wait=True)
+                    g_drawits[0, 0].set_xticks(())
+                    g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                    g_drawits[0, 1].set_xticks(())
+                    g_drawits[0, 1].scatter([iters], [contents['training_speed']], color='k')
+                    display(g_figure)
+                    plt.show()
 
-                    if context.train_progress.value == 1:
-                        g_queue.put((tag, key, 2))
-
-                    context.train_progress.description = '%.2f%%' % (100 * context.train_progress.value)
-
-                    with context.train_progress.drawit:
-                        clear_output(wait=True)
-                        if tloss > 0:
-                            g_drawits[0, 0].set_xticks(())
-                            g_drawits[0, 0].set_ylabel('Loss')
-                            g_drawits[0, 0].scatter([iters], [tloss], label='train loss', color='r', s=16, alpha=0.7)
-                            if vloss > 0:
-                                g_drawits[0, 0].scatter([iters], [vloss], label='val loss', color='b', s=16, alpha=0.7)
-                        if speed > 0:
-                            g_drawits[0, 1].set_xticks(())
-                            g_drawits[0, 1].set_ylabel('Speed')
-                            g_drawits[0, 1].scatter([iters], [speed], color='k', s=16, alpha=0.7)
-                        if acc > 0:
-                            g_drawits[1, 0].set_xticks(())
-                            g_drawits[1, 0].set_ylabel('ACC')
-                            g_drawits[1, 0].scatter([iters], [acc], color='k', s=16, alpha=0.7)
-
-                        if lrs:
-                            lr = 0
-                            if isinstance(lrs, list):
-                                lr = lrs[0]
-                            elif isinstance(lrs, float):
-                                lr = lrs
-                            if lr > 0:
-                                g_drawits[1, 1].set_xticks(())
-                                g_drawits[1, 1].set_ylabel('LR')
-                                g_drawits[1, 1].scatter([iters], [lr], color='k', s=16, alpha=0.7)
-                        display(g_figure)
-                        # plt.show()
-
-                if len(result) > 0:
-                    context._output(result)
-            except Exception:
-                pass
+            if len(result) > 0:
+                context._output(result)
 
     plt.ioff()
     if g_drawits is None:
@@ -366,6 +323,10 @@ def _start_work_process(context):
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
                 # axes[i, j].grid(True)
 
+        axes[0, 0].set_ylabel('Loss')
+        axes[0, 1].set_ylabel('Speed')
+        axes[1, 0].set_ylabel('LR')
+        axes[1, 1].set_ylabel('ACC')
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
         g_drawits = axes
         g_figure = fig
@@ -394,6 +355,8 @@ def _init_project_schema(context, params):
         schema = os.path.join(k12ai_get_top_dir(), 'cv/app', 'templates', 'schema/k12ai_cv.jsonnet')
     elif context.framework == 'k12nlp':
         schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
+    elif context.framework == 'k12rl':
+        schema = os.path.join(k12ai_get_top_dir(), 'rl/app', 'templates', 'schema/k12ai_rl.jsonnet')
     else:
         raise()
 
@@ -414,28 +377,22 @@ def _on_project_trainstart(wdg):
         return
     context = wdg.progress.context
 
+    if not hasattr(wdg.progress, 'running'):
+        wdg.progress.running = -1
+        wdg.progress.value = 0
+
     if not hasattr(context, 'user'):
         context._output('train.start error, no context.user')
         return
-
-    params = context.get_all_kv()
-    if context.framework == 'k12cv':
-        context.max_iters = params.get('solver.max_iters', 0)
-        context.max_epoch = params.get('solver.max_epoch', 0)
-    else:
-        context.max_iters = 0
-        context.max_epoch = params.get('trainer.num_epochs', 0)
 
     op = 'train.start'
     data = {'op': op,
             'user': context.user,
             'service_name': context.framework,
             'service_uuid': context.uuid,
-            'service_params': params}
+            'service_params': context.get_all_kv()}
 
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
-    wdg.progress.trainstart.disabled = True
-    wdg.progress.trainstop.disabled = False
     if response['code'] != 100000:
         context._output(response)
         return
@@ -448,6 +405,9 @@ def _on_project_trainstart(wdg):
         'response': response,
         'key': key
         })
+
+    wdg.progress.trainstart.disabled = True
+    wdg.progress.trainstop.disabled = False
 
 def _on_project_trainstop(wdg):
     if not hasattr(wdg, 'progress'):
@@ -464,8 +424,6 @@ def _on_project_trainstop(wdg):
         'service_uuid': context.uuid,
         }
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
-    wdg.progress.trainstart.disabled = False
-    wdg.progress.trainstop.disabled = True
     if response['code'] != 100000:
         context._output(response)
         return
@@ -477,6 +435,10 @@ def _on_project_trainstop(wdg):
         'response': response,
         'key': key
         })
+
+    wdg.progress.running = 0
+    wdg.progress.trainstart.disabled = False
+    wdg.progress.trainstop.disabled = True
 
 def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit):
     wdg_start.on_click(_on_project_trainstart)
@@ -515,14 +477,15 @@ def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit
         wdg_stop.disabled = True
 
 def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task=None, network=None, dataset=None):
-    if framework is None:
+    if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
                 'project.train.init': _on_project_traininit,
                 }
         pro_schema = os.path.join(k12ai_get_top_dir(), 'k12libs/templates', 'projects.jsonnet')
         context = K12WidgetGenerator(lan, debug, events=events)
-        context.parse_schema(json.loads(_jsonnet.evaluate_file(pro_schema)))
+        context.parse_schema(json.loads(_jsonnet.evaluate_file(
+            pro_schema, tla_vars={'framework': 'k12cv' if framework is None else framework})))
     else:
         events = {
                 'project.train.init': _on_project_traininit,
@@ -535,8 +498,7 @@ def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task
         if network is None:
             network = 'base_model' if framework == 'k12cv' else 'basic_classifier'
         _init_project_schema(context, {
-            'project.user': '15801310416' if framework == 'k12cv' else '16601548608',
-            'project.uuid': '1' if framework == 'k12cv' else '2',
+            'project.uuid': uuid,
             'project.framework': framework,
             'project.task': task,
             'project.network': network,
