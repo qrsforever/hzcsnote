@@ -343,8 +343,15 @@ def _init_project_schema(context, params):
     context._output(params, 0)
 
     context.user = params.get('project.user', '16601548608')
-    context.uuid = params.get('project.uuid', '123456')
     context.framework = params.get('project.framework', None)
+    if context.framework == 'k12cv':
+        context.uuid = '1'
+    elif context.framework == 'k12nlp':
+        context.uuid = '2'
+    elif context.framework == 'k12rl':
+        context.uuid = '3'
+    else:
+        context.uuid = '4'
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
@@ -378,7 +385,6 @@ def _on_project_trainstart(wdg):
     context = wdg.progress.context
 
     if not hasattr(wdg.progress, 'running'):
-        wdg.progress.running = -1
         wdg.progress.value = 0
 
     if not hasattr(context, 'user'):
@@ -393,6 +399,9 @@ def _on_project_trainstart(wdg):
             'service_params': context.get_all_kv()}
 
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
+    wdg.progress.trainstart.disabled = True
+    wdg.progress.trainstop.disabled = False
+
     if response['code'] != 100000:
         context._output(response)
         return
@@ -405,9 +414,6 @@ def _on_project_trainstart(wdg):
         'response': response,
         'key': key
         })
-
-    wdg.progress.trainstart.disabled = True
-    wdg.progress.trainstop.disabled = False
 
 def _on_project_trainstop(wdg):
     if not hasattr(wdg, 'progress'):
@@ -424,6 +430,9 @@ def _on_project_trainstop(wdg):
         'service_uuid': context.uuid,
         }
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
+    wdg.progress.trainstart.disabled = False
+    wdg.progress.trainstop.disabled = True
+
     if response['code'] != 100000:
         context._output(response)
         return
@@ -436,9 +445,6 @@ def _on_project_trainstop(wdg):
         'key': key
         })
 
-    wdg.progress.running = 0
-    wdg.progress.trainstart.disabled = False
-    wdg.progress.trainstop.disabled = True
 
 def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit):
     wdg_start.on_click(_on_project_trainstart)
@@ -476,7 +482,7 @@ def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit
         wdg_start.disabled = False
         wdg_stop.disabled = True
 
-def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task=None, network=None, dataset=None):
+def k12ai_run_project(lan='en', debug=False, framework=None, task=None, network=None, dataset=None):
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
@@ -498,7 +504,6 @@ def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task
         if network is None:
             network = 'base_model' if framework == 'k12cv' else 'basic_classifier'
         _init_project_schema(context, {
-            'project.uuid': uuid,
             'project.framework': framework,
             'project.task': task,
             'project.network': network,
