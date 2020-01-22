@@ -269,8 +269,10 @@ def _start_work_process(context):
                             g_drawits[i, j].cla()
                     timeout = 3
                 elif flag == 2:
-                    timeout = 600
+                    timeout = 5
                 else:
+                    context.train_progress.trainstart.disabled = False
+                    context.train_progress.trainstop.disabled = True
                     timeout = 300
             except Empty:
                 pass
@@ -281,39 +283,50 @@ def _start_work_process(context):
                 continue
 
             result = {}
-            data = k12ai_get_data(key, 'status', num=1, rm=True)
-            if data:
-                result['status'] = data[0]['value']
-            data = k12ai_get_data(key, 'error', num=1, rm=True)
-            if data:
-                result['error'] = data[0]['value']
-                if result['error']['data']['code'] != 100000:
-                    context.train_progress.trainstart.disabled = False
-                    context.train_progress.trainstop.disabled = True
-                    timeout = 300
-            data = k12ai_get_data(key, 'metrics', num=1, rm=True)
-            if data:
-                result['metrics'] = data[0]['value']
-                contents = data[0]['value']['data']
-                if contents.get('training_progress', None):
-                    context.train_progress.value = contents['training_progress']
-                else:
-                    context.train_progress.value = 0 # contents['training_epochs']
-                iters = contents['training_iters']
-                with context.train_progress.drawit:
-                    clear_output(wait=True)
-                    g_drawits[0, 0].set_xticks(())
-                    if context.framework == 'k12rl':
-                        g_drawits[0, 0].set_ylabel('Score')
-                        g_drawits[0, 0].scatter([iters], [contents['training_score']], color='k')
+
+            try:
+                # status
+                data = k12ai_get_data(key, 'status', num=1, rm=True)
+                if data:
+                    result['status'] = data[0]['value']
+                    if result['status']['data']['value'] == 'exit':
+                        g_queue.put((context.tag, key, 3))
+
+                # error
+                data = k12ai_get_data(key, 'error', num=1, rm=True)
+                if data:
+                    result['error'] = data[0]['value']
+                    if result['error']['data']['code'] != 100000:
+                        g_queue.put((context.tag, key, 3))
+
+                # metrics
+                data = k12ai_get_data(key, 'metrics', num=1, rm=True)
+                if data:
+                    result['metrics'] = data[0]['value']
+                    contents = data[0]['value']['data']
+                    if contents.get('training_progress', None):
+                        context.train_progress.value = contents['training_progress']
                     else:
-                        g_drawits[0, 0].set_ylabel('Loss')
-                        g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
-                    g_drawits[0, 1].set_ylabel('Speed')
-                    g_drawits[0, 1].set_xticks(())
-                    g_drawits[0, 1].scatter([iters], [contents['training_speed']], color='k')
-                    display(g_figure)
-                    plt.show()
+                        context.train_progress.value = contents['training_epochs']
+                    iters = contents['training_iters']
+                    with context.train_progress.drawit:
+                        clear_output(wait=True)
+                        if contents.get('training_loss', None):
+                            g_drawits[0, 0].set_xticks(())
+                            g_drawits[0, 0].set_ylabel('Loss')
+                            g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                        if contents.get('training_score', None):
+                            g_drawits[0, 1].set_xticks(())
+                            g_drawits[0, 1].set_ylabel('Score')
+                            g_drawits[0, 1].scatter([iters], [contents['training_score']], color='k')
+                        if contents.get('training_speed', None):
+                            g_drawits[1, 0].set_xticks(())
+                            g_drawits[1, 0].set_ylabel('Speed')
+                            g_drawits[1, 0].scatter([iters], [contents['training_speed']], color='k')
+                        display(g_figure)
+                        plt.show()
+            except Exception:
+                pass
 
             if len(result) > 0:
                 context._output(result)
@@ -331,8 +344,6 @@ def _start_work_process(context):
                 axes[i, j].set_xticklabels(())
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
                 # axes[i, j].grid(True)
-        axes[1, 0].set_ylabel('LR')
-        axes[1, 1].set_ylabel('ACC')
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
         g_drawits = axes
         g_figure = fig

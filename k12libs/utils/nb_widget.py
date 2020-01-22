@@ -335,10 +335,9 @@ class K12WidgetGenerator():
             default = config.get('default', None)
             if default:
                 args['value'] = default
-        if _type not in ['page', 'tab', 'accordion', 'navigation', 'H', 'V', 'object']:
-            tips = config.get('tips', None)
-            if tips:
-                args['description_tooltip'] = tips
+        tips = config.get('tips', None)
+        if tips:
+            args['description_tooltip'] = tips
 
         if _type in ['int', 'float']:
             min = config.get('min', None)
