@@ -281,10 +281,10 @@ def _start_work_process(context):
                 continue
 
             result = {}
-            data = k12ai_get_data(key, 'status', num=1)
+            data = k12ai_get_data(key, 'status', num=1, rm=True)
             if data:
                 result['status'] = data[0]['value']
-            data = k12ai_get_data(key, 'error', num=1)
+            data = k12ai_get_data(key, 'error', num=1, rm=True)
             if data:
                 result['error'] = data[0]['value']
                 if result['error']['data']['code'] != 100000:
@@ -295,12 +295,21 @@ def _start_work_process(context):
             if data:
                 result['metrics'] = data[0]['value']
                 contents = data[0]['value']['data']
-                context.train_progress.value = contents['training_epochs']
+                if contents.get('training_progress', None):
+                    context.train_progress.value = contents['training_progress']
+                else:
+                    context.train_progress.value = 0 # contents['training_epochs']
                 iters = contents['training_iters']
                 with context.train_progress.drawit:
                     clear_output(wait=True)
                     g_drawits[0, 0].set_xticks(())
-                    g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                    if context.framework == 'k12rl':
+                        g_drawits[0, 0].set_ylabel('Score')
+                        g_drawits[0, 0].scatter([iters], [contents['training_score']], color='k')
+                    else:
+                        g_drawits[0, 0].set_ylabel('Loss')
+                        g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                    g_drawits[0, 1].set_ylabel('Speed')
                     g_drawits[0, 1].set_xticks(())
                     g_drawits[0, 1].scatter([iters], [contents['training_speed']], color='k')
                     display(g_figure)
@@ -322,9 +331,6 @@ def _start_work_process(context):
                 axes[i, j].set_xticklabels(())
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
                 # axes[i, j].grid(True)
-
-        axes[0, 0].set_ylabel('Loss')
-        axes[0, 1].set_ylabel('Speed')
         axes[1, 0].set_ylabel('LR')
         axes[1, 1].set_ylabel('ACC')
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
