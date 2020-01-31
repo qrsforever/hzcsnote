@@ -18,49 +18,78 @@ local _string_enum(id, label, options) = {
     default: self.objs[0].value,
 };
 
-local _cv = {
-    cls: {
-        networks: [
-            { name: 'base model', value: 'base_model' },
-        ],
-        datasets: [
-            { name: 'cifar10', value: 'cifar10' },
-            { name: 'mnist', value: 'mnist' },
-        ],
-    },
-    det: {
-        networks: [
-            { name: 'ssd300', value: 'vgg16_ssd300' },
-            { name: 'ssd512', value: 'vgg16_ssd512' },
-            { name: 'yolov3', value: 'darknet_yolov3' },
-            { name: 'faster rcnn', value: 'faster_rcnn' },
-        ],
-        datasets: [
-            { name: 'voc', value: 'VOC07+12_DET' },
-        ],
-    },
+local _task_trigger(id, label, options) = {
+    _id_: id,
+    name: { en: label, cn: self.en },
+    type: 'string-enum-trigger',
+    objs: [
+        {
+            name: { en: opt.task.name, cn: self.en },
+            value: opt.task.value,
+            trigger: {
+                type: '_ignore_',
+                objs: [
+                    _string_enum('project.network', 'Network', opt.networks),
+                    _string_enum('project.dataset', 'Dataset', opt.datasets),
+                ],
+            },
+        }
+        for opt in options
+    ],
+    tips: 'aaaa',
+    default: self.objs[0].value,
 };
 
-local _nlp = {
-    sa: {
-        networks: [
-            { name: 'basic classifier', value: 'basic_classifier' },
-        ],
-        datasets: [
-            { name: 'sst', value: 'sst' },
-        ],
-    },
-};
-
-local _rl = {
-    atari: {
-        networks: [
-            { name: 'dqn', value: 'dqn' },
-        ],
-        datasets: [
-            { name: 'pong', value: 'pong' },
-        ],
-    },
+local _projects = {
+    k12cv: [
+        {
+            task: { name: 'cls', value: self.name },
+            networks: [
+                { name: 'base_model', value: self.name },
+            ],
+            datasets: [
+                { name: 'cifar10', value: self.name },
+                { name: 'mnist', value: self.name },
+            ],
+        },
+        {
+            task: { name: 'det', value: self.name },
+            networks: [
+                { name: 'vgg16_ssd300', value: self.name },
+                { name: 'vgg16_ssd512', value: self.name },
+                { name: 'darknet_yolov3', value: self.name },
+                { name: 'faster_rcnn', value: self.name },
+            ],
+            datasets: [
+                { name: 'VOC07+12_DET', value: self.name },
+            ],
+        },
+    ],
+    k12nlp: [
+        {
+            task: { name: 'sentiment_analysis', value: self.name },
+            networks: [
+                { name: 'basic_classifier', value: self.name },
+            ],
+            datasets: [
+                { name: 'sst', value: self.name },
+            ],
+        },
+    ],
+    k12rl: [
+        {
+            task: { name: 'atari', value: self.name },
+            networks: [
+                { name: 'dqn', value: self.name },
+            ],
+            datasets: [
+                { name: 'pong', value: self.name },
+                { name: 'seaquest', value: self.name },
+                { name: 'qbert', value: self.name },
+                { name: 'chopper_command', value: self.name },
+            ],
+        },
+    ],
 };
 
 function(framework) {
@@ -76,38 +105,7 @@ function(framework) {
                     value: 'k12cv',
                     trigger: {
                         type: '_ignore_',
-                        objs: [
-                            {
-                                _id_: 'project.task',
-                                name: { en: 'Task', cn: self.en },
-                                type: 'string-enum-trigger',
-                                objs: [
-                                    {
-                                        name: { en: 'cls', cn: self.en },
-                                        value: 'cls',
-                                        trigger: {
-                                            type: '_ignore_',
-                                            objs: [
-                                                _string_enum('project.network', 'Network', _cv.cls.networks),
-                                                _string_enum('project.dataset', 'Dataset', _cv.cls.datasets),
-                                            ],
-                                        },
-                                    },
-                                    {
-                                        name: { en: 'det', cn: self.en },
-                                        value: 'det',
-                                        trigger: {
-                                            type: '_ignore_',
-                                            objs: [
-                                                _string_enum('project.network', 'Network', _cv.det.networks),
-                                                _string_enum('project.dataset', 'Dataset', _cv.det.datasets),
-                                            ],
-                                        },
-                                    },
-                                ],
-                                default: self.objs[0].value,
-                            },
-                        ],
+                        objs: [_task_trigger('project.task', 'Task', _projects.k12cv)],
                     },
                 },
                 {
@@ -115,27 +113,7 @@ function(framework) {
                     value: 'k12nlp',
                     trigger: {
                         type: '_ignore_',
-                        objs: [
-                            {
-                                _id_: 'project.task',
-                                name: { en: 'Task', cn: self.en },
-                                type: 'string-enum-trigger',
-                                objs: [
-                                    {
-                                        name: { en: 'sa', cn: self.en },
-                                        value: 'sentiment_analysis',
-                                        trigger: {
-                                            type: '_ignore_',
-                                            objs: [
-                                                _string_enum('project.network', 'Network', _nlp.sa.networks),
-                                                _string_enum('project.dataset', 'Dataset', _nlp.sa.datasets),
-                                            ],
-                                        },
-                                    },
-                                ],
-                                default: self.objs[0].value,
-                            },
-                        ],
+                        objs: [_task_trigger('project.task', 'Task', _projects.k12nlp)],
                     },
                 },
                 {
@@ -143,27 +121,7 @@ function(framework) {
                     value: 'k12rl',
                     trigger: {
                         type: '_ignore_',
-                        objs: [
-                            {
-                                _id_: 'project.task',
-                                name: { en: 'Task', cn: self.en },
-                                type: 'string-enum-trigger',
-                                objs: [
-                                    {
-                                        name: { en: 'sa', cn: self.en },
-                                        value: 'sentiment_analysis',
-                                        trigger: {
-                                            type: '_ignore_',
-                                            objs: [
-                                                _string_enum('project.network', 'Network', _rl.atari.networks),
-                                                _string_enum('project.dataset', 'Dataset', _rl.atari.datasets),
-                                            ],
-                                        },
-                                    },
-                                ],
-                                default: self.objs[0].value,
-                            },
-                        ],
+                        objs: [_task_trigger('project.task', 'Task', _projects.k12rl)],
                     },
                 },
             ],
@@ -175,7 +133,7 @@ function(framework) {
             type: 'button',
         },
         {
-            name: { en: 'Debug Output', cn: '调试输出: ' },
+            name: { en: 'Debug', cn: '调试输出: ' },
             type: 'output',
             objs: [
                 { value: 'print', name: 'Print' },
