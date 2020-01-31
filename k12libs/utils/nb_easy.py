@@ -269,8 +269,10 @@ def _start_work_process(context):
                             g_drawits[i, j].cla()
                     timeout = 3
                 elif flag == 2:
-                    timeout = 600
+                    timeout = 5
                 else:
+                    context.train_progress.trainstart.disabled = False
+                    context.train_progress.trainstop.disabled = True
                     timeout = 300
             except Empty:
                 pass
@@ -281,30 +283,50 @@ def _start_work_process(context):
                 continue
 
             result = {}
-            data = k12ai_get_data(key, 'status', num=1)
-            if data:
-                result['status'] = data[0]['value']
-            data = k12ai_get_data(key, 'error', num=1)
-            if data:
-                result['error'] = data[0]['value']
-                if result['error']['data']['code'] != 100000:
-                    context.train_progress.trainstart.disabled = False
-                    context.train_progress.trainstop.disabled = True
-                    timeout = 300
-            data = k12ai_get_data(key, 'metrics', num=1, rm=True)
-            if data:
-                result['metrics'] = data[0]['value']
-                contents = data[0]['value']['data']
-                context.train_progress.value = contents['training_epochs']
-                iters = contents['training_iters']
-                with context.train_progress.drawit:
-                    clear_output(wait=True)
-                    g_drawits[0, 0].set_xticks(())
-                    g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
-                    g_drawits[0, 1].set_xticks(())
-                    g_drawits[0, 1].scatter([iters], [contents['training_speed']], color='k')
-                    display(g_figure)
-                    plt.show()
+
+            try:
+                # status
+                data = k12ai_get_data(key, 'status', num=1, rm=True)
+                if data:
+                    result['status'] = data[0]['value']
+                    if result['status']['data']['value'] == 'exit':
+                        g_queue.put((context.tag, key, 3))
+
+                # error
+                data = k12ai_get_data(key, 'error', num=1, rm=True)
+                if data:
+                    result['error'] = data[0]['value']
+                    if result['error']['data']['code'] != 100000:
+                        g_queue.put((context.tag, key, 3))
+
+                # metrics
+                data = k12ai_get_data(key, 'metrics', num=1, rm=True)
+                if data:
+                    result['metrics'] = data[0]['value']
+                    contents = data[0]['value']['data']
+                    if contents.get('training_progress', None):
+                        context.train_progress.value = contents['training_progress']
+                    else:
+                        context.train_progress.value = contents['training_epochs']
+                    iters = contents['training_iters']
+                    with context.train_progress.drawit:
+                        clear_output(wait=True)
+                        if contents.get('training_loss', None):
+                            g_drawits[0, 0].set_xticks(())
+                            g_drawits[0, 0].set_ylabel('Loss')
+                            g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                        if contents.get('training_score', None):
+                            g_drawits[0, 1].set_xticks(())
+                            g_drawits[0, 1].set_ylabel('Score')
+                            g_drawits[0, 1].scatter([iters], [contents['training_score']], color='k')
+                        if contents.get('training_speed', None):
+                            g_drawits[1, 0].set_xticks(())
+                            g_drawits[1, 0].set_ylabel('Speed')
+                            g_drawits[1, 0].scatter([iters], [contents['training_speed']], color='k')
+                        display(g_figure)
+                        plt.show()
+            except Exception:
+                pass
 
             if len(result) > 0:
                 context._output(result)
@@ -322,11 +344,6 @@ def _start_work_process(context):
                 axes[i, j].set_xticklabels(())
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
                 # axes[i, j].grid(True)
-
-        axes[0, 0].set_ylabel('Loss')
-        axes[0, 1].set_ylabel('Speed')
-        axes[1, 0].set_ylabel('LR')
-        axes[1, 1].set_ylabel('ACC')
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
         g_drawits = axes
         g_figure = fig
@@ -343,8 +360,15 @@ def _init_project_schema(context, params):
     context._output(params, 0)
 
     context.user = params.get('project.user', '16601548608')
-    context.uuid = params.get('project.uuid', '123456')
     context.framework = params.get('project.framework', None)
+    if context.framework == 'k12cv':
+        context.uuid = '1'
+    elif context.framework == 'k12nlp':
+        context.uuid = '2'
+    elif context.framework == 'k12rl':
+        context.uuid = '3'
+    else:
+        context.uuid = '4'
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
@@ -378,7 +402,6 @@ def _on_project_trainstart(wdg):
     context = wdg.progress.context
 
     if not hasattr(wdg.progress, 'running'):
-        wdg.progress.running = -1
         wdg.progress.value = 0
 
     if not hasattr(context, 'user'):
@@ -393,21 +416,15 @@ def _on_project_trainstart(wdg):
             'service_params': context.get_all_kv()}
 
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
+    wdg.progress.trainstart.disabled = True
+    wdg.progress.trainstop.disabled = False
+    context._output(response)
     if response['code'] != 100000:
-        context._output(response)
         return
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
     k12ai_del_data(key)
     _start_work_process(context)
     g_queue.put((context.tag, key, 1))
-    k12ai_print({
-        'request': data,
-        'response': response,
-        'key': key
-        })
-
-    wdg.progress.trainstart.disabled = True
-    wdg.progress.trainstop.disabled = False
 
 def _on_project_trainstop(wdg):
     if not hasattr(wdg, 'progress'):
@@ -424,21 +441,15 @@ def _on_project_trainstop(wdg):
         'service_uuid': context.uuid,
         }
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
+    wdg.progress.trainstart.disabled = False
+    wdg.progress.trainstop.disabled = True
+    context._output(response)
     if response['code'] != 100000:
-        context._output(response)
         return
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
     k12ai_del_data(key)
     g_queue.put((context.tag, key, 2))
-    k12ai_print({
-        'request': data,
-        'response': response,
-        'key': key
-        })
 
-    wdg.progress.running = 0
-    wdg.progress.trainstart.disabled = False
-    wdg.progress.trainstop.disabled = True
 
 def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit):
     wdg_start.on_click(_on_project_trainstart)
@@ -476,7 +487,7 @@ def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit
         wdg_start.disabled = False
         wdg_stop.disabled = True
 
-def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task=None, network=None, dataset=None):
+def k12ai_run_project(lan='en', debug=False, framework=None, task=None, network=None, dataset=None):
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
@@ -498,7 +509,6 @@ def k12ai_run_project(lan='en', debug=False, uuid='123456', framework=None, task
         if network is None:
             network = 'base_model' if framework == 'k12cv' else 'basic_classifier'
         _init_project_schema(context, {
-            'project.uuid': uuid,
             'project.framework': framework,
             'project.task': task,
             'project.network': network,

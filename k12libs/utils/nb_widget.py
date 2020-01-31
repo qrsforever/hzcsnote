@@ -48,7 +48,7 @@ def k12widget(method):
 class K12WidgetGenerator():
     def __init__(self, lan = 'en', debug=False, events=None):
         self.page = Box()
-        self.out = Output(layout={'border': '1px solid black', 'width': '100%'})
+        self.out = Output(layout={'border': '1px solid black', 'width': '100%', 'height':'auto'})
         self.output_type = 'none'
         self.lan = lan
         self.debug = debug
@@ -140,7 +140,7 @@ class K12WidgetGenerator():
     def get_all_json(self):
         config = ConfigFactory.from_dict(self.get_all_kv())
         # config.pop('_k12')
-        return HOCONConverter.convert(config, 'json')
+        return json.loads(HOCONConverter.convert(config, 'json'))
 
     def _output(self, body, clear=1):
         if self.output_type == 'none':
@@ -163,7 +163,7 @@ class K12WidgetGenerator():
             elif self.output_type == 'kvs':
                 pprint.pprint(self.get_all_kv())
             elif self.output_type == 'jsons':
-                print(self.get_all_json())
+                pprint.pprint(self.get_all_json())
 
     @k12widget
     def Debug(self, description, options):
@@ -335,10 +335,9 @@ class K12WidgetGenerator():
             default = config.get('default', None)
             if default:
                 args['value'] = default
-        if _type not in ['page', 'tab', 'accordion', 'navigation', 'H', 'V', 'object']:
-            tips = config.get('tips', None)
-            if tips:
-                args['description_tooltip'] = tips
+        tips = config.get('tips', None)
+        if tips:
+            args['description_tooltip'] = tips
 
         if _type in ['int', 'float']:
             min = config.get('min', None)
