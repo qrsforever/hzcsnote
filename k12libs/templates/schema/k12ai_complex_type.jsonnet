@@ -43,13 +43,13 @@ local city_group_item(city, descr, flg=0) = {
                         type: 'float',
                         default: 10.0,
                     },
-                    if flg == 1 then {
-                        _id_: 'k12.test.stringenumgroup' + city + '.Humidity',
-                        name: { en: 'Humidity', cn: self.en },
-                        type: 'float',
-                        default: 10.0,
-                    } else {},
-                ],
+                ] + if flg == 1
+                then [{
+                    _id_: 'k12.test.stringenumgroup' + city + '.Humidity',
+                    name: { en: 'Humidity', cn: self.en },
+                    type: 'float',
+                    default: 10.0,
+                }] else [],
             },
         },
         {
@@ -72,7 +72,7 @@ local city_group_item(city, descr, flg=0) = {
     objs: [
         {
             name: { en: 'BoolTriggerTest', cn: '布尔触发测试' },
-            type: 'object',
+            type: 'V',
             objs: [
                 {
                     _id_: 'k12.test.k12booltrigger',
@@ -119,7 +119,7 @@ local city_group_item(city, descr, flg=0) = {
         },
         {
             name: { en: 'StringEnumTriggerTest', cn: '字符串枚举触发测试' },
-            type: 'object',
+            type: 'V',
             objs: [
                 {
                     _id_: 'k12.test.k12stringenum',
@@ -133,6 +133,7 @@ local city_group_item(city, descr, flg=0) = {
                                 objs: [
                                     {
                                         _id_: 'k12.test.stringenum.hue.brightness',
+                                        // _id_: 'k12.test.stringenum.brightness',
                                         name: { en: 'Brightness', cn: '亮度' },
                                         type: 'int',
                                         default: 100,
@@ -159,6 +160,7 @@ local city_group_item(city, descr, flg=0) = {
                                 objs: [
                                     {
                                         _id_: 'k12.test.stringenum.konke.brightness',
+                                        // _id_: 'k12.test.stringenum.brightness',
                                         name: { en: 'Brightness', cn: '亮度' },
                                         type: 'int',
                                         default: 100,
@@ -173,10 +175,10 @@ local city_group_item(city, descr, flg=0) = {
         },
         {
             name: { en: 'StringEnumGroupTriggerTest', cn: '字符串枚举分组触发测试' },
-            type: 'H',
+            type: 'V',
             objs: [
                 {
-                    type: 'object',
+                    type: 'H',
                     objs: [
                         city_group_item('BeiJing', '北京', 1),
                         city_group_item('ShangHai', '上海'),

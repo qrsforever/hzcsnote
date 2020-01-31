@@ -418,19 +418,13 @@ def _on_project_trainstart(wdg):
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
     wdg.progress.trainstart.disabled = True
     wdg.progress.trainstop.disabled = False
-
+    context._output(response)
     if response['code'] != 100000:
-        context._output(response)
         return
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
     k12ai_del_data(key)
     _start_work_process(context)
     g_queue.put((context.tag, key, 1))
-    k12ai_print({
-        'request': data,
-        'response': response,
-        'key': key
-        })
 
 def _on_project_trainstop(wdg):
     if not hasattr(wdg, 'progress'):
@@ -449,18 +443,12 @@ def _on_project_trainstop(wdg):
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
     wdg.progress.trainstart.disabled = False
     wdg.progress.trainstop.disabled = True
-
+    context._output(response)
     if response['code'] != 100000:
-        context._output(response)
         return
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
     k12ai_del_data(key)
     g_queue.put((context.tag, key, 2))
-    k12ai_print({
-        'request': data,
-        'response': response,
-        'key': key
-        })
 
 
 def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit):
