@@ -243,13 +243,13 @@ def k12ai_json_load(path):
 g_queue = None
 g_process = None
 g_contexts = {}
-g_drawits = None
+g_axes = None
 g_figure = None
 
 # g_xlocator = MultipleLocator(20)
 
 def _start_work_process(context):
-    global g_queue, g_process, g_contexts, g_drawits, g_figure
+    global g_queue, g_process, g_contexts, g_axes, g_figure
 
     if not g_queue:
         g_queue = multiprocessing.Queue()
@@ -266,14 +266,17 @@ def _start_work_process(context):
                 if flag == 1:
                     for i in [0, 1]:
                         for j in [0, 1]:
-                            g_drawits[i, j].cla()
+                            g_axes[i, j].cla()
+                    with context.progress.output:
+                        clear_output()
                     timeout = 3
                 elif flag == 2:
                     timeout = 5
                 else:
-                    context.train_progress.trainstart.disabled = False
-                    context.train_progress.trainstop.disabled = True
+                    context.progress.trainstart.disabled = False
+                    context.progress.trainstop.disabled = True
                     timeout = 300
+                    continue
             except Empty:
                 pass
             except AttributeError:
@@ -286,45 +289,75 @@ def _start_work_process(context):
 
             try:
                 # status
-                data = k12ai_get_data(key, 'status', num=1, rm=True)
+                data = k12ai_get_data(key, 'status', num=1)
                 if data:
                     result['status'] = data[0]['value']
                     if result['status']['data']['value'] == 'exit':
                         g_queue.put((context.tag, key, 3))
 
                 # error
-                data = k12ai_get_data(key, 'error', num=1, rm=True)
+                data = k12ai_get_data(key, 'error', num=1)
                 if data:
                     result['error'] = data[0]['value']
                     if result['error']['data']['code'] != 100000:
-                        g_queue.put((context.tag, key, 3))
+                        g_queue.put((context.tag, key, 2))
 
                 # metrics
-                data = k12ai_get_data(key, 'metrics', num=1, rm=True)
-                if data:
-                    result['metrics'] = data[0]['value']
-                    contents = data[0]['value']['data']
-                    if contents.get('training_progress', None):
-                        context.train_progress.value = contents['training_progress']
-                    else:
-                        context.train_progress.value = contents['training_epochs']
-                    iters = contents['training_iters']
-                    with context.train_progress.drawit:
-                        clear_output(wait=True)
-                        if contents.get('training_loss', None):
-                            g_drawits[0, 0].set_xticks(())
-                            g_drawits[0, 0].set_ylabel('Loss')
-                            g_drawits[0, 0].scatter([iters], [contents['training_loss']], color='k')
-                        if contents.get('training_score', None):
-                            g_drawits[0, 1].set_xticks(())
-                            g_drawits[0, 1].set_ylabel('Score')
-                            g_drawits[0, 1].scatter([iters], [contents['training_score']], color='k')
-                        if contents.get('training_speed', None):
-                            g_drawits[1, 0].set_xticks(())
-                            g_drawits[1, 0].set_ylabel('Speed')
-                            g_drawits[1, 0].scatter([iters], [contents['training_speed']], color='k')
-                        display(g_figure)
-                        plt.show()
+                if context.progress.phase == 'train':
+                    data = k12ai_get_data(key, 'metrics', num=1, rm=True)
+                    if data:
+                        result['metrics'] = data[0]['value']
+                        contents = data[0]['value']['data']
+                        if contents.get('training_progress', None):
+                            context.progress.value = contents['training_progress']
+                        else:
+                            context.progress.value = contents['training_epochs']
+                        iters = contents['training_iters']
+
+                        with context.progress.output:
+                            clear_output(wait=True)
+                            if contents.get('training_loss', None):
+                                g_axes[0, 0].set_xticks(())
+                                g_axes[0, 0].set_ylabel('Loss')
+                                g_axes[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                            if contents.get('training_score', None):
+                                g_axes[0, 1].set_xticks(())
+                                g_axes[0, 1].set_ylabel('Score')
+                                g_axes[0, 1].scatter([iters], [contents['training_score']], color='k')
+                            if contents.get('training_speed', None):
+                                g_axes[1, 0].set_xticks(())
+                                g_axes[1, 0].set_ylabel('Speed')
+                                g_axes[1, 0].scatter([iters], [contents['training_speed']], color='k')
+                            display(g_figure)
+                            plt.show()
+                elif context.progress.phase == 'evaluate':
+                    data = k12ai_get_data(key, 'metrics', num=10, rm=True)
+                    if data:
+                        result['metrics'] = data[-1]['value']
+                        context.progress.value = result['metrics']['data']['evaluate_progress']
+                        iters = []
+                        loses = []
+                        acces = []
+                        for item in data:
+                            contents = item['value']['data']
+                            if contents.get('evaluate_iters', None):
+                                iters.append(contents.get('evaluate_iters'))
+                            if contents.get('evaluate_loss', None):
+                                loses.append(contents.get('evaluate_loss'))
+                            if contents.get('evaluate_accuracy', None):
+                                acces.append(contents.get('evaluate_accuracy'))
+                        with context.progress.output:
+                            clear_output(wait=True)
+                            if len(loses) > 0:
+                                g_axes[0, 0].set_xticks(())
+                                g_axes[0, 0].set_ylabel('Loss')
+                                g_axes[0, 0].scatter(iters, loses, color='k')
+                            if len(acces) > 0:
+                                g_axes[0, 1].set_xticks(())
+                                g_axes[0, 1].set_ylabel('Acc')
+                                g_axes[0, 1].scatter(iters, acces, color='k')
+                            display(g_figure)
+                            plt.show()
             except Exception:
                 pass
 
@@ -332,7 +365,7 @@ def _start_work_process(context):
                 context._output(result)
 
     plt.ioff()
-    if g_drawits is None:
+    if g_axes is None:
         fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
         for i in [0, 1]:
@@ -341,11 +374,11 @@ def _start_work_process(context):
                 axes[i, j].spines['top'].set_color('none')
                 axes[i, j].locator_params(nbins = 6)
                 axes[i, j].set_xlabel('Iters')
-                axes[i, j].set_xticklabels(())
+                # axes[i, j].set_xticklabels(())
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
-                # axes[i, j].grid(True)
+                axes[i, j].grid(True)
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
-        g_drawits = axes
+        g_axes = axes
         g_figure = fig
 
     if not g_process or not g_process.is_alive():
@@ -390,11 +423,13 @@ def _init_project_schema(context, params):
             'network': context.network,
             'dataset_name': context.dataset})))
 
+
 def _on_project_confirm(wdg):
     if not hasattr(wdg, 'context'):
         return
     context = wdg.context
     _init_project_schema(context, context.get_all_kv())
+
 
 def _on_project_trainstart(wdg):
     if not hasattr(wdg, 'progress'):
@@ -405,10 +440,28 @@ def _on_project_trainstart(wdg):
         wdg.progress.value = 0
 
     if not hasattr(context, 'user'):
-        context._output('train.start error, no context.user')
+        context._output('start error, no context.user')
         return
 
-    op = 'train.start'
+    response = json.loads(k12ai_post_request(
+            uri='k12ai/platform/stats',
+            data= {
+                'op': 'query',
+                'user': context.user,
+                'service_uuid': context.uuid,
+                'service_params': {'services': True},
+                'async': False}))
+    if response['code'] != 100000:
+        context._output(response)
+        return
+
+    if len(response['data']['services']) == 1:
+        op = response['data']['services'][0]['op']
+        if op != f'{wdg.phase}.start':
+            context._output(f'op {op} is running, please stop!')
+            return
+
+    op = f'{wdg.phase}.start'
     data = {'op': op,
             'user': context.user,
             'service_name': context.framework,
@@ -421,19 +474,22 @@ def _on_project_trainstart(wdg):
     context._output(response)
     if response['code'] != 100000:
         return
+    context.progress = wdg.progress
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
     k12ai_del_data(key)
     _start_work_process(context)
     g_queue.put((context.tag, key, 1))
+
 
 def _on_project_trainstop(wdg):
     if not hasattr(wdg, 'progress'):
         return
     context = wdg.progress.context
     if not hasattr(context, 'user'):
-        context._output('train.start error, no context.user')
+        context._output('stop error, no context.user')
         return
-    op = 'train.stop'
+
+    op = f'{wdg.phase}.stop'
     data = {
         'op': op,
         'user': context.user,
@@ -451,26 +507,33 @@ def _on_project_trainstop(wdg):
     g_queue.put((context.tag, key, 2))
 
 
-def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit):
+def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg_output):
     wdg_start.on_click(_on_project_trainstart)
     wdg_stop.on_click(_on_project_trainstop)
 
     wdg_start.progress = wdg_progress
     wdg_stop.progress = wdg_progress
-    wdg_drawit.progress = wdg_progress
+    wdg_output.progress = wdg_progress
+
+    wdg_start.phase = phase
+    wdg_stop.phase = phase
+    wdg_progress.phase = phase
 
     wdg_progress.trainstart = wdg_start
     wdg_progress.trainstop = wdg_stop
-    wdg_progress.drawit = wdg_drawit
+    wdg_progress.output = wdg_output
     wdg_progress.context = context
-    context.train_progress = wdg_progress
+
+    # if phase == 'train':
+    #     context.train_progress = wdg_progress
+    # elif phase == 'evaluate':
+    #     context.evaluate_progress = wdg_progress
 
     response = json.loads(k12ai_post_request(
             uri='k12ai/platform/stats',
             data= {
                 'op': 'query',
                 'user': context.user,
-                'service_name': 'k12platform',
                 'service_uuid': context.uuid,
                 'service_params': {'services': True},
                 'async': False}))
@@ -478,11 +541,13 @@ def _on_project_traininit(context, wdg_start, wdg_stop, wdg_progress, wdg_drawit
         context._output(response)
         return
     if len(response['data']['services']) == 1:
-        wdg_start.disabled = True
-        wdg_stop.disabled = False
-        _start_work_process(context)
-        key = 'framework/%s/%s/train.start' % (context.user, context.uuid)
-        g_queue.put((context.tag, key, 1))
+        op = response['data']['services'][0]['op']
+        if op == f'{phase}.start':
+            wdg_start.disabled = True
+            wdg_stop.disabled = False
+            _start_work_process(context)
+            key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
+            g_queue.put((context.tag, key, 1))
     else:
         wdg_start.disabled = False
         wdg_stop.disabled = True

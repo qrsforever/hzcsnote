@@ -579,7 +579,7 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'iframe':
-            if __id_ == '_k12.iframe.train':
+            if __id_ == '_k12.iframe.train' or __id_ == '_k12.iframe.evaluate':
                 _start = Button(description='Start', button_style='success',)
                 _stop = Button(description='Stop', button_style='success',)
                 _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=1,
@@ -590,7 +590,7 @@ class K12WidgetGenerator():
                 wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
 
                 if self.events:
-                    self.events['project.train.init'](self,
+                    self.events['project.train.init'](self, __id_.split('.')[2],
                             _start, _stop, _progress, _drawit)
             else:
                 return
