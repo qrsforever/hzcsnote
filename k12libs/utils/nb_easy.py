@@ -189,7 +189,7 @@ def k12ai_post_cv_request(uri, op, user, uuid, params=None):
         "service_params": %s
     }''' % (op, user, uuid, params))
     api = 'http://%s:%d/%s' % (host, port, uri)
-    key = 'framework/%s/%s/%s' % (user, uuid, op)
+    key = 'framework/%s/%s/%s' % (user, uuid, op.split('.')[0])
     return {'req': data,
             'res': json.loads(requests.post(url=api, json=data).text),
             'key': key}
@@ -207,26 +207,7 @@ def k12ai_post_nlp_request(uri, op, user, uuid, params=None):
         "service_params": %s
     }''' % (op, user, uuid, params))
     api = 'http://%s:%d/%s' % (host, port, uri)
-    key = 'framework/%s/%s/%s' % (user, uuid, op)
-    return {'req': data,
-            'res': json.loads(requests.post(url=api, json=data).text),
-            'key': key}
-
-def k12ai_post_platform_request(uri, op, user, uuid, params=None, isasync=False):
-    if not params:
-        params = '{}'
-    if isinstance(params, dict):
-        params = json.dumps(params)
-    data = json.loads('''{
-        "op":"%s",
-        "user": "%s",
-        "service_name": "k12platform",
-        "service_uuid": "%s",
-        "service_params": %s,
-        "async": %s
-    }''' % (op, user, uuid, params, 'true' if isasync else 'false'))
-    api = 'http://%s:%d/%s' % (host, port, uri)
-    key = 'platform/%s/%s/%s' % (user, uuid, op)
+    key = 'framework/%s/%s/%s' % (user, uuid, op.split('.')[0])
     return {'req': data,
             'res': json.loads(requests.post(url=api, json=data).text),
             'key': key}
@@ -258,7 +239,8 @@ def _start_work_process(context):
         context = None
         key = None
         timeout = 3
-        flag = -1
+        total_count = 0
+        result = {}
         while True:
             try:
                 tag, key, flag = g_queue.get(True, timeout=timeout)
@@ -270,13 +252,21 @@ def _start_work_process(context):
                     with context.progress.output:
                         clear_output()
                     timeout = 3
+                    total_count = 0
+                    result = {}
+                    continue
                 elif flag == 2:
                     timeout = 5
-                else:
+                elif flag == 3:
                     context.progress.trainstart.disabled = False
                     context.progress.trainstop.disabled = True
                     timeout = 300
                     continue
+                elif flag == 9:
+                    timeout = 1
+                    continue
+                else:
+                    timeout = 3
             except Empty:
                 pass
             except AttributeError:
@@ -285,10 +275,15 @@ def _start_work_process(context):
             if not context or not key:
                 continue
 
-            result = {}
+            total_count += 1
+            if total_count % 2 == 0:
+                context.progress.description = str(context.progress.value)
+            else:
+                context.progress.description = 'Progress:' 
 
             try:
                 # status
+                result['status'] = {}
                 data = k12ai_get_data(key, 'status', num=1)
                 if data:
                     result['status'] = data[0]['value']
@@ -296,11 +291,12 @@ def _start_work_process(context):
                         g_queue.put((context.tag, key, 3))
 
                 # error
+                result['error'] = {}
                 data = k12ai_get_data(key, 'error', num=1)
                 if data:
                     result['error'] = data[0]['value']
                     if result['error']['data']['code'] != 100000:
-                        g_queue.put((context.tag, key, 2))
+                        g_queue.put((context.tag, key, 3))
 
                 # metrics
                 if context.progress.phase == 'train':
@@ -308,10 +304,7 @@ def _start_work_process(context):
                     if data:
                         result['metrics'] = data[0]['value']
                         contents = data[0]['value']['data']
-                        if contents.get('training_progress', None):
-                            context.progress.value = contents['training_progress']
-                        else:
-                            context.progress.value = contents['training_epochs']
+                        context.progress.value = contents['training_progress']
                         iters = contents['training_iters']
 
                         with context.progress.output:
@@ -330,34 +323,15 @@ def _start_work_process(context):
                                 g_axes[1, 0].scatter([iters], [contents['training_speed']], color='k')
                             display(g_figure)
                             plt.show()
+                            g_queue.put((context.tag, key, 9))
                 elif context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=10, rm=True)
                     if data:
                         result['metrics'] = data[-1]['value']
                         context.progress.value = result['metrics']['data']['evaluate_progress']
-                        iters = []
-                        loses = []
-                        acces = []
-                        for item in data:
-                            contents = item['value']['data']
-                            if contents.get('evaluate_iters', None):
-                                iters.append(contents.get('evaluate_iters'))
-                            if contents.get('evaluate_loss', None):
-                                loses.append(contents.get('evaluate_loss'))
-                            if contents.get('evaluate_accuracy', None):
-                                acces.append(contents.get('evaluate_accuracy'))
                         with context.progress.output:
-                            clear_output(wait=True)
-                            if len(loses) > 0:
-                                g_axes[0, 0].set_xticks(())
-                                g_axes[0, 0].set_ylabel('Loss')
-                                g_axes[0, 0].scatter(iters, loses, color='k')
-                            if len(acces) > 0:
-                                g_axes[0, 1].set_xticks(())
-                                g_axes[0, 1].set_ylabel('Acc')
-                                g_axes[0, 1].scatter(iters, acces, color='k')
-                            display(g_figure)
-                            plt.show()
+                            clear_output()
+                            k12ai_print(data)
             except Exception:
                 pass
 
@@ -376,7 +350,7 @@ def _start_work_process(context):
                 axes[i, j].set_xlabel('Iters')
                 # axes[i, j].set_xticklabels(())
                 # axes[i, j].xaxis.set_major_locator(g_xlocator)
-                axes[i, j].grid(True)
+                # axes[i, j].grid(True)
         plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
         g_axes = axes
         g_figure = fig
@@ -475,7 +449,7 @@ def _on_project_trainstart(wdg):
     if response['code'] != 100000:
         return
     context.progress = wdg.progress
-    key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
+    key = 'framework/%s/%s/%s' % (context.user, context.uuid, wdg.phase)
     k12ai_del_data(key)
     _start_work_process(context)
     g_queue.put((context.tag, key, 1))
@@ -502,8 +476,7 @@ def _on_project_trainstop(wdg):
     context._output(response)
     if response['code'] != 100000:
         return
-    key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
-    k12ai_del_data(key)
+    key = 'framework/%s/%s/%s' % (context.user, context.uuid, wdg.phase)
     g_queue.put((context.tag, key, 2))
 
 
@@ -545,8 +518,9 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
         if op == f'{phase}.start':
             wdg_start.disabled = True
             wdg_stop.disabled = False
+            context.progress = wdg_progress
             _start_work_process(context)
-            key = 'framework/%s/%s/%s' % (context.user, context.uuid, op)
+            key = 'framework/%s/%s/%s' % (context.user, context.uuid, phase)
             g_queue.put((context.tag, key, 1))
     else:
         wdg_start.disabled = False
