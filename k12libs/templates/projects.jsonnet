@@ -59,6 +59,8 @@ local _projects = {
                 { name: 'vgg16_ssd512', value: self.name },
                 { name: 'darknet_yolov3', value: self.name },
                 { name: 'faster_rcnn', value: self.name },
+                { name: 'custom_ssd300', value: self.name },
+                { name: 'custom_ssd512', value: self.name },
             ],
             datasets: [
                 { name: 'VOC07+12_DET', value: self.name },

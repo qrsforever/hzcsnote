@@ -592,6 +592,15 @@ class K12WidgetGenerator():
                 if self.events:
                     self.events['project.train.init'](self, __id_.split('.')[2],
                             _start, _stop, _progress, _drawit)
+            elif __id_ == 'network.net_def':
+                wdg = self.Text(
+                    __id_,
+                    description = 'Input(test):',
+                    layout = tlo,
+                    style = self.style,
+                    continuous_update=False,
+                    **args,
+                )
             else:
                 return
             return _widget_add_child(widget, wdg)

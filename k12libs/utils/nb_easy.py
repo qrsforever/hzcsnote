@@ -397,6 +397,11 @@ def _init_project_schema(context, params):
             'network': context.network,
             'dataset_name': context.dataset})))
 
+    if context.framework == 'k12cv':
+        if context.network.split('_')[0] == 'custom':
+            from k12libs.templates.det.custom_ssd import NETWORK_BACKBONE_DEF
+            context.wid_widget_map['network.net_def'].value = NETWORK_BACKBONE_DEF
+
 
 def _on_project_confirm(wdg):
     if not hasattr(wdg, 'context'):
