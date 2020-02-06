@@ -399,8 +399,12 @@ def _init_project_schema(context, params):
 
     if context.framework == 'k12cv':
         if context.network.split('_')[0] == 'custom':
-            from k12libs.templates.det.custom_ssd import NETWORK_BACKBONE_DEF
-            context.wid_widget_map['network.net_def'].value = NETWORK_BACKBONE_DEF
+            if context.task == 'cls' and context.dataset == 'mnist':
+                from k12libs.templates.cls.custom_mnist import NETWORK_MNIST_DEF
+                context.wid_widget_map['network.net_def'].value = NETWORK_MNIST_DEF
+            elif context.task == 'det':
+                from k12libs.templates.det.custom_ssd import NETWORK_BACKBONE_DEF
+                context.wid_widget_map['network.net_def'].value = NETWORK_BACKBONE_DEF
 
 
 def _on_project_confirm(wdg):
