@@ -279,7 +279,7 @@ def _start_work_process(context):
             if total_count % 2 == 0:
                 context.progress.description = str(context.progress.value)
             else:
-                context.progress.description = 'Progress:' 
+                context.progress.description = 'Progress:'
 
             try:
                 # status
@@ -302,28 +302,34 @@ def _start_work_process(context):
                 if context.progress.phase == 'train':
                     data = k12ai_get_data(key, 'metrics', num=1, rm=True)
                     if data:
-                        result['metrics'] = data[0]['value']
-                        contents = data[0]['value']['data']
-                        context.progress.value = contents['training_progress']
-                        iters = contents['training_iters']
+                        if context.framework == 'k12ml':
+                            with context.progress.output:
+                                clear_output()
+                                k12ai_print(data)
+                            context.progress.value = 1.0
+                        else:
+                            result['metrics'] = data[0]['value']
+                            contents = data[0]['value']['data']
+                            context.progress.value = contents['training_progress']
+                            iters = contents['training_iters']
 
-                        with context.progress.output:
-                            clear_output(wait=True)
-                            if contents.get('training_loss', None):
-                                g_axes[0, 0].set_xticks(())
-                                g_axes[0, 0].set_ylabel('Loss')
-                                g_axes[0, 0].scatter([iters], [contents['training_loss']], color='k')
-                            if contents.get('training_score', None):
-                                g_axes[0, 1].set_xticks(())
-                                g_axes[0, 1].set_ylabel('Score')
-                                g_axes[0, 1].scatter([iters], [contents['training_score']], color='k')
-                            if contents.get('training_speed', None):
-                                g_axes[1, 0].set_xticks(())
-                                g_axes[1, 0].set_ylabel('Speed')
-                                g_axes[1, 0].scatter([iters], [contents['training_speed']], color='k')
-                            display(g_figure)
-                            plt.show()
-                            g_queue.put((context.tag, key, 9))
+                            with context.progress.output:
+                                clear_output(wait=True)
+                                if contents.get('training_loss', None):
+                                    g_axes[0, 0].set_xticks(())
+                                    g_axes[0, 0].set_ylabel('Loss')
+                                    g_axes[0, 0].scatter([iters], [contents['training_loss']], color='k')
+                                if contents.get('training_score', None):
+                                    g_axes[0, 1].set_xticks(())
+                                    g_axes[0, 1].set_ylabel('Score')
+                                    g_axes[0, 1].scatter([iters], [contents['training_score']], color='k')
+                                if contents.get('training_speed', None):
+                                    g_axes[1, 0].set_xticks(())
+                                    g_axes[1, 0].set_ylabel('Speed')
+                                    g_axes[1, 0].scatter([iters], [contents['training_speed']], color='k')
+                                display(g_figure)
+                                plt.show()
+                                g_queue.put((context.tag, key, 9))
                 elif context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=10, rm=True)
                     if data:
@@ -374,8 +380,10 @@ def _init_project_schema(context, params):
         context.uuid = '2'
     elif context.framework == 'k12rl':
         context.uuid = '3'
-    else:
+    elif context.framework == 'k12ml':
         context.uuid = '4'
+    else:
+        context.uuid = '5'
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
@@ -388,6 +396,8 @@ def _init_project_schema(context, params):
         schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
     elif context.framework == 'k12rl':
         schema = os.path.join(k12ai_get_top_dir(), 'rl/app', 'templates', 'schema/k12ai_rl.jsonnet')
+    elif context.framework == 'k12ml':
+        schema = os.path.join(k12ai_get_top_dir(), 'ml/app', 'templates', 'schema/k12ai_ml.jsonnet')
     else:
         raise()
 

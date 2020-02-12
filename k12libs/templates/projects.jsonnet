@@ -92,6 +92,32 @@ local _projects = {
             ],
         },
     ],
+    k12ml: [
+        {
+            task: { name: 'classifier', value: self.name },
+            networks: [
+                { name: 'svc', value: self.name },
+                { name: 'random_forest', value: self.name },
+            ],
+            datasets: [
+                { name: 'iris', value: self.name },
+                { name: 'digits', value: self.name },
+                { name: 'wine', value: self.name },
+                { name: 'breast_cancer', value: self.name },
+            ],
+        },
+        {
+            task: { name: 'regressor', value: self.name },
+            networks: [
+                { name: 'svr', value: self.name },
+            ],
+            datasets: [
+                { name: 'boston', value: self.name },
+                { name: 'diabetes', value: self.name },
+                { name: 'linnerud', value: self.name },
+            ],
+        },
+    ],
 };
 
 function(framework) {
@@ -124,6 +150,14 @@ function(framework) {
                     trigger: {
                         type: '_ignore_',
                         objs: [_task_trigger('project.task', 'Task', _projects.k12rl)],
+                    },
+                },
+                {
+                    name: { en: 'ml', cn: self.en },
+                    value: 'k12ml',
+                    trigger: {
+                        type: '_ignore_',
+                        objs: [_task_trigger('project.task', 'Task', _projects.k12ml)],
                     },
                 },
             ],
