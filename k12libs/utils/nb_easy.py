@@ -521,6 +521,8 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
     # elif phase == 'evaluate':
     #     context.evaluate_progress = wdg_progress
 
+    context.progress = wdg_progress
+
     response = json.loads(k12ai_post_request(
             uri='k12ai/platform/stats',
             data= {
@@ -537,7 +539,6 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
         if op == f'{phase}.start':
             wdg_start.disabled = True
             wdg_stop.disabled = False
-            context.progress = wdg_progress
             _start_work_process(context)
             key = 'framework/%s/%s/%s' % (context.user, context.uuid, phase)
             g_queue.put((context.tag, key, 1))
