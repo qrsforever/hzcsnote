@@ -36,7 +36,6 @@ local _task_trigger(id, label, options) = {
         }
         for opt in options
     ],
-    tips: 'aaaa',
     default: self.objs[0].value,
 };
 
@@ -46,6 +45,7 @@ local _projects = {
             task: { name: 'cls', value: self.name },
             networks: [
                 { name: 'base_model', value: self.name },
+                { name: 'custom_base', value: self.name },
             ],
             datasets: [
                 { name: 'cifar10', value: self.name },
@@ -57,8 +57,8 @@ local _projects = {
             networks: [
                 { name: 'vgg16_ssd300', value: self.name },
                 { name: 'vgg16_ssd512', value: self.name },
-                { name: 'darknet_yolov3', value: self.name },
-                { name: 'faster_rcnn', value: self.name },
+                // { name: 'darknet_yolov3', value: self.name },
+                // { name: 'faster_rcnn', value: self.name },
                 { name: 'custom_ssd300', value: self.name },
                 { name: 'custom_ssd512', value: self.name },
             ],
@@ -97,7 +97,10 @@ local _projects = {
             task: { name: 'classifier', value: self.name },
             networks: [
                 { name: 'svc', value: self.name },
+                { name: 'knn', value: self.name },
+                { name: 'decision_tree', value: self.name },
                 { name: 'random_forest', value: self.name },
+                { name: 'gaussian_nb', value: self.name },
             ],
             datasets: [
                 { name: 'iris', value: self.name },
@@ -110,6 +113,9 @@ local _projects = {
             task: { name: 'regressor', value: self.name },
             networks: [
                 { name: 'svr', value: self.name },
+                { name: 'knn', value: self.name },
+                { name: 'decision_tree', value: self.name },
+                { name: 'random_forest', value: self.name },
             ],
             datasets: [
                 { name: 'boston', value: self.name },
@@ -161,7 +167,8 @@ function(framework) {
                     },
                 },
             ],
-            default: framework,
+            [if 'k12ai' != framework then 'readonly']: true,
+            default: if 'k12ai' == framework then 'k12cv' else framework,
         },
         {
             _id_: 'project.confirm',

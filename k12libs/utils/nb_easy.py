@@ -390,22 +390,37 @@ def _init_project_schema(context, params):
     context.tag = '%s_%s_%s' % (context.user, context.uuid, context.dataset)
     g_contexts[context.tag] = context
 
-    if context.framework == 'k12cv':
-        schema = os.path.join(k12ai_get_top_dir(), 'cv/app', 'templates', 'schema/k12ai_cv.jsonnet')
-    elif context.framework == 'k12nlp':
-        schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
-    elif context.framework == 'k12rl':
-        schema = os.path.join(k12ai_get_top_dir(), 'rl/app', 'templates', 'schema/k12ai_rl.jsonnet')
-    elif context.framework == 'k12ml':
-        schema = os.path.join(k12ai_get_top_dir(), 'ml/app', 'templates', 'schema/k12ai_ml.jsonnet')
-    else:
-        raise()
+    response = json.loads(k12ai_post_request(
+        uri='k12ai/framework/schema',
+        data={
+            'service_name': context.framework,
+            'service_task': context.task,
+            'dataset_name': context.dataset,
+            'network_type': context.network
+            }))
 
-    context.parse_schema(json.loads(_jsonnet.evaluate_file(schema,
-        ext_vars={
-            'task': context.task,
-            'network': context.network,
-            'dataset_name': context.dataset})))
+    if response['code'] != 100000:
+        context._output(response)
+        return
+
+    context.parse_schema(json.loads(response['data']))
+
+    # if context.framework == 'k12cv':
+    #     schema = os.path.join(k12ai_get_top_dir(), 'cv/app', 'templates', 'schema/k12ai_cv.jsonnet')
+    # elif context.framework == 'k12nlp':
+    #     schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
+    # elif context.framework == 'k12rl':
+    #     schema = os.path.join(k12ai_get_top_dir(), 'rl/app', 'templates', 'schema/k12ai_rl.jsonnet')
+    # elif context.framework == 'k12ml':
+    #     schema = os.path.join(k12ai_get_top_dir(), 'ml/app', 'templates', 'schema/k12ai_ml.jsonnet')
+    # else:
+    #     raise()
+
+    # context.parse_schema(json.loads(_jsonnet.evaluate_file(schema,
+    #     ext_vars={
+    #         'task': context.task,
+    #         'network': context.network,
+    #         'dataset_name': context.dataset})))
 
     if context.framework == 'k12cv':
         if context.network.split('_')[0] == 'custom':
