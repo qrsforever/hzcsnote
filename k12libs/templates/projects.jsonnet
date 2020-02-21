@@ -50,6 +50,21 @@ local _projects = {
             datasets: [
                 { name: 'cifar10', value: self.name },
                 { name: 'mnist', value: self.name },
+                { name: 'Animals', value: self.name },
+                { name: 'Boats', value: self.name },
+                { name: 'cactus', value: self.name },
+                { name: 'Chars74K', value: self.name },
+                { name: 'dogAndCat', value: self.name },
+                { name: 'Dogs', value: self.name },
+                { name: 'EMNIST_Balanced', value: self.name },
+                { name: 'EMNIST_Digits', value: self.name },
+                { name: 'EMNIST_Letters', value: self.name },
+                { name: 'EMNIST_MNIST', value: self.name },
+                { name: 'FashionMNIST', value: self.name },
+                { name: 'Fruits360', value: self.name },
+                { name: 'kannada', value: self.name },
+                { name: 'kannada_dig', value: self.name },
+                { name: 'KMNIST', value: self.name },
             ],
         },
         {
@@ -89,6 +104,16 @@ local _projects = {
                 { name: 'seaquest', value: self.name },
                 { name: 'qbert', value: self.name },
                 { name: 'chopper_command', value: self.name },
+            ],
+        },
+        {
+            task: { name: 'mujoco', value: self.name },
+            networks: [
+                { name: 'pg', value: self.name },
+            ],
+            datasets: [
+                { name: 'CartPole-v0', value: self.name },
+                { name: 'Pendulum-v0', value: self.name },
             ],
         },
     ],
