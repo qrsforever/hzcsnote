@@ -54,7 +54,7 @@ local _projects = {
                 { name: 'Boats', value: self.name },
                 { name: 'cactus', value: self.name },
                 { name: 'Chars74K', value: self.name },
-                { name: 'dogAndCats', value: self.name },
+                { name: 'dogsVsCats', value: self.name },
                 { name: 'Dogs', value: self.name },
                 { name: 'EMNIST_Balanced', value: self.name },
                 { name: 'EMNIST_Digits', value: self.name },
