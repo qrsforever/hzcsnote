@@ -133,6 +133,7 @@ local _projects = {
                 { name: 'wine', value: self.name },
                 { name: 'breast_cancer', value: self.name },
                 { name: 'sf-crime', value: self.name },
+                { name: 'titanic', value: self.name },
             ],
         },
         {

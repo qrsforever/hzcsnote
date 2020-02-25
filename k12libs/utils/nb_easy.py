@@ -182,6 +182,7 @@ def k12ai_post_cv_request(uri, op, user, uuid, params=None):
     if isinstance(params, dict):
         params = json.dumps(params)
     data = json.loads('''{
+        "token": "123456",
         "op":"%s",
         "user": "%s",
         "service_name": "k12cv",
@@ -200,6 +201,7 @@ def k12ai_post_nlp_request(uri, op, user, uuid, params=None):
     if isinstance(params, dict):
         params = json.dumps(params)
     data = json.loads('''{
+        "token": "123456",
         "op":"%s",
         "user": "%s",
         "service_name": "k12nlp",
@@ -470,11 +472,14 @@ def _on_project_trainstart(wdg):
             return
 
     op = f'{wdg.phase}.start'
-    data = {'op': op,
-            'user': context.user,
-            'service_name': context.framework,
-            'service_uuid': context.uuid,
-            'service_params': context.get_all_kv()}
+    data = {
+        'token': '123456',
+        'op': op,
+        'user': context.user,
+        'service_name': context.framework,
+        'service_uuid': context.uuid,
+        'service_params': context.get_all_kv()
+    }
 
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
     wdg.progress.trainstart.disabled = True
@@ -499,6 +504,7 @@ def _on_project_trainstop(wdg):
 
     op = f'{wdg.phase}.stop'
     data = {
+        'token': '123456',
         'op': op,
         'user': context.user,
         'service_name': context.framework,
