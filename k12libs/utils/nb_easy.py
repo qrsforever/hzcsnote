@@ -9,6 +9,7 @@
 
 import os
 import base64
+import hashlib
 import requests
 import json
 import _jsonnet
@@ -376,20 +377,12 @@ def _init_project_schema(context, params):
 
     context.user = params.get('project.user', '16601548608')
     context.framework = params.get('project.framework', None)
-    if context.framework == 'k12cv':
-        context.uuid = '1'
-    elif context.framework == 'k12nlp':
-        context.uuid = '2'
-    elif context.framework == 'k12rl':
-        context.uuid = '3'
-    elif context.framework == 'k12ml':
-        context.uuid = '4'
-    else:
-        context.uuid = '5'
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
-    context.tag = '%s_%s_%s' % (context.user, context.uuid, context.dataset)
+    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
+    context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
+
     g_contexts[context.tag] = context
 
     response = json.loads(k12ai_post_request(
