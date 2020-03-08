@@ -139,7 +139,6 @@ class K12WidgetGenerator():
 
     def get_all_json(self):
         config = ConfigFactory.from_dict(self.get_all_kv())
-        # config.pop('_k12')
         return json.loads(HOCONConverter.convert(config, 'json'))
 
     def _output(self, body, clear=1):
@@ -534,19 +533,9 @@ class K12WidgetGenerator():
                 layout = tlo,
                 **args,
                 )
-            # wdg.layout = self.vlo
             for obj in _objs:
                 trigger_obj = obj['trigger']
                 trigger_box = wdg.trigger_box['true' if obj['value'] else 'false']
-                # trigger_box.layout = self.vlo
-                # if hasattr(trigger_obj, 'type'):
-                #     if trigger_obj['type'] == 'H':
-                #         wdg.layout = self.hlo
-                #         trigger_box.layout = self.hlo
-                #     elif trigger_obj['type'] == 'V':
-                #         wdg.layout = self.vlo
-                #         trigger_box.layout = self.vlo
-
                 self._parse_config(trigger_box, trigger_obj)
             return _widget_add_child(widget, wdg)
 

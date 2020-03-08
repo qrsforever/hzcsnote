@@ -1,0 +1,1 @@
+,id,model,dataset,batchsize,uptimeapp_cpu_memory_usage_MB,app_gpu_memory_usage_MB,sys_cpu_memory_free_MB,sys_gpu_memory_free_MB,app_cpu_max_memory_children_MB,app_gpu_max_memory_cached_MB,app_gpu_memory_allocated_MB,app_gpu_memory_cached_MB

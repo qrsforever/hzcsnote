@@ -148,8 +148,8 @@ def k12ai_get_error_data(datakey, num=1):
 def k12ai_get_metrics_data(datakey, num=1):
     return k12ai_get_data(datakey, 'metrics', num)
 
-def k12ai_get_status_data(datakey, num=1):
-    return k12ai_get_data(datakey, 'status', num)
+# def k12ai_get_status_data(datakey, num=1):
+#     return k12ai_get_data(datakey, 'status', num)
 
 def k12ai_out_data(key, contents, hook_func = None):
     tab = widgets.Tab(layout={'width': '100%'})
@@ -286,19 +286,20 @@ def _start_work_process(context):
 
             try:
                 # status
-                result['status'] = {}
-                data = k12ai_get_data(key, 'status', num=1)
-                if data:
-                    result['status'] = data[0]['value']
-                    if result['status']['data']['value'] == 'exit':
-                        g_queue.put((context.tag, key, 3))
+                # result['status'] = {}
+                # data = k12ai_get_data(key, 'status', num=1)
+                # if data:
+                #     result['status'] = data[0]['value']
+                #     if result['status']['data']['value'] == 'exit':
+                #         g_queue.put((context.tag, key, 3))
 
                 # error
                 result['error'] = {}
                 data = k12ai_get_data(key, 'error', num=1)
                 if data:
                     result['error'] = data[0]['value']
-                    if result['error']['data']['code'] != 100000:
+                    code = result['error']['data']['code']
+                    if code != 100001 and code != 100002:
                         g_queue.put((context.tag, key, 3))
 
                 # metrics
@@ -399,23 +400,6 @@ def _init_project_schema(context, params):
         return
 
     context.parse_schema(json.loads(response['data']))
-
-    # if context.framework == 'k12cv':
-    #     schema = os.path.join(k12ai_get_top_dir(), 'cv/app', 'templates', 'schema/k12ai_cv.jsonnet')
-    # elif context.framework == 'k12nlp':
-    #     schema = os.path.join(k12ai_get_top_dir(), 'nlp/app', 'templates', 'schema/k12ai_nlp.jsonnet')
-    # elif context.framework == 'k12rl':
-    #     schema = os.path.join(k12ai_get_top_dir(), 'rl/app', 'templates', 'schema/k12ai_rl.jsonnet')
-    # elif context.framework == 'k12ml':
-    #     schema = os.path.join(k12ai_get_top_dir(), 'ml/app', 'templates', 'schema/k12ai_ml.jsonnet')
-    # else:
-    #     raise()
-
-    # context.parse_schema(json.loads(_jsonnet.evaluate_file(schema,
-    #     ext_vars={
-    #         'task': context.task,
-    #         'network': context.network,
-    #         'dataset_name': context.dataset})))
 
     if context.framework == 'k12cv':
         if context.network.split('_')[0] == 'custom':
@@ -530,11 +514,6 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
     wdg_progress.output = wdg_output
     wdg_progress.context = context
 
-    # if phase == 'train':
-    #     context.train_progress = wdg_progress
-    # elif phase == 'evaluate':
-    #     context.evaluate_progress = wdg_progress
-
     context.progress = wdg_progress
 
     response = json.loads(k12ai_post_request(
@@ -586,6 +565,50 @@ def k12ai_run_project(lan='en', debug=False, framework=None, task=None, network=
             'project.task': task,
             'project.network': network,
             'project.dataset': dataset
-            })
+        })
     display(context.page)
     return context
+
+def k12ai_get_config(framework, task, network, dataset):
+    context = K12WidgetGenerator()
+    response = json.loads(k12ai_post_request(
+        uri='k12ai/framework/schema',
+        data={
+            'service_name': framework,
+            'service_task': task,
+            'dataset_name': dataset,
+            'network_type': network
+        }))
+    context.parse_schema(json.loads(response['data']))
+    return context.get_all_kv()
+
+
+def k12ai_train_execute(framework, task, network, dataset, batchsize=32, backbone=None, iter_num=1, run_num=1):
+    config = k12ai_get_config(framework, task, network, dataset)
+    if framework == 'k12cv':
+        config['train.batch_size'] = batchsize
+        config['solver.max_epoch'] = iter_num
+        if backbone:
+            network = backbone
+            config['network.backbone'] = backbone
+    user = '15801310416'
+    tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}'.encode()).hexdigest()[0:6]
+    keys = []
+    for i in range(run_num):
+        uuid = f'{tag}-{i}'
+        data = {
+            'token': tag,
+            'op': 'train.start',
+            'user': user,
+            'service_name': framework,
+            'service_uuid': uuid,
+        }
+        data['op'] = 'train.stop'
+        k12ai_post_request(uri='k12ai/framework/execute', data=data)
+
+        data['op'] = 'train.start'
+        data['service_params'] = config
+        k12ai_post_request(uri='k12ai/framework/execute', data=data)
+
+        keys.append(f'framework/{user}/{uuid}/train')
+    return keys
