@@ -583,7 +583,8 @@ def k12ai_get_config(framework, task, network, dataset):
     return context.get_all_kv()
 
 
-def k12ai_train_execute(framework, task, network, dataset, batchsize=32, backbone=None, iter_num=1, run_num=1):
+def k12ai_train_execute(framework='k12cv', task='cls', network='base_model',
+         backbone='vgg11', dataset='Boats', batchsize=32, iter_num=1, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
         config['train.batch_size'] = batchsize
