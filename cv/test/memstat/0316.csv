@@ -1,0 +1,5 @@
+id,model,dataset,batchsize,inputsize,uptime,app_cpu_memory_usage_MB,app_gpu_memory_usage_MB,sys_cpu_memory_free_MB,sys_gpu_memory_free_MB,peak_cpu_self_ru_maxrss,peak_cpu_children_ru_maxrss,peak_gpu_0_memory_cached_MB,peak_gpu_0_memory_allocated_MB,peak_gpu_0_max_memory_cached_MB,peak_gpu_0_max_memory_allocated_MB
+abda1d-0,vgg11,Fruits360,16,28,12,4727.628,3694.1059999999998,38026.078,[15240.0],2772.355,1955.273,3158.0,2467.859,3974.0,3694.1059999999998
+433d6f-0,vgg11,Fruits360,16,32,13,4723.633,3692.606,40126.094,[18987.0],2768.742,1954.891,3158.0,2466.403,3974.0,3692.606
+68d2ae-0,vgg11,Fruits360,16,64,11,4722.9760000000015,3693.684,38015.488,[16124.0],2769.027,1953.9489999999998,2738.0,2467.4210000000003,3966.0,3693.684
+dc5a63-0,vgg11,Fruits360,16,96,11,4724.5,3691.122,40115.688,[18989.0],2769.527,1954.973,2744.0,2464.858,3972.0,3691.122

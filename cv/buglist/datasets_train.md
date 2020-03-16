@@ -53,3 +53,6 @@ AssertionError
 ```
 
 TODO:　Workers　设置为１ 或者启动container不去限制shm和mem
+
+
+ "Error(s) in loading state_dict for VGG:\n\tsize mismatch for classifier.6.weight: copying a param with shape torch.Size([1000, 4096]) from checkpoint, the shape in current model is torch.Size([9, 4096]).\n\tsize mismatch for classifier.6.bias: copying a param with shape torch.Size([1000]) from checkpoint, the shape in current model is torch.Size([9]).",

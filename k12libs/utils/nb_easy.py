@@ -21,7 +21,7 @@ import multiprocessing
 from multiprocessing.queues import Empty
 
 from IPython.display import clear_output
-from IPython.display import display
+from IPython.display import display, HTML
 from .nb_widget import K12WidgetGenerator
 import ipywidgets as widgets
 
@@ -53,6 +53,18 @@ consul_port = 8500
 NBURL = 'http://{}:{}'.format(host, 8118)
 AIURL = 'http://{}:{}'.format(host, 8119)
 SSURL = 'http://{}:{}'.format(host, 8500)
+
+K12AI_HOST_ADDR = host
+
+## DIR
+K12AI_DATASETS_ROOT = '/data/datasets'
+K12AI_USERS_ROOT = '/data/users'
+K12AI_NBDATA_ROOT = '/data/nb_data'
+
+
+def k12ai_set_notebook(cellw=None):
+    if cellw: 
+        display(HTML('<style>.container { width:%d%% !important; }</style>' % cellw))
 
 def _print_json(text, indent):
     if isinstance(text, str):
@@ -584,16 +596,18 @@ def k12ai_get_config(framework, task, network, dataset):
 
 
 def k12ai_train_execute(framework='k12cv', task='cls', network='base_model',
-         backbone='vgg11', dataset='Boats', batchsize=32, iter_num=1, run_num=1):
+         backbone='vgg11', dataset='Boats', batchsize=32, inputsize=32, iter_num=1, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
         config['train.batch_size'] = batchsize
-        config['solver.max_epoch'] = iter_num
+        config['train.data_transformer.input_size'] = [inputsize, inputsize]
+        config['solver.lr.metric'] = 'iters'
+        config['solver.max_iters'] = iter_num
         if backbone:
             network = backbone
             config['network.backbone'] = backbone
     user = '15801310416'
-    tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}'.encode()).hexdigest()[0:6]
+    tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}{inputsize}'.encode()).hexdigest()[0:6]
     keys = []
     for i in range(run_num):
         uuid = f'{tag}-{i}'
