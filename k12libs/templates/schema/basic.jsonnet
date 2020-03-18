@@ -222,10 +222,5 @@ local default_schema = import 'default.libsonnet';
                 },
             ],  // objs
         },
-        {
-            name: { en: 'Debug Output', cn: '调试输出: ' },
-            type: 'output',
-            objs: [],
-        },
     ],  // objs
 }

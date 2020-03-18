@@ -207,10 +207,5 @@ local complex_schema = import 'k12ai_complex_type.jsonnet';
                 },
             ],
         },
-        {
-            name: { en: 'Debug Output', cn: '调试输出: ' },
-            type: 'output',
-            objs: [],
-        },
     ],  // objs
 }

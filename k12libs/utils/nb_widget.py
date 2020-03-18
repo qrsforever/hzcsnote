@@ -8,8 +8,7 @@
 # @version 1.0
 # @date 2019-12-18 19:55:57
 
-from IPython.core.display import display
-from IPython.display import clear_output
+from IPython.display import display, clear_output
 from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress,
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
                         Layout, Tab, Accordion, ToggleButtons, Checkbox)
@@ -30,7 +29,7 @@ def _widget_add_child(widget, wdgs):
 def k12widget(method):
     def _widget(self, *args, **kwargs):
         wdg, cb = method(self, *args, **kwargs)
-        if self.debug:
+        if self.border:
             wdg.layout.border = '1px solid yellow'
 
         def _on_value_change(change, cb):
@@ -46,12 +45,14 @@ def k12widget(method):
     return _widget
 
 class K12WidgetGenerator():
-    def __init__(self, lan = 'en', debug=False, events=None):
+    def __init__(self, lan = 'en', debug=False, tb_port=None, events=None):
         self.page = Box()
         self.out = Output(layout={'border': '1px solid black', 'width': '100%', 'height':'auto'})
         self.output_type = 'none'
         self.lan = lan
         self.debug = debug
+        self.border = False
+        self.tb_port = tb_port
         self.events = events
         self.basic_types = ['int', 'float', 'bool',
                 'string', 'int-array', 'float-array',
@@ -67,7 +68,7 @@ class K12WidgetGenerator():
                 justify_content='flex-start',
                 margin='3px 0px 3px 0px',
                 )
-        if debug:
+        if self.border:
             self.vlo.border = 'solid 2px red'
 
         self.hlo = Layout(
@@ -77,28 +78,28 @@ class K12WidgetGenerator():
                 justify_content='flex-start',
                 margin='3px 0px 3px 0px',
                 )
-        if debug:
+        if self.border:
             self.hlo.border = 'solid 2px blue'
 
         self.page_layout = Layout(
                 display='flex',
                 width='100%',
                 )
-        if debug:
+        if self.border:
             self.page_layout.border = 'solid 2px black'
 
         self.tab_layout = Layout(
                 display='flex',
                 width='99%',
                 )
-        if debug:
+        if self.border:
             self.tab_layout.border = 'solid 2px yellow'
 
         self.accordion_layout = Layout(
                 display='flex',
                 width='99%',
                 )
-        if debug:
+        if self.border:
             self.accordion_layout.border = 'solid 2px green'
 
         self.nav_layout = Layout(
@@ -117,7 +118,9 @@ class K12WidgetGenerator():
         self.wid_value_map = {}
 
     def get_all_kv(self):
-        kv_map = {}
+        kv_map = {
+            '_k12.notebook.execute': 1,
+        }
 
         def _get_kv(widget):
             if isinstance(widget, Box):
@@ -409,6 +412,11 @@ class K12WidgetGenerator():
             wdg = self.Debug(_name[self.lan], options)
             return _widget_add_child(widget, [wdg, self.out])
 
+        elif _type == 'tensorboard': # tensorboard
+            value = '<iframe width="100%" height="800px" src="{}" frameborder="0" allowfullscreen></iframe>'.format(config['value'])
+            wdg = HTML(value=value, layout={'height': '100%', 'width': '100%'})
+            return _widget_add_child(widget, wdg)
+
         elif _type == 'object':
             if _name:
                 wdg = HTML(value = f"<b><font color='black'>{_name[self.lan]} :</b>")
@@ -602,17 +610,42 @@ class K12WidgetGenerator():
                 self._parse_config(widget, obj)
             return widget
 
-    def parse_schema(self, config):
+    def parse_schema(self, config, tb_url=None):
         if not isinstance(config, dict):
             print('config is not dict')
             return
+        # add debug
+        if self.debug:
+            config['objs'].append({
+                'type': 'output',
+                'name': {'cn': '调试: ', 'en': 'Debug: '},
+                'objs': [
+                    {'name': 'Print', 'value': 'print'},
+                    {'name': 'Key-Value(changed)', 'value': 'kv'},
+                    {'name': 'Json(changed)', 'value': 'json'},
+                    {'name': 'Key-Value(all)', 'value': 'kvs'},
+                    {'name': 'Json(all)', 'value': 'jsons'}
+                ]})
+
+        # add tensorboard
+        if self.tb_port and tb_url:
+            config['objs'][0]['objs'].append({
+                'name': {'cn': 'Tensorboard', 'en': '可视化'},
+                'objs': [
+                    {
+                        '_id_': '_k12.notebook.tensorboard',
+                        'type': 'tensorboard',
+                        'name': 'tensorboard',
+                        'value': tb_url
+                    },
+                ]})
         self.init_page()
         box = Box(layout=self.page_layout)
         self._parse_config(box, config)
         self.page.children = [box]
 
-def k12ai_schema_parse(config, lan='en', debug=True):
-    g = K12WidgetGenerator(lan, debug)
+def k12ai_schema_parse(config, lan='en', debug=True, tb_port=None):
+    g = K12WidgetGenerator(lan, debug=debug, tb_port=tb_port)
     g.parse_schema(config)
     display(g.page)
     return g

@@ -14,16 +14,21 @@ import requests
 import json
 import _jsonnet
 import consul
+import errno
 import time
 import socket
+import shlex
 import threading
 import multiprocessing
 from multiprocessing.queues import Empty
 
-from IPython.display import clear_output
-from IPython.display import display, HTML
+from IPython.display import clear_output, display, HTML
 from .nb_widget import K12WidgetGenerator
 import ipywidgets as widgets
+
+import signal
+from tensorboard import notebook as tbnotebook
+from tensorboard import manager as tbmanager
 
 import matplotlib.pyplot as plt
 # from matplotlib.ticker import MultipleLocator
@@ -53,8 +58,10 @@ consul_port = 8500
 NBURL = 'http://{}:{}'.format(host, 8118)
 AIURL = 'http://{}:{}'.format(host, 8119)
 SSURL = 'http://{}:{}'.format(host, 8500)
+TBURL = 'http://{}:{}'.format(host, 6006)
 
 K12AI_HOST_ADDR = host
+K12AI_WLAN_ADDR = consul_addr
 
 ## DIR
 K12AI_DATASETS_ROOT = '/data/datasets'
@@ -63,8 +70,38 @@ K12AI_NBDATA_ROOT = '/data/nb_data'
 
 
 def k12ai_set_notebook(cellw=None):
-    if cellw: 
+    if cellw:
         display(HTML('<style>.container { width:%d%% !important; }</style>' % cellw))
+
+
+def k12ai_start_tensorboard(port, logdir, reload_interval=30, height=None, display=True):
+    # kill
+    infos = tbmanager.get_all()
+    for info in infos:
+        if info.port != port:
+            continue
+        os.kill(info.pid, signal.SIGKILL)
+        infofile = os.path.join(tbmanager._get_info_dir(), f'pid-{info.pid}.info')
+        try:
+            os.unlink(infofile)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                pass
+            else:
+                raise
+        break
+
+    # start
+    strargs = f'--host {K12AI_HOST_ADDR} --port {port} --logdir {logdir} --reload_interval {reload_interval}'
+    command = shlex.split(strargs, comments=True, posix=True)
+    tbmanager.start(command)
+
+    # display
+    if display:
+        tbnotebook.display(port, height)
+
+    return f'http://{K12AI_WLAN_ADDR}:{port}'
+
 
 def _print_json(text, indent):
     if isinstance(text, str):
@@ -395,6 +432,7 @@ def _init_project_schema(context, params):
     context.dataset = params.get('project.dataset', None)
     context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
+    context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
 
     g_contexts[context.tag] = context
 
@@ -411,7 +449,14 @@ def _init_project_schema(context, params):
         context._output(response)
         return
 
-    context.parse_schema(json.loads(response['data']))
+    if context.tb_port:
+        k12ai_set_notebook(cellw=95)
+        tb_log = f'{context.usercache}/tblogs'
+        tb_url = k12ai_start_tensorboard(port=context.tb_port, logdir=tb_log, display=False)
+    else:
+        tb_url = None
+
+    context.parse_schema(json.loads(response['data']), tb_url=tb_url)
 
     if context.framework == 'k12cv':
         if context.network.split('_')[0] == 'custom':
@@ -444,7 +489,7 @@ def _on_project_trainstart(wdg):
 
     response = json.loads(k12ai_post_request(
             uri='k12ai/platform/stats',
-            data= {
+            data={
                 'op': 'query',
                 'user': context.user,
                 'service_uuid': context.uuid,
@@ -551,21 +596,22 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
         wdg_start.disabled = False
         wdg_stop.disabled = True
 
-def k12ai_run_project(lan='en', debug=False, framework=None, task=None, network=None, dataset=None):
+def k12ai_run_project(lan='en', debug=False, tb_port=None,
+        framework=None, task=None, network=None, dataset=None):
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
                 'project.train.init': _on_project_traininit,
                 }
         pro_schema = os.path.join(k12ai_get_top_dir(), 'k12libs/templates', 'projects.jsonnet')
-        context = K12WidgetGenerator(lan, debug, events=events)
+        context = K12WidgetGenerator(lan, debug=debug, tb_port=tb_port, events=events)
         context.parse_schema(json.loads(_jsonnet.evaluate_file(
             pro_schema, tla_vars={'framework': 'k12cv' if framework is None else framework})))
     else:
         events = {
                 'project.train.init': _on_project_traininit,
                 }
-        context = K12WidgetGenerator(lan, debug, events=events)
+        context = K12WidgetGenerator(lan, debug=debug, tb_port=tb_port, events=events)
         if task is None:
             task = 'cls' if framework == 'k12cv' else 'sa'
         if dataset is None:

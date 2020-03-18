@@ -188,10 +188,5 @@ local city_group_item(city, descr, flg=0) = {
                 },
             ],
         },
-        {
-            name: { en: 'Debug Output', cn: '调试输出: ' },
-            type: 'output',
-            objs: [],
-        },
     ],
 }
