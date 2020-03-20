@@ -18,6 +18,7 @@ import errno
 import time
 import socket
 import shlex
+import shutil
 import threading
 import multiprocessing
 from multiprocessing.queues import Empty
@@ -30,7 +31,7 @@ import signal
 from tensorboard import notebook as tbnotebook
 from tensorboard import manager as tbmanager
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # noqa
 # from matplotlib.ticker import MultipleLocator
 
 def get_host_ip():
@@ -74,13 +75,16 @@ def k12ai_set_notebook(cellw=None):
         display(HTML('<style>.container { width:%d%% !important; }</style>' % cellw))
 
 
-def k12ai_start_tensorboard(port, logdir, reload_interval=30, height=None, display=True):
+def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, height=None, display=True):
     # kill
     infos = tbmanager.get_all()
     for info in infos:
         if info.port != port:
             continue
-        os.kill(info.pid, signal.SIGKILL)
+        try:
+            os.kill(info.pid, signal.SIGKILL)
+        except Exception:
+            pass
         infofile = os.path.join(tbmanager._get_info_dir(), f'pid-{info.pid}.info')
         try:
             os.unlink(infofile)
@@ -92,6 +96,10 @@ def k12ai_start_tensorboard(port, logdir, reload_interval=30, height=None, displ
         break
 
     # start
+    if clear and os.path.exists(logdir):
+        shutil.rmtree(logdir, ignore_errors=True)
+        os.mkdir(logdir)
+
     strargs = f'--host {K12AI_HOST_ADDR} --port {port} --logdir {logdir} --reload_interval {reload_interval}'
     command = shlex.split(strargs, comments=True, posix=True)
     tbmanager.start(command)
@@ -298,9 +306,8 @@ def _start_work_process(context):
                 tag, key, flag = g_queue.get(True, timeout=timeout)
                 context = g_contexts.get(tag, None)
                 if flag == 1:
-                    for i in [0, 1]:
-                        for j in [0, 1]:
-                            g_axes[i, j].cla()
+                    # g_axes[0].cla()
+                    # g_axes[1].cla()
                     with context.progress.output:
                         clear_output()
                     timeout = 3
@@ -334,14 +341,6 @@ def _start_work_process(context):
                 context.progress.description = 'Progress:'
 
             try:
-                # status
-                # result['status'] = {}
-                # data = k12ai_get_data(key, 'status', num=1)
-                # if data:
-                #     result['status'] = data[0]['value']
-                #     if result['status']['data']['value'] == 'exit':
-                #         g_queue.put((context.tag, key, 3))
-
                 # error
                 result['error'] = {}
                 data = k12ai_get_data(key, 'error', num=1)
@@ -355,64 +354,62 @@ def _start_work_process(context):
                 if context.progress.phase == 'train':
                     data = k12ai_get_data(key, 'metrics', num=1, rm=True)
                     if data:
+                        result['metrics'] = data[0]['value']
                         if context.framework == 'k12ml':
-                            with context.progress.output:
-                                clear_output()
-                                k12ai_print(data)
+                            # with context.progress.output:
+                            #     clear_output()
+                            #     k12ai_print(data)
                             context.progress.value = 1.0
                         else:
-                            result['metrics'] = data[0]['value']
                             contents = data[0]['value']['data']
                             context.progress.value = contents['training_progress']
-                            iters = contents['training_iters']
+                        #     iters = contents['training_iters']
 
-                            with context.progress.output:
-                                clear_output(wait=True)
-                                if contents.get('training_loss', None):
-                                    g_axes[0, 0].set_xticks(())
-                                    g_axes[0, 0].set_ylabel('Loss')
-                                    g_axes[0, 0].scatter([iters], [contents['training_loss']], color='k')
-                                if contents.get('training_score', None):
-                                    g_axes[0, 1].set_xticks(())
-                                    g_axes[0, 1].set_ylabel('Score')
-                                    g_axes[0, 1].scatter([iters], [contents['training_score']], color='k')
-                                if contents.get('training_speed', None):
-                                    g_axes[1, 0].set_xticks(())
-                                    g_axes[1, 0].set_ylabel('Speed')
-                                    g_axes[1, 0].scatter([iters], [contents['training_speed']], color='k')
-                                display(g_figure)
-                                plt.show()
-                                g_queue.put((context.tag, key, 9))
+                        #     with context.progress.output:
+                        #         clear_output(wait=True)
+                        #         if contents.get('training_loss', None):
+                        #             g_axes[0].set_xticks(())
+                        #             g_axes[0].set_ylabel('Loss')
+                        #             g_axes[0].scatter([iters], [contents['training_loss']], color='k')
+                        #         if contents.get('training_score', None):
+                        #             g_axes[1].set_xticks(())
+                        #             g_axes[1].set_ylabel('Score')
+                        #             g_axes[1].scatter([iters], [contents['training_score']], color='k')
+                        #         display(g_figure)
+                        #         plt.show()
+                        #         g_queue.put((context.tag, key, 9))
                 elif context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=10, rm=True)
                     if data:
                         result['metrics'] = data[-1]['value']
                         context.progress.value = result['metrics']['data']['evaluate_progress']
-                        with context.progress.output:
-                            clear_output()
-                            k12ai_print(data)
+                        # with context.progress.output:
+                        #     clear_output()
+                        #     k12ai_print(data)
             except Exception:
                 pass
 
             if len(result) > 0:
-                context._output(result)
+                if 'error' in result:
+                    context._output(result['error'])
+                if 'metrics' in result:
+                    with context.progress.output:
+                        clear_output(wait=True)
+                        k12ai_print(result['metrics'])
 
-    plt.ioff()
-    if g_axes is None:
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    # plt.ioff()
+    # if g_axes is None:
+    #     fig, axes = plt.subplots(1, 2, figsize=(12, 8))
 
-        for i in [0, 1]:
-            for j in [0, 1]:
-                axes[i, j].spines['right'].set_color('none')
-                axes[i, j].spines['top'].set_color('none')
-                axes[i, j].locator_params(nbins = 6)
-                axes[i, j].set_xlabel('Iters')
-                # axes[i, j].set_xticklabels(())
-                # axes[i, j].xaxis.set_major_locator(g_xlocator)
-                # axes[i, j].grid(True)
-        plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
-        g_axes = axes
-        g_figure = fig
+    #     for i in (0, 1):
+    #         axes[i].spines['right'].set_color('none')
+    #         axes[i].spines['top'].set_color('none')
+    #         axes[i].locator_params(nbins = 6)
+    #         axes[i].set_xlabel('Iters')
+
+    #     plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
+    #     g_axes = axes
+    #     g_figure = fig
 
     if not g_process or not g_process.is_alive():
         # g_process = multiprocessing.Process(target=_queue_work, args=())
@@ -433,6 +430,7 @@ def _init_project_schema(context, params):
     context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
+    context.tb_logdir = f'{context.usercache}/tblogs'
 
     g_contexts[context.tag] = context
 
@@ -451,8 +449,7 @@ def _init_project_schema(context, params):
 
     if context.tb_port:
         k12ai_set_notebook(cellw=95)
-        tb_log = f'{context.usercache}/tblogs'
-        tb_url = k12ai_start_tensorboard(port=context.tb_port, logdir=tb_log, display=False)
+        tb_url = k12ai_start_tensorboard(context.tb_port, context.tb_logdir, clear=False, display=False)
     else:
         tb_url = None
 
@@ -521,6 +518,7 @@ def _on_project_trainstart(wdg):
     context._output(response)
     if response['code'] != 100000:
         return
+    k12ai_start_tensorboard(context.tb_port, context.tb_logdir, clear=True, display=False)
     context.progress = wdg.progress
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, wdg.phase)
     k12ai_del_data(key)
