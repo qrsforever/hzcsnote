@@ -66,6 +66,7 @@ local _projects = {
                 { name: 'kannada_dig', value: self.name },
                 { name: 'KMNIST', value: self.name },
                 { name: 'cellular', value: self.name },
+                { name: 'aliproducts', value: self.name },
             ],
         },
         {
@@ -203,16 +204,8 @@ function(framework) {
         },
         {
             _id_: 'project.confirm',
-            name: { en: 'Gen Project Schema', cn: self.en },
+            name: { en: 'Goto Project', cn: '进入项目' },
             type: 'button',
-        },
-        {
-            name: { en: 'Debug', cn: '调试输出: ' },
-            type: 'output',
-            objs: [
-                { value: 'print', name: 'Print' },
-                { value: 'kvs', name: 'Key-Value(all)' },
-            ],
         },
     ],
 }

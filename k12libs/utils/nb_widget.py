@@ -11,8 +11,9 @@
 from IPython.display import display, clear_output
 from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress,
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
-                        Layout, Tab, Accordion, ToggleButtons, Checkbox)
+                        Image, Layout, Tab, Accordion, ToggleButtons, Checkbox)
 from traitlets.utils.bunch import Bunch
+import os
 import json
 import pprint
 from pyhocon import ConfigFactory
@@ -54,6 +55,7 @@ class K12WidgetGenerator():
         self.border = False
         self.tb_port = tb_port
         self.events = events
+        self.dataset_dir = ''
         self.basic_types = ['int', 'float', 'bool',
                 'string', 'int-array', 'float-array',
                 'string-array', 'string-enum', 'image']
@@ -503,7 +505,12 @@ class K12WidgetGenerator():
             height = config.get('height', '100')
             if not value:
                 raise RuntimeError('not set value')
-            wdg = HTML(value=f'<img src={value} width={width} height={height} alt={_name[self.lan]}>')
+            image_file = f'{self.dataset_dir}/{value}'
+            if not os.path.exists(image_file):
+                return widget
+            with open(image_file, 'rb') as fp:
+                wdg = Image(value=fp.read(), width=width, height=height)
+            # wdg = HTML(value=f'<img src={self.dataset_dir}/{value} width={width} height={height} alt={_name[self.lan]}>')
             return _widget_add_child(widget, wdg)
 
         elif _type == 'int-array' or _type == 'float-array' or _type == 'string-array':

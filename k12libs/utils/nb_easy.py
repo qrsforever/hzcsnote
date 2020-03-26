@@ -56,10 +56,11 @@ port = 8119
 consul_addr = get_net_ip()
 consul_port = 8500
 
-NBURL = 'http://{}:{}'.format(host, 8118)
-AIURL = 'http://{}:{}'.format(host, 8119)
-SSURL = 'http://{}:{}'.format(host, 8500)
-TBURL = 'http://{}:{}'.format(host, 6006)
+NBURL = 'http://{}:{}'.format(host, 8118) # Jupyter
+AIURL = 'http://{}:{}'.format(host, 8119) # K12AI API
+SSURL = 'http://{}:{}'.format(host, 8500) # Consul
+TBURL = 'http://{}:{}'.format(host, 6006) # Tensorboard
+DSURL = 'http://{}:{}'.format(host, 9090) # Dataset
 
 K12AI_HOST_ADDR = host
 K12AI_WLAN_ADDR = consul_addr
@@ -431,6 +432,7 @@ def _init_project_schema(context, params):
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{context.usercache}/tblogs'
+    context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
 
     g_contexts[context.tag] = context
 
