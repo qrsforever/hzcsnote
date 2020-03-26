@@ -13,7 +13,7 @@ local default_schema = import 'default.libsonnet';
 
     type: 'page',
     objs: [
-        default_schema.bool('k12.test', '1'),
+        default_schema.bool('k12.test', '1', true),
         {
             type: 'H',
             objs: [
@@ -43,11 +43,5 @@ local default_schema = import 'default.libsonnet';
             ],
         },
         default_schema.text('_js.text.k12.test.text', 1),
-        {
-            name: { en: 'Debug Output', cn: '调试输出: ' },
-            type: 'output',
-            objs: [
-            ],
-        },
     ],
 }

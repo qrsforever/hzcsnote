@@ -65,7 +65,7 @@ local _projects = {
                 { name: 'kannada', value: self.name },
                 { name: 'kannada_dig', value: self.name },
                 { name: 'KMNIST', value: self.name },
-                { name: 'cellular', value: self.name},
+                { name: 'cellular', value: self.name },
             ],
         },
         {
@@ -80,6 +80,7 @@ local _projects = {
             ],
             datasets: [
                 { name: 'VOC07+12_DET', value: self.name },
+                { name: 'underwater', value: self.name },
             ],
         },
     ],
