@@ -56,11 +56,13 @@ port = 8119
 consul_addr = get_net_ip()
 consul_port = 8500
 
-NBURL = 'http://{}:{}'.format(host, 8118) # Jupyter
+netip = consul_addr
+
+NBURL = 'http://{}:{}'.format(netip, 8118) # Jupyter
 AIURL = 'http://{}:{}'.format(host, 8119) # K12AI API
-SSURL = 'http://{}:{}'.format(host, 8500) # Consul
+SSURL = 'http://{}:{}'.format(netip, 8500) # Consul
 TBURL = 'http://{}:{}'.format(host, 6006) # Tensorboard
-DSURL = 'http://{}:{}'.format(host, 9090) # Dataset
+DSURL = 'http://{}:{}'.format(netip, 9090) # Dataset
 
 K12AI_HOST_ADDR = host
 K12AI_WLAN_ADDR = consul_addr
@@ -433,6 +435,7 @@ def _init_project_schema(context, params):
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{context.usercache}/tblogs'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
+    context.dataset_url = f'{DSURL}'
 
     g_contexts[context.tag] = context
 
@@ -627,8 +630,8 @@ def k12ai_run_project(lan='en', debug=False, tb_port=None,
     display(context.page)
     return context
 
-def k12ai_get_config(framework, task, network, dataset):
-    context = K12WidgetGenerator()
+
+def k12ai_get_schema(framework, task, network, dataset):
     response = json.loads(k12ai_post_request(
         uri='k12ai/framework/schema',
         data={
@@ -637,7 +640,12 @@ def k12ai_get_config(framework, task, network, dataset):
             'dataset_name': dataset,
             'network_type': network
         }))
-    context.parse_schema(json.loads(response['data']))
+    return json.loads(response['data'])
+
+
+def k12ai_get_config(framework, task, network, dataset):
+    context = K12WidgetGenerator()
+    context.parse_schema(k12ai_get_schema(framework, task, network, dataset))
     return context.get_all_kv()
 
 

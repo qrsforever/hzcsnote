@@ -155,6 +155,15 @@ local _projects = {
                 { name: 'sf-crime', value: self.name },
             ],
         },
+        {
+            task: { name: 'cluster', value: self.name },
+            networks: [
+                { name: 'kmeans', value: self.name },
+            ],
+            datasets: [
+                { name: 'iris', value: self.name },
+            ],
+        },
     ],
 };
 

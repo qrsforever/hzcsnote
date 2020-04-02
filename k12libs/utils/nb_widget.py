@@ -9,7 +9,7 @@
 # @date 2019-12-18 19:55:57
 
 from IPython.display import display, clear_output
-from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress,
+from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress, # noqa
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
                         Image, Layout, Tab, Accordion, ToggleButtons, Checkbox)
 from traitlets.utils.bunch import Bunch
@@ -56,6 +56,7 @@ class K12WidgetGenerator():
         self.tb_port = tb_port
         self.events = events
         self.dataset_dir = ''
+        self.dataset_url = ''
         self.basic_types = ['int', 'float', 'bool',
                 'string', 'int-array', 'float-array',
                 'string-array', 'string-enum', 'image']
@@ -505,12 +506,12 @@ class K12WidgetGenerator():
             height = config.get('height', '100')
             if not value:
                 raise RuntimeError('not set value')
-            image_file = f'{self.dataset_dir}/{value}'
+            image_file = f'/data{value}'
             if not os.path.exists(image_file):
                 return widget
             with open(image_file, 'rb') as fp:
                 wdg = Image(value=fp.read(), width=width, height=height)
-            # wdg = HTML(value=f'<img src={self.dataset_dir}/{value} width={width} height={height} alt={_name[self.lan]}>')
+            # wdg = HTML(value=f'<img src={self.dataset_url}{value} title="{_name[self.lan]}" width={width} height={height}>')
             return _widget_add_child(widget, wdg)
 
         elif _type == 'int-array' or _type == 'float-array' or _type == 'string-array':
