@@ -350,7 +350,8 @@ def _start_work_process(context):
                 if data:
                     result['error'] = data[0]['value']
                     code = result['error']['data']['code']
-                    if code != 100001 and code != 100002:
+                    # 100003: finish 100004: stop
+                    if code == 100003 or code == 100004 or code > 100100:
                         g_queue.put((context.tag, key, 3))
 
                 # metrics
