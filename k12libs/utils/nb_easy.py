@@ -287,13 +287,9 @@ def k12ai_json_load(path):
 g_queue = None
 g_process = None
 g_contexts = {}
-g_axes = None
-g_figure = None
-
-# g_xlocator = MultipleLocator(20)
 
 def _start_work_process(context):
-    global g_queue, g_process, g_contexts, g_axes, g_figure
+    global g_queue, g_process, g_contexts
 
     if not g_queue:
         g_queue = multiprocessing.Queue()
@@ -309,8 +305,6 @@ def _start_work_process(context):
                 tag, key, flag = g_queue.get(True, timeout=timeout)
                 context = g_contexts.get(tag, None)
                 if flag == 1:
-                    # g_axes[0].cla()
-                    # g_axes[1].cla()
                     with context.progress.output:
                         clear_output()
                     timeout = 3
@@ -339,7 +333,7 @@ def _start_work_process(context):
 
             total_count += 1
             if total_count % 2 == 0:
-                context.progress.description = str(context.progress.value)
+                context.progress.description = str(context.progress.value) + '%'
             else:
                 context.progress.description = 'Progress:'
 
@@ -360,36 +354,18 @@ def _start_work_process(context):
                     if data:
                         result['metrics'] = data[0]['value']
                         if context.framework == 'k12ml':
-                            # with context.progress.output:
-                            #     clear_output()
-                            #     k12ai_print(data)
                             context.progress.value = 1.0
                         else:
-                            contents = data[0]['value']['data']
-                            context.progress.value = contents['training_progress']
-                        #     iters = contents['training_iters']
-
-                        #     with context.progress.output:
-                        #         clear_output(wait=True)
-                        #         if contents.get('training_loss', None):
-                        #             g_axes[0].set_xticks(())
-                        #             g_axes[0].set_ylabel('Loss')
-                        #             g_axes[0].scatter([iters], [contents['training_loss']], color='k')
-                        #         if contents.get('training_score', None):
-                        #             g_axes[1].set_xticks(())
-                        #             g_axes[1].set_ylabel('Score')
-                        #             g_axes[1].scatter([iters], [contents['training_score']], color='k')
-                        #         display(g_figure)
-                        #         plt.show()
-                        #         g_queue.put((context.tag, key, 9))
+                            for obj in result['metrics']['data']:
+                                if obj['type'] == 'scalar':
+                                    if obj['data']['title'] == 'progress':
+                                        progress = obj['data']['payload']['y'][0]['value']
+                                        context.progress.value = progress
                 elif context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=10, rm=True)
                     if data:
                         result['metrics'] = data[-1]['value']
-                        context.progress.value = result['metrics']['data']['evaluate_progress']
-                        # with context.progress.output:
-                        #     clear_output()
-                        #     k12ai_print(data)
+                        context.progress.value = result['metrics']['data']['progress']
             except Exception:
                 pass
 
@@ -401,22 +377,7 @@ def _start_work_process(context):
                         clear_output(wait=True)
                         k12ai_print(result['metrics'])
 
-    # plt.ioff()
-    # if g_axes is None:
-    #     fig, axes = plt.subplots(1, 2, figsize=(12, 8))
-
-    #     for i in (0, 1):
-    #         axes[i].spines['right'].set_color('none')
-    #         axes[i].spines['top'].set_color('none')
-    #         axes[i].locator_params(nbins = 6)
-    #         axes[i].set_xlabel('Iters')
-
-    #     plt.tight_layout(pad=3, h_pad=3.5, w_pad=3.5)
-    #     g_axes = axes
-    #     g_figure = fig
-
     if not g_process or not g_process.is_alive():
-        # g_process = multiprocessing.Process(target=_queue_work, args=())
         g_process = threading.Thread(target=_queue_work, args=())
         g_process.start()
         time.sleep(1.5)

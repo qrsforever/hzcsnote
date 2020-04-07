@@ -587,7 +587,7 @@ class K12WidgetGenerator():
             if __id_ == '_k12.iframe.train' or __id_ == '_k12.iframe.evaluate':
                 _start = Button(description='Start', button_style='success',)
                 _stop = Button(description='Stop', button_style='success',)
-                _progress = FloatProgress(value=0.0, description='Progress:', min=0.0, max=1,
+                _progress = FloatProgress(value=0.0, description='Progress:', min=0, max=100,
                         bar_style='success', layout=Layout(width='60%'))
 
                 _drawit = Output(layout=Layout(width='100%', min_height='400px'))
