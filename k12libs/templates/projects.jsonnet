@@ -103,15 +103,13 @@ local _projects = {
                 { name: 'dqn', value: self.name },
             ],
             datasets: [
-                { name: 'pong', value: self.name },
-                { name: 'seaquest', value: self.name },
-                { name: 'qbert', value: self.name },
-                { name: 'chopper_command', value: self.name },
+                { name: 'Pong-v0', value: self.name },
             ],
         },
         {
-            task: { name: 'mujoco', value: self.name },
+            task: { name: 'classic', value: self.name },
             networks: [
+                { name: 'dqn', value: self.name },
                 { name: 'pg', value: self.name },
             ],
             datasets: [
@@ -119,6 +117,24 @@ local _projects = {
                 { name: 'Pendulum-v0', value: self.name },
             ],
         },
+        // {
+        //     task: { name: 'algorithmic', value: self.name },
+        //     networks: [],
+        //     datasets: [],
+        // },
+        // {
+        //     task: { name: 'box2d', value: self.name },
+        //     networks: [],
+        //     datasets: [],
+        // },
+        // {
+        //     task: { name: 'toy_text', value: self.name },
+        //     networks: [
+        //     ],
+        //     datasets: [
+        //         { name: 'Blackjack-v0', value: self.name },
+        //     ],
+        // },
     ],
     k12ml: [
         {
