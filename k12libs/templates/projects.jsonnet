@@ -103,7 +103,7 @@ local _projects = {
                 { name: 'dqn', value: self.name },
             ],
             datasets: [
-                { name: 'Pong-v0', value: self.name },
+                { name: 'Pong-v4', value: self.name },
             ],
         },
         {

@@ -638,7 +638,7 @@ class K12WidgetGenerator():
         # add tensorboard
         if self.tb_port and tb_url:
             config['objs'][0]['objs'].append({
-                'name': {'cn': 'Tensorboard', 'en': '可视化'},
+                'name': {'cn': 'Tensorboard', 'en': 'Tensorboard'},
                 'objs': [
                     {
                         '_id_': '_k12.notebook.tensorboard',
