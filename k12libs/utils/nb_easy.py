@@ -70,6 +70,7 @@ K12AI_WLAN_ADDR = consul_addr
 ## DIR
 K12AI_DATASETS_ROOT = '/data/datasets'
 K12AI_USERS_ROOT = '/data/users'
+K12AI_PRETRAINED_ROOT = '/data/pretrained'
 K12AI_NBDATA_ROOT = '/data/nb_data'
 
 
