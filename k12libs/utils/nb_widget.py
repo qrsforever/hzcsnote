@@ -121,9 +121,7 @@ class K12WidgetGenerator():
         self.wid_value_map = {}
 
     def get_all_kv(self):
-        kv_map = {
-            '_k12.notebook.execute': 1,
-        }
+        kv_map = {}
 
         def _get_kv(widget):
             if isinstance(widget, Box):
@@ -141,6 +139,7 @@ class K12WidgetGenerator():
                         kv_map[widget.id] = widget.value
 
         _get_kv(self.page)
+        kv_map['_k12.dev_mode'] = True
         return kv_map
 
     def get_all_json(self):

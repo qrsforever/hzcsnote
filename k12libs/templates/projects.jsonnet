@@ -44,7 +44,16 @@ local _projects = {
         {
             task: { name: 'cls', value: self.name },
             networks: [
-                { name: 'base_model', value: self.name },
+                { name: 'alexnet', value: self.name },
+                { name: 'resnet18', value: self.name },
+                { name: 'resnet50', value: self.name },
+                { name: 'resnet101', value: self.name },
+                { name: 'resnet152', value: self.name },
+                { name: 'vgg11', value: self.name },
+                { name: 'vgg16', value: self.name },
+                { name: 'vgg19', value: self.name },
+                { name: 'vgg16_bn', value: self.name },
+                { name: 'vgg19_bn', value: self.name },
                 { name: 'custom_base', value: self.name },
             ],
             datasets: [

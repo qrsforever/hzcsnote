@@ -588,7 +588,7 @@ def k12ai_run_project(lan='en', debug=False, tb_port=None,
             'project.framework': framework,
             'project.task': task,
             'project.network': network,
-            'project.dataset': dataset
+            'project.dataset': dataset,
         })
     display(context.page)
     return context
@@ -612,17 +612,14 @@ def k12ai_get_config(framework, task, network, dataset):
     return context.get_all_kv()
 
 
-def k12ai_train_execute(framework='k12cv', task='cls', network='base_model',
-         backbone='vgg11', dataset='Boats', batchsize=32, inputsize=32, iter_num=1, run_num=1):
+def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
+        dataset='Boats', batchsize=32, inputsize=32, iter_num=1, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
         config['train.batch_size'] = batchsize
         config['train.data_transformer.input_size'] = [inputsize, inputsize]
         config['solver.lr.metric'] = 'iters'
         config['solver.max_iters'] = iter_num
-        if backbone:
-            network = backbone
-            config['network.backbone'] = backbone
     user = '15801310416'
     tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}{inputsize}'.encode()).hexdigest()[0:6]
     keys = []

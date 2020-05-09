@@ -31,3 +31,10 @@ https://zhuanlan.zhihu.com/p/39
 
 
 [](https://github.com/utkuozbulak/pytorch-cnn-visualizations/issues/3)
+
+
+[](https://discuss.pytorch.org/t/visualize-feature-map/29597/7)
+
+[](https://towardsdatascience.com/how-to-visualize-convolutional-features-in-40-lines-of-code-70b7d87b0030)
+
+[](https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/)
