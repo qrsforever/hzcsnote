@@ -139,7 +139,7 @@ class K12WidgetGenerator():
                         kv_map[widget.id] = widget.value
 
         _get_kv(self.page)
-        kv_map['_k12.dev_mode'] = True
+        kv_map['_k12.tb_logdir'] = self.tb_logdir
         return kv_map
 
     def get_all_json(self):

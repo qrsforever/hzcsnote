@@ -70,6 +70,7 @@ K12AI_WLAN_ADDR = consul_addr
 ## DIR
 K12AI_DATASETS_ROOT = '/data/datasets'
 K12AI_USERS_ROOT = '/data/users'
+K12AI_TBLOG_ROOT = '/data/tblogs'
 K12AI_PRETRAINED_ROOT = '/data/pretrained'
 K12AI_NBDATA_ROOT = '/data/nb_data'
 
@@ -396,7 +397,7 @@ def _init_project_schema(context, params):
     context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
-    context.tb_logdir = f'{context.usercache}/tblogs'
+    context.tb_logdir = f'{K12AI_TBLOG_ROOT}/{context.user}/{context.uuid}'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
     context.dataset_url = f'{DSURL}'
 
