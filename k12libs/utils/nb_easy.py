@@ -613,6 +613,11 @@ def k12ai_get_config(framework, task, network, dataset):
     return context.get_all_kv()
 
 
+def k12ai_get_tooltips(framework, task, network, dataset):
+    context = K12WidgetGenerator()
+    return context.parse_schema(k12ai_get_schema(framework, task, network, dataset), tooltips=True)
+
+
 def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
         dataset='Boats', batchsize=32, inputsize=32, iter_num=1, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)

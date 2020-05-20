@@ -20,6 +20,57 @@ from pyhocon import ConfigFactory
 from pyhocon import HOCONConverter
 
 
+def schema_tooltips(widget_map):
+    tables = []
+    for key, wid in widget_map.items():
+        if not hasattr(wid, 'description_tooltip') \
+                or wid.description_tooltip is None \
+                or wid.disabled:
+            continue
+
+        if isinstance(wid, Text):
+            if wid.value.startswith('[') and wid.value.endswith(']'):
+                value = json.loads(wid.value)
+                if isinstance(value[0], int):
+                    tables.append((key, wid.description, '整型数组', wid.value, '[int, int, ...]', wid.description_tooltip))
+                elif isinstance(value[0], float):
+                    tables.append((key, wid.description, '浮点数组', wid.value, '[float, float, ...]', wid.description_tooltip))
+            else:
+                tables.append((key, wid.description, '字符串', wid.value, '', wid.description_tooltip))
+        elif isinstance(wid, BoundedIntText):
+            tables.append((key,
+                           wid.description,
+                           '整型',
+                           wid.value,
+                           f'{"(-inf" if wid.min == -2147483647 else "[%d" % wid.min}, {"+inf)" if wid.max == 2147483647 else "%d]" % wid.max}',
+                           wid.description_tooltip))
+        elif isinstance(wid, BoundedFloatText):
+            tables.append((key,
+                           wid.description,
+                           '浮点型',
+                           wid.value,
+                           f'{"(-inf" if wid.min == -2147483647.0 else "[%f" % wid.min}, {"+inf)" if wid.max == 2147483647.0 else "%f]" % wid.max}',
+                           wid.description_tooltip))
+        elif isinstance(wid, Checkbox):
+            tables.append((key,
+                           wid.description,
+                           '布尔型',
+                           wid.value,
+                           '',
+                           wid.description_tooltip))
+        elif isinstance(wid, Dropdown):
+            for opt in wid.options:
+                if opt[1] == wid.value:
+                    value = opt[0]
+            tables.append((key,
+                           wid.description,
+                           '枚举型',
+                            value,
+                           f'{[o[0] for o in wid.options]}',
+                           wid.description_tooltip))
+    return tables
+
+
 def _widget_add_child(widget, wdgs):
     if not isinstance(wdgs, list):
         wdgs = [wdgs]
@@ -54,6 +105,7 @@ class K12WidgetGenerator():
         self.debug = debug
         self.border = False
         self.tb_port = tb_port
+        self.tb_logdir = '/tmp/tblogs'
         self.events = events
         self.dataset_dir = ''
         self.dataset_url = ''
@@ -346,11 +398,11 @@ class K12WidgetGenerator():
         if _type in ['int', 'float']:
             min = config.get('min', None)
             max = config.get('max', None)
-            if min:
+            if min is not None:
                 args['min'] = min
             else:
                 args['min'] = -2147483647
-            if max:
+            if max is not None:
                 args['max'] = max
             else:
                 args['max'] = 2147483647
@@ -617,10 +669,11 @@ class K12WidgetGenerator():
                 self._parse_config(widget, obj)
             return widget
 
-    def parse_schema(self, config, tb_url=None):
+    def parse_schema(self, config, tb_url=None, tooltips=False):
         if not isinstance(config, dict):
             print('config is not dict')
             return
+
         # add debug
         if self.debug:
             config['objs'].append({
@@ -650,6 +703,9 @@ class K12WidgetGenerator():
         box = Box(layout=self.page_layout)
         self._parse_config(box, config)
         self.page.children = [box]
+        if tooltips:
+            return schema_tooltips(self.wid_widget_map)
+
 
 def k12ai_schema_parse(config, lan='en', debug=True, tb_port=None):
     g = K12WidgetGenerator(lan, debug=debug, tb_port=tb_port)
