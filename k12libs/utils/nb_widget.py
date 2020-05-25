@@ -10,9 +10,10 @@
 
 from IPython.display import display, clear_output
 from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress, # noqa
-                        BoundedFloatText, Box, HBox, VBox, Dropdown, Button,
+                        BoundedFloatText, Box, HBox, VBox, Dropdown, Button, FileUpload,
                         Image, Layout, Tab, Accordion, ToggleButtons, Checkbox)
 from traitlets.utils.bunch import Bunch
+import base64
 import os
 import json
 import pprint
@@ -103,6 +104,7 @@ class K12WidgetGenerator():
         self.output_type = 'none'
         self.lan = lan
         self.debug = debug
+        self.predict_images = []
         self.border = False
         self.tb_port = tb_port
         self.tb_logdir = '/tmp/tblogs'
@@ -192,6 +194,8 @@ class K12WidgetGenerator():
 
         _get_kv(self.page)
         kv_map['_k12.tb_logdir'] = self.tb_logdir
+        if len(self.predict_images) > 0:
+            kv_map['_k12.predict_images'] = self.predict_images
         return kv_map
 
     def get_all_json(self):
@@ -635,7 +639,10 @@ class K12WidgetGenerator():
             return _widget_add_child(widget, wdg)
 
         elif _type == 'iframe':
-            if __id_ == '_k12.iframe.train' or __id_ == '_k12.iframe.evaluate':
+            if __id_ == '_k12.iframe.train' or \
+                    __id_ == '_k12.iframe.evaluate' or \
+                    __id_ == '_k12.iframe.predict':
+
                 _start = Button(description='Start', button_style='success',)
                 _stop = Button(description='Stop', button_style='success',)
                 _progress = FloatProgress(value=0.0, description='Progress:', min=0, max=100,
@@ -643,7 +650,24 @@ class K12WidgetGenerator():
 
                 _drawit = Output(layout=Layout(width='100%', min_height='400px'))
 
-                wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
+                if __id_ == '_k12.iframe.predict':
+                    def on_value_change(change):
+                        wdg = change['owner']
+                        if hasattr(wdg, 'data'):
+                            for k, v in wdg.value.items():
+                                self.predict_images.append({
+                                    'name': k,
+                                    'content': base64.b64encode(v['content']).decode()})
+                        else: # ipywidgets version > 7.5.1
+                            for img in wdg.value:
+                                self.predict_images.append({
+                                    'name': img['name'],
+                                    'content': base64.b64encode(img['content']).decode()})
+                    fileupload = FileUpload(accept='image/*', multiple=False)
+                    fileupload.observe(on_value_change, names='value')
+                    wdg = VBox([fileupload, HBox([_start, _stop, _progress]), _drawit])
+                else:
+                    wdg = VBox([HBox([_start, _stop, _progress]), _drawit])
 
                 if self.events:
                     self.events['project.train.init'](self, __id_.split('.')[2],
