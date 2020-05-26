@@ -663,7 +663,7 @@ class K12WidgetGenerator():
                                 self.predict_images.append({
                                     'name': img['name'],
                                     'content': base64.b64encode(img['content']).decode()})
-                    fileupload = FileUpload(accept='image/*', multiple=False)
+                    fileupload = FileUpload(accept='image/*', multiple=True)
                     fileupload.observe(on_value_change, names='value')
                     wdg = VBox([fileupload, HBox([_start, _stop, _progress]), _drawit])
                 else:

@@ -363,7 +363,7 @@ def _start_work_process(context):
                                     if obj['data']['title'] == 'progress':
                                         progress = obj['data']['payload']['y'][0]['value']
                                         context.progress.value = progress
-                elif context.progress.phase == 'evaluate':
+                else: # context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=10, rm=True)
                     if data:
                         result['metrics'] = data[-1]['value']
