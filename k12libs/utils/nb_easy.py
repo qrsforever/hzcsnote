@@ -79,6 +79,8 @@ def k12ai_set_notebook(cellw=None):
     if cellw:
         display(HTML('<style>.container { width:%d%% !important; }</style>' % cellw))
 
+def k12ai_restart_kernel() :
+    display(HTML("<script>Jupyter.notebook.kernel.restart()</script>"))
 
 def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, height=None, display=True):
     # kill
