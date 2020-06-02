@@ -23,7 +23,7 @@ import threading
 import multiprocessing
 from multiprocessing.queues import Empty
 
-from IPython.display import clear_output, display, HTML
+from IPython.display import clear_output, display, HTML, IFrame
 from .nb_widget import K12WidgetGenerator
 import ipywidgets as widgets
 
@@ -63,6 +63,7 @@ AIURL = 'http://{}:{}'.format(host, 8119) # K12AI API
 SSURL = 'http://{}:{}'.format(netip, 8500) # Consul
 TBURL = 'http://{}:{}'.format(host, 6006) # Tensorboard
 DSURL = 'http://{}:{}'.format(netip, 9090) # Dataset
+MDURL = 'http://{}:{}'.format(netip, 9091) # Model Diagram
 
 K12AI_HOST_ADDR = host
 K12AI_WLAN_ADDR = consul_addr
@@ -116,6 +117,15 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
         tbnotebook.display(port, height)
 
     return f'http://{K12AI_WLAN_ADDR}:{port}'
+
+
+def k12ai_start_html(uri, width=None, height=None):
+    k12ai_set_notebook(cellw=95)
+    if width is None:
+        width = '100%'
+    if height is None:
+        height = 300
+    return IFrame(uri, width=width, height=height) 
 
 
 def _print_json(text, indent):
@@ -567,7 +577,7 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
         wdg_stop.disabled = True
 
 def k12ai_run_project(lan='en', debug=False, tb_port=None,
-        framework=None, task=None, network=None, dataset=None):
+        framework=None, task=None, network=None, dataset=None, netdef_type=None):
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
@@ -587,7 +597,9 @@ def k12ai_run_project(lan='en', debug=False, tb_port=None,
         if dataset is None:
             dataset = 'cifar10' if framework == 'k12cv' else 'sst'
         if network is None:
-            network = 'base_model' if framework == 'k12cv' else 'basic_classifier'
+            raise RuntimeError('network is null')
+        if netdef_type is not None:
+            context.netdef_type = netdef_type 
         _init_project_schema(context, {
             'project.framework': framework,
             'project.task': task,

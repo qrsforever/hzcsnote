@@ -1,0 +1,585 @@
+{
+    "class": "GraphLinksModel", 
+    "copiesKey": false, 
+    "linkFromPortIdProperty": "fromPort", 
+    "linkToPortIdProperty": "toPort", 
+    "modelData": {
+        "position": "65.22899609375003 26.078125"
+    }, 
+    "nodeDataArray": [
+        {
+            "key": "Conv", 
+            "text": "Conv2d_6831", 
+            "category": "Conv", 
+            "loc": "163.78007373203124 126.8965063398438", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Input_4059"
+                ], 
+                "outputs": [
+                    "Conv2d_7510"
+                ], 
+                "in_channels": "3", 
+                "out_channels": "30", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 26, 
+                    "h": 26, 
+                    "channel": "30"
+                }
+            }, 
+            "id": "6831", 
+            "outshape": "(None,30,26,26)"
+        }, 
+        {
+            "key": "Vulkan", 
+            "text": "Flatten_5235", 
+            "category": "Vulkan", 
+            "loc": "434.8386250000002 105.20862499999993", 
+            "info": {
+                "subtype": "Flatten", 
+                "name": "Vulkan", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "MaxPool2d_5315"
+                ], 
+                "outputs": [
+                    "Linear_2653"
+                ], 
+                "start_dim": "1", 
+                "end_dim": "-1", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": 12800, 
+                    "channel": null
+                }
+            }, 
+            "id": "5235", 
+            "outshape": "(None,12800)"
+        }, 
+        {
+            "key": "Linear", 
+            "text": "Linear_5215", 
+            "category": "Linear", 
+            "loc": "434.08037499999966 276.33250000000027", 
+            "info": {
+                "subtype": "Linear", 
+                "name": "Linear", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Linear_2653"
+                ], 
+                "outputs": [
+                    "Linear_9970"
+                ], 
+                "in_features": "1000", 
+                "out_features": "100", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "100", 
+                    "channel": null
+                }
+            }, 
+            "id": "5215", 
+            "outshape": "(None,100)"
+        }, 
+        {
+            "key": "Linear2", 
+            "text": "Linear_9970", 
+            "category": "Linear", 
+            "loc": "436.46912500000036 351.9967500000001", 
+            "info": {
+                "subtype": "Linear", 
+                "name": "Linear", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Linear_5215"
+                ], 
+                "outputs": [
+                    "Output_6954"
+                ], 
+                "in_features": "100", 
+                "out_features": "10", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "10", 
+                    "channel": null
+                }
+            }, 
+            "id": "9970", 
+            "outshape": "(None,10)"
+        }, 
+        {
+            "key": -8, 
+            "text": "Conv2d_7510", 
+            "category": "Conv", 
+            "loc": "162.84375 199.578125", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_6831"
+                ], 
+                "outputs": [
+                    "Conv2d_5900"
+                ], 
+                "in_channels": "30", 
+                "out_channels": "30", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 24, 
+                    "h": 24, 
+                    "channel": "30"
+                }
+            }, 
+            "id": "7510", 
+            "outshape": "(None,30,24,24)"
+        }, 
+        {
+            "key": -9, 
+            "text": "Conv2d_5900", 
+            "category": "Conv", 
+            "loc": "161.84375 282.578125", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_7510"
+                ], 
+                "outputs": [
+                    "MaxPool2d_7843"
+                ], 
+                "in_channels": "30", 
+                "out_channels": "30", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 22, 
+                    "h": 22, 
+                    "channel": "30"
+                }
+            }, 
+            "id": "5900", 
+            "outshape": "(None,30,22,22)"
+        }, 
+        {
+            "key": -10, 
+            "text": "Linear_2653", 
+            "category": "Linear", 
+            "loc": "434.39349999999956 196.99674999999982", 
+            "info": {
+                "subtype": "Linear", 
+                "name": "Linear", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Flatten_5235"
+                ], 
+                "outputs": [
+                    "Linear_5215"
+                ], 
+                "in_features": "12800", 
+                "out_features": "1000", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "1000", 
+                    "channel": null
+                }
+            }, 
+            "id": "2653", 
+            "outshape": "(None,1000)"
+        }, 
+        {
+            "key": -12, 
+            "text": "Input_4059", 
+            "category": "Input", 
+            "loc": "167.84375 51.578125", 
+            "info": {
+                "subtype": "Input", 
+                "name": "Input", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [ ], 
+                "outputs": [
+                    "Conv2d_6831"
+                ], 
+                "in_features": "3,28,28", 
+                "out_shapes": {
+                    "w": "28", 
+                    "h": "28", 
+                    "channel": "3"
+                }
+            }, 
+            "id": "4059", 
+            "outshape": "(None,3,28,28)"
+        }, 
+        {
+            "key": -11, 
+            "text": "Output_6954", 
+            "category": "Output", 
+            "loc": "693.0194975000004 467.65112499999987", 
+            "info": {
+                "subtype": "Output", 
+                "name": "Output", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Linear_9970"
+                ], 
+                "outputs": [ ], 
+                "out_features": "10", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "10"
+                }
+            }, 
+            "id": "6954", 
+            "outshape": "(None,10)"
+        }, 
+        {
+            "key": -13, 
+            "text": "MaxPool2d_7843", 
+            "category": "Pool", 
+            "loc": "163.04424609375 350.27200195312497", 
+            "info": {
+                "subtype": "MaxPool2d", 
+                "name": "Pool", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_5900"
+                ], 
+                "outputs": [
+                    "Conv2d_4074"
+                ], 
+                "kernel_size": "3", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "return_indices": "False", 
+                "ceil_mode": "False", 
+                "count_include_pad": "True", 
+                "norm_type": "1", 
+                "out_shapes": {
+                    "w": 20, 
+                    "h": 20, 
+                    "channel": "30"
+                }
+            }, 
+            "id": "7843", 
+            "outshape": "(None,30,20,20)"
+        }, 
+        {
+            "key": -14, 
+            "text": "Conv2d_4074", 
+            "category": "Conv", 
+            "loc": "160.72899609375003 420.88712695312506", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "MaxPool2d_7843"
+                ], 
+                "outputs": [
+                    "MaxPool2d_5315"
+                ], 
+                "in_channels": "30", 
+                "out_channels": "50", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 18, 
+                    "h": 18, 
+                    "channel": "50"
+                }
+            }, 
+            "id": "4074", 
+            "outshape": "(None,50,18,18)"
+        }, 
+        {
+            "key": -15, 
+            "text": "MaxPool2d_5315", 
+            "category": "Pool", 
+            "loc": "175.77812109375003 492.65987695312504", 
+            "info": {
+                "subtype": "MaxPool2d", 
+                "name": "Pool", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_4074"
+                ], 
+                "outputs": [
+                    "Flatten_5235"
+                ], 
+                "kernel_size": "3", 
+                "stride": "1", 
+                "padding": "0", 
+                "dilation": "1", 
+                "return_indices": "False", 
+                "ceil_mode": "False", 
+                "count_include_pad": "True", 
+                "norm_type": "1", 
+                "out_shapes": {
+                    "w": 16, 
+                    "h": 16, 
+                    "channel": "50"
+                }
+            }, 
+            "id": "5315", 
+            "outshape": "(None,50,16,16)"
+        }
+    ], 
+    "linkDataArray": [
+        {
+            "from": "Linear", 
+            "to": "Linear2", 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                434.0803749999995, 
+                294.0710762508465, 
+                434.0803749999995, 
+                304.0710762508465, 
+                436.4691250000003, 
+                304.0710762508465, 
+                436.4691250000003, 
+                304.0710762508465, 
+                436.4691250000003, 
+                324.258173749154, 
+                436.4691250000003, 
+                334.258173749154
+            ]
+        }, 
+        {
+            "from": "Conv", 
+            "to": -8, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                163.78007373203133, 
+                144.63508259068985, 
+                163.78007373203133, 
+                154.63508259068985, 
+                163.78007373203133, 
+                163.237315669922, 
+                162.84375000000006, 
+                163.237315669922, 
+                162.84375000000006, 
+                171.83954874915412, 
+                162.84375000000006, 
+                181.83954874915412
+            ]
+        }, 
+        {
+            "from": -8, 
+            "to": -9, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                162.84375000000006, 
+                217.31670125084617, 
+                162.84375000000006, 
+                227.31670125084617, 
+                161.84374999999994, 
+                227.31670125084617, 
+                161.84374999999994, 
+                227.31670125084617, 
+                161.84374999999994, 
+                254.839548749154, 
+                161.84374999999994, 
+                264.839548749154
+            ]
+        }, 
+        {
+            "from": "Vulkan", 
+            "to": -10, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                434.8386249999999, 
+                122.94720125084592, 
+                434.8386249999999, 
+                132.94720125084592, 
+                434.3934999999997, 
+                132.94720125084592, 
+                434.3934999999997, 
+                132.94720125084592, 
+                434.3934999999997, 
+                169.2581737491538, 
+                434.3934999999997, 
+                179.2581737491538
+            ]
+        }, 
+        {
+            "from": -10, 
+            "to": "Linear", 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                434.3934999999997, 
+                214.73532625084584, 
+                434.3934999999997, 
+                224.73532625084584, 
+                434.0803749999995, 
+                224.73532625084584, 
+                434.0803749999995, 
+                224.73532625084584, 
+                434.0803749999995, 
+                248.59392374915438, 
+                434.0803749999995, 
+                258.5939237491544
+            ]
+        }, 
+        {
+            "from": -12, 
+            "to": "Conv", 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                167.84375, 
+                69.31670125084602, 
+                167.84375, 
+                79.31670125084602, 
+                163.78007373203133, 
+                79.31670125084602, 
+                163.78007373203133, 
+                79.31670125084602, 
+                163.78007373203133, 
+                99.15793008899777, 
+                163.78007373203133, 
+                109.15793008899777
+            ]
+        }, 
+        {
+            "from": "Linear2", 
+            "to": -11, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                436.4691250000003, 
+                369.73532625084613, 
+                436.4691250000003, 
+                379.73532625084613, 
+                436.4691250000003, 
+                380, 
+                693.0194975000002, 
+                380, 
+                693.0194975000002, 
+                439.91254874915404, 
+                693.0194975000002, 
+                449.91254874915404
+            ]
+        }, 
+        {
+            "from": -9, 
+            "to": -13, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                161.84374999999994, 
+                300.3167012508461, 
+                161.84374999999994, 
+                310.3167012508461, 
+                161.84374999999994, 
+                316.4250634765625, 
+                163.04424609374996, 
+                316.4250634765625, 
+                163.04424609374996, 
+                322.5334257022789, 
+                163.04424609374996, 
+                332.5334257022789
+            ]
+        }, 
+        {
+            "from": -13, 
+            "to": -14, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                163.04424609374996, 
+                368.010578203971, 
+                163.04424609374996, 
+                378.010578203971, 
+                163.04424609374996, 
+                385.579564453125, 
+                160.72899609375003, 
+                385.579564453125, 
+                160.72899609375003, 
+                393.14855070227895, 
+                160.72899609375003, 
+                403.14855070227895
+            ]
+        }, 
+        {
+            "from": -14, 
+            "to": -15, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                160.72899609375003, 
+                438.62570320397106, 
+                160.72899609375003, 
+                448.62570320397106, 
+                160.72899609375003, 
+                456.7735019531251, 
+                175.77812109374992, 
+                456.7735019531251, 
+                175.77812109374992, 
+                464.9213007022791, 
+                175.77812109374992, 
+                474.9213007022791
+            ]
+        }, 
+        {
+            "from": -15, 
+            "to": "Vulkan", 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                175.77812109374992, 
+                510.3984532039712, 
+                175.77812109374992, 
+                520.3984532039713, 
+                175.77812109374992, 
+                524, 
+                276, 
+                524, 
+                276, 
+                76, 
+                434.8386249999999, 
+                76, 
+                434.8386249999999, 
+                77.47004874915386, 
+                434.8386249999999, 
+                87.47004874915386
+            ]
+        }
+    ]
+}

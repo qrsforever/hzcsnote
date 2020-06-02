@@ -109,6 +109,7 @@ class K12WidgetGenerator():
         self.border = False
         self.tb_port = tb_port
         self.tb_logdir = '/tmp/tblogs'
+        self.netdef_type = 'simple'
         self.events = events
         self.dataset_dir = ''
         self.dataset_url = ''
@@ -675,16 +676,8 @@ class K12WidgetGenerator():
                             _start, _stop, _progress, _drawit)
             elif __id_ == 'network.net_def':
                 html = config.get('html', '')
-                wdg = HTML(value=f'<iframe src="{html}" width=98% height="666px">',
+                wdg = HTML(value=f'<iframe src="{html}?type={self.netdef_type}" width=98% height="777px">',
                         layout={'width': '99%', 'height': 'auto'})
-                # wdg = self.Text(
-                #     __id_,
-                #     description = 'Input(test):',
-                #     layout = tlo,
-                #     style = self.style,
-                #     continuous_update=False,
-                #     **args,
-                # )
             else:
                 return
             return _widget_add_child(widget, wdg)
