@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8"> 
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=0" ">
+        <title>Gojs</title>        
+                 
+        <link rel="stylesheet" href="css/cauchy/bootstrap-material-design.css">   
+        <link rel="stylesheet" href="css/cauchy/docs.min.css">   
+        <link rel="stylesheet" type="text/css" href="css/open-iconic-bootstrap.css"> 
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <link rel="stylesheet" type="text/css" href="css/cauchy/main.css">
+        
+        <style>
+             
+        </style>
+        <script src="js/jquery.min.js" type="text/javascript"></script>
+        <script src="js/jquery.cookie.js" type="text/javascript"></script>
+        <script src="js/jquery.form.js" type="text/javascript"></script>
+         
+        <script src="js/cauchy/popper.min.js"></script>  
+        <script src="js/cauchy/bootstrap-material-design.js"></script> 
+        <script src="js/cauchy/main.js?v=1.2" type="text/javascript"></script>
+    </head>
+    <body>
+        <input type="hidden" value="1" id="project_id">
+        <input type="hidden" value="cls" id="hproject_type">
+        <input type="hidden" value="hproject_model_name" id="hproject_model_name">
+        <input type="hidden" value="fc_classifier" id="hproject_method">
+        <div style="width:95%;margin:0 auto">
+            <div>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist" id="main_tabs">
+                    <li role="presentation" class="nav-item nav-model"><a href="#main_model" aria-controls="main_model" role="tab" data-toggle="tab" class="nav-link" active></a></li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade in active" id="main_model">
+                        <style> 
+                          canvas:focus{
+                            outline:none;
+                          }
+
+                          .property-div{      
+                              position:fixed;
+                              right:0px;
+                              top:117px;
+                              width:300px;
+                              margin-top:2rem;
+                              z-index:99;
+                              max-height:500px;
+                              min-height:100px;
+                              overflow-y:auto;
+                              
+                          }
+
+                          .property-div > div{
+                            padding:1rem;
+                            padding-left:3rem;
+                            background-color:#EEE;
+                          }
+
+                          #accordion{
+                              position:fixed;
+                              top:150px;
+                              width:145px;
+                              left:2.5%;
+                          }
+
+                          #accordion .card > .card-header{
+                            padding:0.5rem;
+                          }
+
+                          #accordion .card button{
+                            font-size:1rem;
+                            margin:0;
+                          }
+
+                          #design_div{
+                            height:100%;
+                            width:100%;
+                            
+                            min-height:1200px;
+                            border:1px solid  #AAA;
+                            
+
+                          }
+
+                          .toolbar-div{
+                            width:30px;
+                            position:fixed;
+                            top:117px;
+                            right:0px;
+                            height:200px;
+                            z-index:100;
+                            background-color:#EEE;
+                            margin-top:2rem;
+                            padding-top:1rem;
+                         
+                            text-align:center;
+                          }
+
+                          .toolbar-div span{
+                            cursor:pointer;
+                          }
+                        </style>
+                        <br/>
+                        <div class="container-fluid">
+                            <div class="row" style="position:relative">
+                                <div style="width:150px;position:absolute;top:0;left:0;min-height:700px;z-index:9;display:none;">
+                                    <div id="accordion">
+                                        <div class="card model-layer">  
+                                            <div id="collapseOne" class="collapse model-palette in" aria-labelledby="headingOne" data-parent="#accordion">
+                                                <div class="card-body" id="layer_palette" style="height:500px;min-height:500px">
+                                                    
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card model-network" style="display:none">                     
+                                            <div id="collapseTwo" class="collapse model-palette" aria-labelledby="headingTwo" data-parent="#accordion">
+                                                <div class="card-body" id="network_palette" style="height:400px;min-height:400px">
+                                                     
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>                                
+                                </div>
+                                <div class="col-md-12" style="min-height:1200px;padding-right:0px">
+                                    <div id="design_div">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-div" id="property_div">
+
+                        </div>
+                        <div class="toolbar-div" style="">
+                            <span class="oi oi-layers" title="复制" aria-hidden="true"></span><br/>
+                            <span class="oi oi-random" title="剪切" aria-hidden="true"></span><br/>
+                            <span class="oi oi-clipboard" title="粘贴" aria-hidden="true"></span><br/>
+                            <span class="oi oi-action-undo" title="撤销" aria-hidden="true" onclick="toolbar_undo()"></span><br/>
+                            <span class="oi oi-action-redo" title="重做" aria-hidden="true" onclick="toolbar_redo()"></span><br/>  
+                            <span class="oi oi-zoom-in" title="放大" aria-hidden="true" onclick="toolbar_zoomin()"></span><br/>
+                            <span class="oi oi-zoom-out" title="缩小" aria-hidden="true" onclick="toolbar_zoomout()"></span><br/>
+                        </div>
+
+
+
+                        <script src="js/cauchy/go-debug.js" type="text/javascript"></script>
+                        <script src="js/cauchy/layerconfig.js" type="text/javascript"></script>
+                        <script src="js/cauchy/blockconfig.js" type="text/javascript"></script>
+                        <script src="js/cauchy/netconfig.js" type="text/javascript"></script>
+                        <script src="js/cauchy/layernode.js" type="text/javascript"></script>
+                        <script src="js/cauchy/blocknode.js" type="text/javascript"></script>
+                        <script src="js/cauchy/design.js?v=1" type="text/javascript"></script>
+                          
+                    </div>
+                </div>
+            </div>    
+        </div>
+
+    </body>
+    <script>
+       let current_net = "custom";
+        if(current_net == "")
+          current_net = 'plain_net';
+        let net_def = "";
+
+
+        function generateProto(){         
+            let res = toPrototxt(diagram.model.nodeDataArray,diagram.model.linkDataArray,current_net,$("#hproject_model_name").val());
+            net_def = res;  
+            console.log("PROTO DATA") 
+            console.log(net_def)    
+        }
+
+        function toolbar_undo(){
+            diagram.commandHandler.undo();
+            savemodel();
+
+        }
+
+        function toolbar_redo(){
+            diagram.commandHandler.redo();
+            savemodel();
+        }
+
+        function toolbar_zoomin(){
+            diagram.commandHandler.increaseZoom()
+        }
+
+        function toolbar_zoomout(){
+            diagram.commandHandler.decreaseZoom()
+        }
+       
+
+        let project_model = 'custom';
+        let project_model_sub = 'custom';
+        
+         
+        $(function(){
+          //design.js
+          $('body').bootstrapMaterialDesign();
+
+          //========================
+          loadProjectInfo('cls','custom');
+
+          let paraminfo = '';
+          let modelinfo = '';       
+          if(modelinfo != ""){
+            diagram.model = go.Model.fromJson(modelinfo);
+            let model = JSON.parse(modelinfo);
+            if(model.hasOwnProperty("modelData")){
+              var pos = model.modelData.position;                          
+              if(pos) 
+                diagram.initialPosition = go.Point.parse(pos);
+            }
+            
+             
+            let nodeData = model.nodeDataArray;
+            $.each(nodeData,function(i,val){              
+              if(val.hasOwnProperty("category") && val.hasOwnProperty("info") && !val.hasOwnProperty("isGroup")){
+                nodearr.push(val.key);
+                let info = LayerNode.subfactory(val.category,val.info.name,val.info.subtype,val.id);
+                 
+                Object.assign(info,val.info);
+                diagram.model.nodeDataArray[i].info = info;
+              }else if(val.hasOwnProperty("isGroup")){
+                
+                let info = BlockNode.subfactory(val.text,val.text);
+                Object.assign(info,val.info);
+                diagram.model.nodeDataArray[i].info  = info;
+              }
+            });           
+             
+          }
+
+          let subtab = window.location.hash; 
+          if(subtab.length > 5)          
+            $(`.nav-item a[href="#${subtab.substr(5)}"]`).tab('show');         
+           
+          generateProto()
+        });
+
+        
+         
+        let config = {};
+        $(function(){
+           $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {               
+              window.location.href = window.location.origin + window.location.pathname + window.location.search   + "#loc_" +$(".tab-pane.active").attr("id"); 
+
+              if($(".tab-pane.active").attr("id") == "main_model"){ 
+                  layer_palette.requestUpdate();
+                  net_palette.requestUpdate(); 
+                  diagram.requestUpdate();
+              }
+                
+            });            
+            
+            $(".param-advanced-switch").change(function(e){               
+              if($(this).prop("checked"))
+                $("." + $(this).attr("target")).fadeIn();
+              else
+                $("." + $(this).attr("target")).fadeOut();
+
+            });
+        });
+        
+
+        
+    </script>
+</html>
+
+ 

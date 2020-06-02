@@ -1,0 +1,44 @@
+ 
+body{
+  background-color:#FFF;   
+}
+
+.project-info{
+  box-shadow:0 1px 3px 0 rgba(0,0,0,0.3);
+  border-radius:2px;
+  margin-bottom:1rem;
+}
+
+.project-info > div:first-child{
+  height:40px;
+  line-height:40px;
+  background-color:#00CED1;
+  color:#FFF;
+  font-size:1rem;
+  padding:0 1.5rem;
+}
+
+.project-info > div:last-child{
+  min-height:40px;
+  padding:1.5rem;  
+  font-size:0.875rem;
+}
+
+.project-info .glyphicon{
+  line-height:40px;
+  cursor:pointer;
+  margin-left:0.5rem;
+}
+
+#main_tabs{
+  border-bottom:1px solid rgba(0,0,0,0.2);
+}
+
+#main_tabs > .nav-item{                 
+  min-width:150px;
+  text-align:center;
+}
+
+select.form-control:not([size]):not([multiple]), select.custom-file-control:not([size]):not([multiple]){
+  height: calc(2.4375rem + 2px);
+}

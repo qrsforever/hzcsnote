@@ -12,6 +12,7 @@ from IPython.display import display, clear_output
 from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress, # noqa
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button, FileUpload,
                         Image, Layout, Tab, Accordion, ToggleButtons, Checkbox)
+
 from traitlets.utils.bunch import Bunch
 import base64
 import os
@@ -673,14 +674,17 @@ class K12WidgetGenerator():
                     self.events['project.train.init'](self, __id_.split('.')[2],
                             _start, _stop, _progress, _drawit)
             elif __id_ == 'network.net_def':
-                wdg = self.Text(
-                    __id_,
-                    description = 'Input(test):',
-                    layout = tlo,
-                    style = self.style,
-                    continuous_update=False,
-                    **args,
-                )
+                html = config.get('html', '')
+                wdg = HTML(value=f'<iframe src="{html}" width=98% height="666px">',
+                        layout={'width': '99%', 'height': 'auto'})
+                # wdg = self.Text(
+                #     __id_,
+                #     description = 'Input(test):',
+                #     layout = tlo,
+                #     style = self.style,
+                #     continuous_update=False,
+                #     **args,
+                # )
             else:
                 return
             return _widget_add_child(widget, wdg)

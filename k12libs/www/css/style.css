@@ -1,0 +1,154 @@
+html{
+  font-size:16px;   
+}
+
+body{
+  font-size:0.875rem;
+  font-family:arial,tahoma,Hiragino Sans GB,Microsoft YaHei,sans-serif;
+  font-weight:500;
+  color:#666; 
+  
+}
+
+a{
+  color:#666666;
+  text-decoration:none;
+}
+a:hover,a:focus{
+  color:#29A6F6;
+  text-decoration:none;
+}
+
+ul{
+  list-style:none;
+}
+
+input,textarea,button{
+  outline:none;
+}
+
+
+.font28{
+  font-size:1.75rem;
+}
+
+.font22{
+  font-size:1.375rem;
+}
+
+.font12{
+  font-size:0.75rem;  
+}
+
+.font14{
+  font-size:0.875rem;  
+}
+.font16{
+  font-size:1rem;  
+}
+
+.font18{
+  font-size:1.125rem;  
+}
+
+.font20{
+  font-size:1.25rem;  
+}
+
+.color-embellish{
+  color:#F6A623;
+}
+
+.color-999{
+  color:#999999;
+}
+
+.color-333{
+  color:#333333;
+}
+
+.color-blue{
+  color:#4990E2;
+}
+
+.has-cursor{
+  cursor:pointer;
+}
+
+.bg-fff{
+  background-color:#FFFFFF;
+}
+
+.bg-f9{
+  background-color:#F9F9F9;
+}
+
+.ai-scroll-bar::-webkit-scrollbar {/*滚动条整体样式*/
+  width: 2px;     /*高宽分别对应横竖滚动条的尺寸*/
+  height: 2px;
+}
+.ai-scroll-bar::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+  border-radius: 5px; 
+  background: #F6A623;
+}
+.ai-scroll-bar::-webkit-scrollbar-track {/*滚动条里面轨道*/
+  border-radius: 0;
+  background: #D3D3D3;
+}
+
+.form-control{
+  box-shadow: inset 0 0px 0px rgba(0, 0, 0, .075); 
+  -webkit-box-shadow: inset 0 0px 0px rgba(0, 0, 0, .075);
+}
+
+.over-hide{
+  overflow:hidden;
+}
+
+.dropdown.open, .dropdown.open > .menu-space,.navbar-default .navbar-nav > .open > a,.navbar-default .navbar-nav > .open > a:focus,.navbar-default .navbar-nav > .open > a:hover{
+  background-color:transparent;   
+   
+} 
+
+.navbar-default .navbar-nav > .open > a:hover{
+  color:#29A6F6;
+}
+
+.navbar-right > li >  .dropdown-menu{   
+  right:auto;
+  padding:0;
+  min-width:110px;
+  text-align:left;
+  margin-top:-10px;
+  margin-left:-15px;
+  border-radius:0;
+}
+
+.dropdown-menu > li,.dropdown-menu > li > a{
+  height:35px;
+  line-height:35px;
+  font-size:0.75rem;
+  padding:0;  
+  /* border-bottom:1px solid #CBCBCB; */
+}
+
+.dropdown-menu > li > a{
+  padding:0 1.5rem;
+}
+
+.dropdown-menu > li > a:hover{
+  background-color:#29A8F6;
+  color:#FFFFFF;
+}
+
+.ai-brand{
+  /* background-image:url(../images/icon-blueb-logo.png); */
+  width:68px;
+  height:22px;
+  margin-top:16px;
+}
+
+.nav-sigai-fixed .ai-brand{
+  /* background-image:url(../images/icon-blue-logo.png);   */
+}
+ 
