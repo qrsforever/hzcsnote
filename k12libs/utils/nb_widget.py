@@ -11,7 +11,7 @@
 from IPython.display import display, clear_output
 from ipywidgets import (HTML, Text, BoundedIntText, Output, Textarea, FloatProgress, # noqa
                         BoundedFloatText, Box, HBox, VBox, Dropdown, Button, FileUpload,
-                        Image, Layout, Tab, Accordion, ToggleButtons, Checkbox)
+                        Image, Layout, Tab, Accordion, ToggleButtons, Checkbox, Label)
 
 from traitlets.utils.bunch import Bunch
 import base64
@@ -173,6 +173,11 @@ class K12WidgetGenerator():
                 margin='3px 0px 3px 0px',
                 )
 
+        self.label_layout = Layout(
+                width="60px",
+                justify_content="center",
+                )
+
     def init_page(self):
         self.wid_widget_map = {}
         self.wid_value_map = {}
@@ -232,11 +237,13 @@ class K12WidgetGenerator():
 
     @k12widget
     def Debug(self, description, options):
+        label = Label(value=description, layout=self.label_layout)
         wdg = ToggleButtons(
                 options=options,
-                description=description,
+                # description=description,
                 disabled=False,
                 button_style='warning')
+        wdg.parent_box = HBox(children=(label, wdg))
 
         def _value_change(change):
             self.output_type = change['new']
@@ -425,22 +432,26 @@ class K12WidgetGenerator():
 
         elif _type == 'tab':
             wdg = Tab(layout = self.tab_layout)
+            wdg.titles = [obj['name'][self.lan] for obj in _objs]
             for i, obj in enumerate(_objs):
-                wdg.set_title(i, obj['name'][self.lan])
+                # wdg.set_title(i, obj['name'][self.lan])
                 box = VBox(layout = self.vlo)
                 for obj in obj['objs']:
                     self._parse_config(box, obj)
                 _widget_add_child(wdg, box)
+            wdg.selected_index = 0
             return _widget_add_child(widget, wdg)
 
         elif _type == 'accordion':
             wdg = Accordion(layout = self.accordion_layout)
+            wdg.titles = [obj['name'][self.lan] for obj in _objs]
             for i, obj in enumerate(_objs):
-                wdg.set_title(i, obj['name'][self.lan])
+                # wdg.set_title(i, obj['name'][self.lan])
                 box = VBox(layout = self.vlo)
                 for obj in obj['objs']:
                     self._parse_config(box, obj)
                 _widget_add_child(wdg, box)
+            wdg.selected_index = 0
             return _widget_add_child(widget, wdg)
 
         elif _type == 'navigation':
@@ -450,12 +461,12 @@ class K12WidgetGenerator():
                 val = change['new']
                 parent_box = wdg.parent_box
                 trigger_box = parent_box.boxes[val]
-                parent_box.children = [wdg, trigger_box]
+                parent_box.children = [parent_box.children[0], trigger_box]
 
-            wdg = VBox([ToggleButtons()], layout = self.nav_layout)
+            label = Label(value= _name[self.lan] if _name else 'TODO', layout=self.label_layout)
+            btns = ToggleButtons()
+            wdg = VBox(layout = self.nav_layout)
             wdg.node_type = 'navigation'
-            wdg.children[0].parent_box = wdg
-            wdg.children[0].observe(_value_change, 'value')
             wdg.boxes = []
             options = []
             for i, obj in enumerate(_objs):
@@ -463,9 +474,10 @@ class K12WidgetGenerator():
                 box = VBox(layout = self.vlo)
                 self._parse_config(box, obj)
                 wdg.boxes.append(box)
-            wdg.children[0].options = options
-            if _name:
-                wdg.children[0].description = _name[self.lan]
+            wdg.children = [HBox([label, btns]), wdg.boxes[0]]
+            btns.options = options
+            btns.parent_box = wdg
+            btns.observe(_value_change, 'value')
             return _widget_add_child(widget, wdg)
 
         elif _type == 'output': # debug info
