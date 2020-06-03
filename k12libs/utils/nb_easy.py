@@ -11,6 +11,7 @@ import os
 import base64
 import hashlib
 import requests
+import logging
 import json
 import _jsonnet
 import consul
@@ -22,6 +23,8 @@ import shutil
 import threading
 import multiprocessing
 from multiprocessing.queues import Empty
+from flask import Flask, request
+from flask_cors import CORS
 
 from IPython.display import clear_output, display, HTML, IFrame
 from .nb_widget import K12WidgetGenerator
@@ -33,6 +36,20 @@ from tensorboard import manager as tbmanager
 
 import matplotlib.pyplot as plt # noqa
 # from matplotlib.ticker import MultipleLocator
+
+app = Flask(__name__)
+app.logger.disabled = True
+log = logging.getLogger('werkzeug')
+log.disabled = True
+# Access-Control-Allow-Origin
+CORS(app, supports_credentials=True)
+
+# Global
+g_queue = None
+g_flask_process = None
+g_result_process = None
+g_contexts = {}
+
 
 def get_host_ip():
     ip = ''
@@ -52,6 +69,9 @@ def get_net_ip():
 
 host = get_host_ip()
 port = 8119
+
+flask_host = host
+flask_port = 8117
 
 consul_addr = get_net_ip()
 consul_port = 8500
@@ -118,15 +138,13 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
 
     return f'http://{K12AI_WLAN_ADDR}:{port}'
 
-
 def k12ai_start_html(uri, width=None, height=None):
     k12ai_set_notebook(cellw=95)
     if width is None:
         width = '100%'
     if height is None:
         height = 300
-    return IFrame(uri, width=width, height=height) 
-
+    return IFrame(uri, width=width, height=height)
 
 def _print_json(text, indent):
     if isinstance(text, str):
@@ -222,9 +240,6 @@ def k12ai_get_error_data(datakey, num=1):
 def k12ai_get_metrics_data(datakey, num=1):
     return k12ai_get_data(datakey, 'metrics', num)
 
-# def k12ai_get_status_data(datakey, num=1):
-#     return k12ai_get_data(datakey, 'status', num)
-
 def k12ai_out_data(key, contents, hook_func = None):
     tab = widgets.Tab(layout={'width': '100%'})
     children = [widgets.Output(layout={
@@ -297,13 +312,25 @@ def k12ai_json_load(path):
         str = json.load(f)
     return str
 
+### Train
 
-g_queue = None
-g_process = None
-g_contexts = {}
+@app.route('/k12ai/notebook/message', methods=['POST', 'GET'])
+def _http_handle():
+    try:
+        reqjson = json.loads(request.get_data().decode())
+        msgtype = reqjson['msgtype']
+        if msgtype == 'protodata':
+            tag = reqjson['tag']
+            ctx = g_contexts.get(tag, None)
+            if ctx:
+                ctx.protodata = reqjson[msgtype]['datastr']
+    except Exception as err:
+        print("{}".format(err))
+        return ''
+    return ''
 
 def _start_work_process(context):
-    global g_queue, g_process, g_contexts
+    global g_queue, g_result_process, g_contexts
 
     if not g_queue:
         g_queue = multiprocessing.Queue()
@@ -391,9 +418,9 @@ def _start_work_process(context):
                         clear_output(wait=True)
                         k12ai_print(result['metrics'])
 
-    if not g_process or not g_process.is_alive():
-        g_process = threading.Thread(target=_queue_work, args=())
-        g_process.start()
+    if not g_result_process or not g_result_process.is_alive():
+        g_result_process = threading.Thread(target=_queue_work, args=())
+        g_result_process.start()
         time.sleep(1.5)
 
 
@@ -406,12 +433,13 @@ def _init_project_schema(context, params):
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
-    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{K12AI_TBLOG_ROOT}/{context.user}/{context.uuid}'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
     context.dataset_url = f'{DSURL}'
+
+    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
 
     g_contexts[context.tag] = context
 
@@ -434,17 +462,15 @@ def _init_project_schema(context, params):
     else:
         tb_url = None
 
-    context.parse_schema(json.loads(response['data']), tb_url=tb_url)
+    if context.model_templ:
+        context.templ_params = f'jfile={context.model_templ}&flask=http://{netip}:{flask_port}/k12ai/notebook/message&tag={context.tag}'
+        global g_flask_process
+        if g_flask_process is None or not g_flask_process.is_alive():
+            g_flask_process = threading.Thread(target=app.run,
+                    kwargs={"host": flask_host, "port": flask_port})
+            g_flask_process.start()
 
-    if context.framework == 'k12cv':
-        if context.network.split('_')[0] == 'custom':
-            pass
-            # if context.task == 'cls' and context.dataset == 'mnist':
-            #     from k12libs.templates.cls.custom_mnist import NETWORK_MNIST_DEF
-            #     context.wid_widget_map['network.net_def'].value = NETWORK_MNIST_DEF
-            # elif context.task == 'det':
-            #     from k12libs.templates.det.custom_ssd import NETWORK_BACKBONE_DEF
-            #     context.wid_widget_map['network.net_def'].value = NETWORK_BACKBONE_DEF
+    context.parse_schema(json.loads(response['data']), tb_url=tb_url)
 
 
 def _on_project_confirm(wdg):
@@ -577,7 +603,7 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
         wdg_stop.disabled = True
 
 def k12ai_run_project(lan='en', debug=False, tb_port=None,
-        framework=None, task=None, network=None, dataset=None, netdef_type=None):
+        framework=None, task=None, network=None, dataset=None, model_templ=None):
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
@@ -598,8 +624,8 @@ def k12ai_run_project(lan='en', debug=False, tb_port=None,
             dataset = 'cifar10' if framework == 'k12cv' else 'sst'
         if network is None:
             raise RuntimeError('network is null')
-        if netdef_type is not None:
-            context.netdef_type = netdef_type 
+        if model_templ:
+            context.model_templ = model_templ
         _init_project_schema(context, {
             'project.framework': framework,
             'project.task': task,

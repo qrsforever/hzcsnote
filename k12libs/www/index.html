@@ -37,7 +37,7 @@
                 <ul class="nav nav-tabs" role="tablist" id="main_tabs">
                     <li role="presentation" class="nav-item nav-model"><a href="#main_model"
                             aria-controls="main_model" role="tab" data-toggle="tab"
-                            class="nav-link">ModelDiagram</a></li>
+                            class="nav-link">Diagram</a></li>
                     <li role="presentation" class="nav-item"><a href="#main_parameters"
                             aria-controls="main_parameters" role="tab" data-toggle="tab"
                             class="nav-link">GoJSData</a></li>
@@ -191,10 +191,11 @@
           current_net = 'plain_net';
         let net_def = "";
         let diagram_json = "";
-        let model_type = window.location.href.split("=")[1]
-        if(model_type != undefined) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const jfile = urlParams.get('jfile')
+        if(jfile != undefined) {
             $.ajaxSettings.async = false;
-            $.getJSON("models/" + model_type + ".json", function(data){
+            $.getJSON("models/" + jfile + ".json", function(data){
                 diagram_json = JSON.stringify(data);
             })
             $.ajaxSettings.async = true;
@@ -203,8 +204,8 @@
         function generateProto(){
             let res = toPrototxt(diagram.model.nodeDataArray,diagram.model.linkDataArray,current_net,$("#hproject_model_name").val());
             net_def = res;
-            console.log("PROTO DATA")
-            console.log(net_def)
+            // console.log("PROTO DATA")
+            // console.log(net_def)
         }
 
         function toolbar_undo(){
@@ -308,11 +309,14 @@
 
         function onGenProtoData() {
             let protoData = toPrototxt(diagram.model.nodeDataArray,diagram.model.linkDataArray,current_net,$("#hproject_model_name").val());
-            // console.log(protoData);
-            // let resData = JSON.stringify(protoData, undefined, 4).replace(/\\n/g, '\n').replace(/\\\"/g, '"');
             $("#protodata").text(JSON.stringify(protoData, undefined, 4));
+            if (urlParams.has('flask')) {
+                let jsonData = {"msgtype": "protodata", "tag": urlParams.get("tag"), "protodata": protoData}
+                protoData = JSON.stringify(jsonData, undefined, 4)
+                $.post(urlParams.get('flask'), protoData, function(response) {
+                }, "json" );
+            }
         }
-
 
     </script>
 </html>

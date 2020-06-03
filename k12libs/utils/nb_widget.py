@@ -104,12 +104,13 @@ class K12WidgetGenerator():
         self.out = Output(layout={'border': '1px solid black', 'width': '100%', 'height':'auto'})
         self.output_type = 'none'
         self.lan = lan
+        self.tag = 'tag'
         self.debug = debug
         self.predict_images = []
         self.border = False
         self.tb_port = tb_port
         self.tb_logdir = '/tmp/tblogs'
-        self.netdef_type = 'simple'
+        self.model_templ = ''
         self.events = events
         self.dataset_dir = ''
         self.dataset_url = ''
@@ -198,6 +199,8 @@ class K12WidgetGenerator():
         kv_map['_k12.tb_logdir'] = self.tb_logdir
         if len(self.predict_images) > 0:
             kv_map['_k12.predict_images'] = self.predict_images
+        if hasattr(self, 'protodata'):
+            kv_map['network.net_def'] = self.protodata
         return kv_map
 
     def get_all_json(self):
@@ -674,10 +677,14 @@ class K12WidgetGenerator():
                 if self.events:
                     self.events['project.train.init'](self, __id_.split('.')[2],
                             _start, _stop, _progress, _drawit)
+
             elif __id_ == 'network.net_def':
-                html = config.get('html', '')
-                wdg = HTML(value=f'<iframe src="{html}?type={self.netdef_type}" width=98% height="777px">',
-                        layout={'width': '99%', 'height': 'auto'})
+                if self.model_templ:
+                    html = config.get('html', '')
+                    wdg = HTML(value=f'<iframe src="{html}?{self.templ_params}" width=98% height="777px">',
+                            layout={'width': '99%', 'height': 'auto'})
+                else:
+                    return
             else:
                 return
             return _widget_add_child(widget, wdg)
