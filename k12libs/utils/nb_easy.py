@@ -357,6 +357,8 @@ def _start_work_process(context):
                 elif flag == 3:
                     context.progress.trainstart.disabled = False
                     context.progress.trainstop.disabled = True
+                    context.progress.value = 100.0
+                    context.progress.description = '100.0%'
                     timeout = 300
                     continue
                 elif flag == 9:
@@ -433,13 +435,12 @@ def _init_project_schema(context, params):
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
+    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
     context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{K12AI_TBLOG_ROOT}/{context.user}/{context.uuid}'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
     context.dataset_url = f'{DSURL}'
-
-    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
 
     g_contexts[context.tag] = context
 

@@ -663,7 +663,7 @@ class K12WidgetGenerator():
                 _start = Button(description='Start', button_style='success',)
                 _stop = Button(description='Stop', button_style='success',)
                 _progress = FloatProgress(value=0.0, description='Progress:', min=0, max=100,
-                        bar_style='success', layout=Layout(width='60%'))
+                        bar_style='success', layout=Layout(min_width='600px'))
 
                 _drawit = Output(layout=Layout(width='100%', min_height='400px'))
 
