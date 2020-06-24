@@ -104,6 +104,15 @@ local _projects = {
                 { name: 'sst', value: self.name },
             ],
         },
+        {
+            task: { name: 'named_entity_recognization', value: self.name },
+            networks: [
+                { name: 'crf_tagger', value: self.name },
+            ],
+            datasets: [
+                { name: 'conll2003', value: self.name },
+            ],
+        },
     ],
     k12rl: [
         {
@@ -154,6 +163,9 @@ local _projects = {
                 { name: 'decision_tree', value: self.name },
                 { name: 'random_forest', value: self.name },
                 { name: 'gaussian_nb', value: self.name },
+                { name: 'adaboost', value: self.name },
+                { name: 'xgboost', value: self.name },
+                { name: 'gradient_boosting', value: self.name },
             ],
             datasets: [
                 { name: 'iris', value: self.name },
@@ -172,6 +184,9 @@ local _projects = {
                 { name: 'decision_tree', value: self.name },
                 { name: 'random_forest', value: self.name },
                 { name: 'logistic', value: self.name },
+                { name: 'gradient_boosting', value: self.name },
+                { name: 'adaboost', value: self.name },
+                { name: 'xgboost', value: self.name },
             ],
             datasets: [
                 { name: 'boston', value: self.name },
@@ -187,6 +202,17 @@ local _projects = {
             ],
             datasets: [
                 { name: 'iris', value: self.name },
+            ],
+        },
+    ],
+    k123d: [
+        {
+            task: { name: 'make3d', value: self.name },
+            networks: [
+                { name: 'fcrn', value: self.name },
+            ],
+            datasets: [
+                { name: 'nyu', value: self.name },
             ],
         },
     ],
@@ -230,6 +256,14 @@ function(framework) {
                     trigger: {
                         type: '_ignore_',
                         objs: [_task_trigger('project.task', 'Task', _projects.k12ml)],
+                    },
+                },
+                {
+                    name: { en: '3d', cn: self.en },
+                    value: 'k123d',
+                    trigger: {
+                        type: '_ignore_',
+                        objs: [_task_trigger('project.task', 'Task', _projects.k123d)],
                     },
                 },
             ],
