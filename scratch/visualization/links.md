@@ -16,6 +16,8 @@
 
 [Guided Grad-CAM is Broken! Sanity Checks for Saliency Maps](https://glassboxmedicine.com/2019/10/12/guided-grad-cam-is-broken-sanity-checks-for-saliency-maps/)
 
+[Grad-CAM: Visual Explanations from Deep Networks](https://glassboxmedicine.com/2020/05/29/grad-cam-visual-explanations-from-deep-networks/)
+
 
 ## Other
 
@@ -31,7 +33,6 @@ https://zhuanlan.zhihu.com/p/39
 
 
 [](https://github.com/utkuozbulak/pytorch-cnn-visualizations/issues/3)
-
 
 [](https://discuss.pytorch.org/t/visualize-feature-map/29597/7)
 
