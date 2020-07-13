@@ -138,6 +138,9 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
 
     return f'http://{K12AI_WLAN_ADDR}:{port}'
 
+def k12ai_build_model(str):
+    pass
+
 def k12ai_start_html(uri, width=None, height=None):
     k12ai_set_notebook(cellw=95)
     if width is None:

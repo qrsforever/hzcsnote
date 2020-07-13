@@ -18,7 +18,7 @@ from .nb_easy import k12ai_get_top_dir, K12AI_PRETRAINED_ROOT
 
 
 class ImageJsonFileDataset(Dataset):
-    def __init__(self, datadir, jfiles, resize=None, transform=None):
+    def __init__(self, datadir, jfiles, resize=(224, 224), transform=None):
         self.datadir = datadir
         self.resize = resize
         if isinstance(jfiles, str):
@@ -31,7 +31,6 @@ class ImageJsonFileDataset(Dataset):
 
     def __getitem__(self, index):
         img = Image.open(self.image_list[index]).convert('RGB')
-        print(img)
         if self.resize:
             img = img.resize(self.resize)
         if self.transform is not None:
@@ -80,15 +79,15 @@ class ImageListFileDataset(Dataset):
         return len(self.image_list)
 
 
-def k12ai_compute_mean_std(imagelist=None, labellist=None, datadir=None, jfiles=None):
+def k12ai_compute_mean_std(imagelist=None, labellist=None, datadir=None, jfiles=None, resize=(224, 224)):
     if imagelist is not None:
-        dataset = ImageListFileDataset(imagelist=imagelist, labellist=labellist)
+        dataset = ImageListFileDataset(imagelist=imagelist, labellist=labellist, resize=resize)
     else:
-        dataset = ImageJsonFileDataset(datadir=datadir, jfiles=jfiles)
+        dataset = ImageJsonFileDataset(datadir=datadir, jfiles=jfiles, resize=resize)
     loader = DataLoader(
         dataset,
-        batch_size=64,
-        num_workers=2,
+        batch_size=32,
+        num_workers=1,
         shuffle=False
     )
 
