@@ -138,9 +138,6 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
 
     return f'http://{K12AI_WLAN_ADDR}:{port}'
 
-def k12ai_build_model(str):
-    pass
-
 def k12ai_start_html(uri, width=None, height=None):
     k12ai_set_notebook(cellw=95)
     if width is None:
@@ -664,13 +661,13 @@ def k12ai_get_tooltips(framework, task, network, dataset):
 
 
 def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
-        dataset='Boats', batchsize=32, inputsize=32, iter_num=1, run_num=1):
+        dataset='Boats', batchsize=32, inputsize=32, epoch_num=1, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
         config['train.batch_size'] = batchsize
         config['train.data_transformer.input_size'] = [inputsize, inputsize]
-        config['solver.lr.metric'] = 'iters'
-        config['solver.max_iters'] = iter_num
+        config['solver.lr.metric'] = 'epoch'
+        config['solver.max_epoch'] = epoch_num
     user = '15801310416'
     tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}{inputsize}'.encode()).hexdigest()[0:6]
     keys = []
@@ -685,6 +682,8 @@ def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
         }
         data['op'] = 'train.stop'
         k12ai_post_request(uri='k12ai/framework/execute', data=data)
+
+        time.sleep(0.5)
 
         data['op'] = 'train.start'
         data['service_params'] = config
