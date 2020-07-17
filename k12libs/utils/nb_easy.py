@@ -661,13 +661,21 @@ def k12ai_get_tooltips(framework, task, network, dataset):
 
 
 def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
-        dataset='Boats', batchsize=32, inputsize=32, epoch_num=1, run_num=1):
+        dataset='Boats', batchsize=32, inputsize=32, epoch_num=1, log_iters=None, test_iters=None, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
         config['train.batch_size'] = batchsize
+        config['val.batch_size'] = batchsize
+        config['test.batch_size'] = batchsize
         config['train.data_transformer.input_size'] = [inputsize, inputsize]
+        config['val.data_transformer.input_size'] = [inputsize, inputsize]
+        config['test.data_transformer.input_size'] = [inputsize, inputsize]
         config['solver.lr.metric'] = 'epoch'
         config['solver.max_epoch'] = epoch_num
+        if log_iters:
+            config['solver.display_iter'] = log_iters
+        if test_iters:
+            config['solver.test_interval'] = test_iters
     user = '15801310416'
     tag = hashlib.md5(f'{task}{network}{dataset}{batchsize}{inputsize}'.encode()).hexdigest()[0:6]
     keys = []
