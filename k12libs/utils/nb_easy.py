@@ -37,6 +37,16 @@ from tensorboard import manager as tbmanager
 import matplotlib.pyplot as plt # noqa
 # from matplotlib.ticker import MultipleLocator
 
+from collections import OrderedDict
+import torch
+import torchvision
+import pytorch_lightning as pl
+from torch import optim
+import torch.nn as nn
+from PIL import Image
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import (Dataset, DataLoader)
+
 app = Flask(__name__)
 app.logger.disabled = True
 log = logging.getLogger('werkzeug')
@@ -699,3 +709,210 @@ def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
 
         keys.append(f'framework/{user}/{uuid}/train')
     return keys
+
+
+class EasyaiClassifier(pl.LightningModule):
+    def __init__(self):
+        super(EasyaiClassifier, self).__init__()
+        self.model = self.build_model()
+        self.criterion = None
+        
+    def setup(self, stage: str):
+        pass
+    
+    def teardown(self, stage: str):
+        pass
+    
+    def load_presetting_dataset_(self, dataset_name):
+        class JsonfileDataset(Dataset):
+            def __init__(self, root, phase, info):
+                self.root = root
+                self.info = info
+                image_list = []
+                label_list = []
+                with open(os.path.join(self.root, f'{phase}.json')) as f:
+                    items = json.load(f)
+                    for item in items:
+                        image_list.append(os.path.join(self.root, item['image_path']))
+                        label_list.append(item['label'])
+                self.image_list, self.label_list = image_list, label_list
+                
+                self.augtrans = None
+                self.imgtrans = torchvision.transforms.Compose([
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(mean=info['mean'], std=info['std'])
+                ])
+
+            def data_augment(self, augtrans):
+                self.augtrans = torchvision.transforms.Compose(augtrans)
+
+            def __getitem__(self, index):
+                img = Image.open(self.image_list[index]).convert('RGB')
+                if self.augtrans:
+                    img = self.augtrans(img)
+                img = self.imgtrans(img)
+                return img, self.label_list[index]
+
+            def __len__(self):
+                return len(self.image_list)
+
+        root = os.path.join('/data/datasets/cv/', dataset_name)
+        with open(os.path.join(root, 'info.json')) as f:
+            info = json.load(f)
+        return {phase:JsonfileDataset(root, phase, info) for phase in ('train', 'val', 'test')}
+
+    def prepare_dataset(self):
+        return self.load_presetting_dataset_('rmnist')
+
+    def prepare_data(self):
+        self.datasets = self.prepare_dataset()
+    
+    def train_dataloader(self) -> DataLoader:
+        dataset = self.datasets['train']
+        dataset.data_augment([
+            torchvision.transforms.Resize((28, 28)),
+            torchvision.transforms.RandomHorizontalFlip()                     
+        ])
+        return DataLoader(dataset, batch_size=32, num_workers=2)
+        
+    def val_dataloader(self) -> DataLoader:
+        dataset = self.datasets['val']
+        dataset.data_augment([
+            torchvision.transforms.Resize((28, 28)),
+        ])
+        return DataLoader(dataset, batch_size=32, num_workers=2)
+    
+    def test_dataloader(self) -> DataLoader:
+        dataset = self.datasets['test']
+        return DataLoader(dataset, batch_size=32, num_workers=2)
+    
+    def load_pretrained_model_(self, model_name, num_classes=None, pretrained=True):
+        model = getattr(torchvision.models, model_name)(pretrained)
+        if num_classes:
+            if model_name.startswith('vgg'):
+                model.classifier[6] = nn.Linear(4096, num_classes)
+            elif model_name.startswith('resnet'):
+                model.fc = nn.Linear(model.fc.in_features, num_classes)
+            elif model_name.startswith('alexnet'):
+                model.classifier[6] = nn.Linear(4096, num_classes)
+            elif model_name.startswith('mobilenet_v2'):
+                model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+            elif model_name.startswith('squeezenet'):
+                model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=1)
+            elif model_name.startswith('shufflenet'):
+                model.fc = nn.Linear(model.fc.in_features, num_classes)
+            elif model_name.startswith('densenet'):
+                in_features = {
+                    "densenet121": 1024,
+                    "densenet161": 2208,
+                    "densenet169": 1664,
+                    "densenet201": 1920,
+                }
+                model.classifier = nn.Linear(in_features[model_name], num_classes)
+            else:
+                raise NotImplementedError(f'{model_name}')
+        return model
+    
+    def build_model(self):
+        return self.load_pretrained_model_('resnet18', 10)
+    
+    @property
+    def loss(self):
+        if self.criterion is None:
+            self.criterion = self.configure_criterion()
+        return self.criterion
+    
+    def configure_criterion(self):
+        # default
+        loss = nn.CrossEntropyLoss(reduction='mean')
+        return loss
+    
+    def configure_optimizer(self):
+        # default
+        optimizer = optim.Adam(
+            filter(lambda p: p.requires_grad, self.model.parameters()),
+            lr=0.001)
+        return optimizer
+    
+    def configure_scheduler(self, optimizer):
+        # default
+        scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+        return scheduler
+
+    def configure_optimizers(self):
+        optimizer = self.configure_optimizer()
+        scheduler = self.configure_scheduler(optimizer)
+        return [optimizer], [scheduler]
+    
+    # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, second_order_closure=None):
+    #     pass
+    
+    def forward(self, x, *args, **kwargs):
+        return self.model(x)
+    
+    def calculate_acc_(self, y_pred, y_true):
+        return (torch.argmax(y_pred, axis=1) == y_true).float().mean()
+    
+    def step_(self, batch):
+        x, y = batch
+        y_hat = self.model(x)
+        loss = self.loss(y_hat, y)
+        return x, y, y_hat, loss
+    
+    ## Train
+    def training_step(self, batch, batch_idx):
+        x, y, y_hat, loss = self.step_(batch)
+        with torch.no_grad():
+            accuracy = self.calculate_acc_(y_hat, y)
+        log = {'train_loss': loss, 'train_acc': accuracy}
+        output = OrderedDict({
+            'loss': loss,  # M
+            'acc': accuracy,     # O
+            'progress_bar': log, # O
+            "log": log           # O
+        })
+        return output
+    
+    # def training_step_end(self, *args, **kwargs):
+    #     pass
+    
+    def training_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
+        log = {'train_loss': avg_loss, 'train_acc': avg_acc, 'step': self.current_epoch}
+        return {'progress_bar': log, 'log': log}
+    
+    ## Valid
+    def validation_step(self, batch, batch_idx):
+        x, y, y_hat, loss = self.step_(batch)
+        accuracy = self.calculate_acc_(y_hat, y)
+        return {'val_loss': loss, 'val_acc': accuracy}
+    
+    # def validation_step_end(self, outputs):
+    #     pass
+    
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
+        log = {'val_loss': avg_loss, 'val_acc': avg_acc, 'step': self.current_epoch}
+        return {'progress_bar': log, 'log': log}
+    
+    ## Test
+    def test_step(self, batch, batch_idx):
+        x, y, y_hat, loss = self.step_(batch)
+        accuracy = self.calculate_acc_(y_hat, y)
+        return {'test_loss': loss, 'test_acc': accuracy}
+    
+    # def test_step_end(self, *args, **kwargs):
+    #     pass
+    
+    def test_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['test_acc'] for x in outputs]).mean()
+        log = {'test_loss': avg_loss, 'test_acc': avg_acc}
+        return {'progress_bar': log, 'log': log}
+    
+
+class EasyaiTrainer(pl.Trainer):
+    def __init__(self, *args, **kwargs):
+        super(EasyaiTrainer, self).__init__(*args, **kwargs, gpus=[0])
