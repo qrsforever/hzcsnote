@@ -7,6 +7,7 @@
 # @version 1.0
 # @date 2019-12-06 12:16:50
 
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Sequence # noqa
 import os
 import base64
 import hashlib
@@ -36,6 +37,8 @@ from tensorboard import manager as tbmanager
 
 import matplotlib.pyplot as plt # noqa
 # from matplotlib.ticker import MultipleLocator
+
+from abc import ABC, abstractmethod
 
 from collections import OrderedDict
 import torch
@@ -711,81 +714,211 @@ def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
     return keys
 
 
+############################### Easyai ###################################
+
+from torchvision.transforms import ( # noqa
+        Compose,
+        ToTensor,
+        Normalize,
+        RandomOrder,
+        ColorJitter,
+        RandomRotation,
+        RandomGrayscale,
+        RandomResizedCrop,
+        RandomHorizontalFlip,
+        RandomVerticalFlip)
+
+class IDataTransforms(object):
+
+    @staticmethod
+    def compose_order(transforms: List):
+        return Compose(transforms)
+
+    @staticmethod
+    def shuffle_order(transforms: List):
+        return RandomOrder(transforms)
+
+    @staticmethod
+    def image_to_tensor():
+        return ToTensor()
+
+    @staticmethod
+    def normalize_tensor(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)):
+        return Normalize(mean, std)
+
+    @staticmethod
+    def random_brightness(factor=0.25):
+        return ColorJitter(brightness=factor)
+
+    @staticmethod
+    def random_contrast(factor=0.25):
+        return ColorJitter(contrast=factor)
+
+    @staticmethod
+    def random_saturation(factor=0.25):
+        return ColorJitter(saturation=factor)
+
+    @staticmethod
+    def random_hue(factor=0.25):
+        return ColorJitter(hue=factor)
+
+    @staticmethod
+    def random_rotation(degrees=25):
+        return RandomRotation(degrees=degrees)
+
+    @staticmethod
+    def random_grayscale(p=0.5):
+        return RandomGrayscale(p=p)
+
+    @staticmethod
+    def random_resized_crop(size):
+        return RandomResizedCrop(size=size)
+
+    @staticmethod
+    def random_horizontal_flip(p=0.5):
+        return RandomHorizontalFlip(p=p)
+
+    @staticmethod
+    def random_vertical_flip(p=0.5):
+        return RandomVerticalFlip(p=p)
+
+
+class EasyaiDataset(ABC, Dataset, IDataTransforms):
+    def __init__(self, **kwargs):
+        self.augtrans, self.imgtrans = None, self.image_to_tensor()
+
+        # reader
+        data = self.data_reader(**kwargs)
+        if isinstance(data, (tuple, list)) and len(data) == 2:
+            self.images, self.labels = data
+        elif isinstance(data, dict) and all([x in data.keys() for x in ('images', 'labels')]):
+            self.images, self.labels = data['images'], data['labels']
+        else:
+            raise ValueError('The return of data_reader must be List or Dict')
+
+        # transform
+        trans = self.data_augment(**kwargs)
+        if trans is not None:
+            if isinstance(trans, (tuple, list)) and len(trans) == 2:
+                if hasattr(trans[0], '__call__'):
+                    self.augtrans = trans[0]
+                if hasattr(trans[1], '__call__'):
+                    self.imgtrans = trans[1]
+            elif isinstance(trans, dict) and \
+                    all([x in trans.keys() for x in ('augtrans', 'imgtrans')]):
+                self.augtrans, self.imgtrans = trans['augtrans'], trans['imgtrans']
+            else:
+                print('Warning: data augment is not working')
+
+    @abstractmethod
+    def data_reader(self, **kwargs) -> Union[Tuple[List, List, List], Dict[str, List]]:
+        """
+        (M)
+        """
+
+    def data_augment(self, **kwargs) -> Union[Callable, Tuple[Callable], Dict[str, Callable]]:
+        """
+        (O)
+        """
+        return None
+
+    def __getitem__(self, index):
+        img = Image.open(self.images[index]).convert('RGB')
+        if self.augtrans:
+            img = self.augtrans(img)
+        return self.imgtrans(img), self.labels[index], self.images[index]
+
+    def __len__(self):
+        return len(self.images)
+
+
 class EasyaiClassifier(pl.LightningModule):
     def __init__(self):
         super(EasyaiClassifier, self).__init__()
         self.model = self.build_model()
         self.criterion = None
-        
+        self.datasets = {'train': None, 'val': None, 'test': None}
+
     def setup(self, stage: str):
         pass
-    
+
     def teardown(self, stage: str):
         pass
-    
+
+    # Data
     def load_presetting_dataset_(self, dataset_name):
-        class JsonfileDataset(Dataset):
-            def __init__(self, root, phase, info):
-                self.root = root
-                self.info = info
+        class JsonfileDataset(EasyaiDataset):
+            def data_reader(self, path, phase):
+                """
+                Args:
+                    path: the dataset root directory
+                    phase: the json file name (train.json / val.json / test.json)
+                """
                 image_list = []
                 label_list = []
-                with open(os.path.join(self.root, f'{phase}.json')) as f:
+                with open(os.path.join(path, f'{phase}.json')) as f:
                     items = json.load(f)
                     for item in items:
-                        image_list.append(os.path.join(self.root, item['image_path']))
+                        image_list.append(os.path.join(path, item['image_path']))
                         label_list.append(item['label'])
-                self.image_list, self.label_list = image_list, label_list
-                
-                self.augtrans = None
-                self.imgtrans = torchvision.transforms.Compose([
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=info['mean'], std=info['std'])
+                return image_list, label_list
+
+            def data_augment(self, path, phase):
+                augtrans, imgtrans = None, None
+
+                # data augment transform (compose_order or shuffle_order)
+                augtrans = self.shuffle_order([
+                    self.random_brightness(factor=0.3),
+                    self.random_rotation(degrees=30)
                 ])
 
-            def data_augment(self, augtrans):
-                self.augtrans = torchvision.transforms.Compose(augtrans)
+                # image to tensor transform (only using compose_order)
+                imgtrans = self.compose_order([
+                    self.image_to_tensor(),
+                    self.normalize_tensor(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+                ])
+                return augtrans, imgtrans
 
-            def __getitem__(self, index):
-                img = Image.open(self.image_list[index]).convert('RGB')
-                if self.augtrans:
-                    img = self.augtrans(img)
-                img = self.imgtrans(img)
-                return img, self.label_list[index]
+        root = f'{K12AI_DATASETS_ROOT}/cv/{dataset_name}'
+        return {x:JsonfileDataset(path=root, phase=x) for x in ('train', 'val', 'test')}
 
-            def __len__(self):
-                return len(self.image_list)
-
-        root = os.path.join('/data/datasets/cv/', dataset_name)
-        with open(os.path.join(root, 'info.json')) as f:
-            info = json.load(f)
-        return {phase:JsonfileDataset(root, phase, info) for phase in ('train', 'val', 'test')}
-
-    def prepare_dataset(self):
+    def prepare_dataset(self) -> Union[EasyaiDataset, List[EasyaiDataset], Dict[str, EasyaiDataset]]:
         return self.load_presetting_dataset_('rmnist')
 
+    @staticmethod
+    def _safe_delattr(cls, method):
+        try:
+            delattr(cls, method)
+        except Exception:
+            pass
+
     def prepare_data(self):
-        self.datasets = self.prepare_dataset()
-    
-    def train_dataloader(self) -> DataLoader:
-        dataset = self.datasets['train']
-        dataset.data_augment([
-            torchvision.transforms.Resize((28, 28)),
-            torchvision.transforms.RandomHorizontalFlip()                     
-        ])
-        return DataLoader(dataset, batch_size=32, num_workers=2)
-        
-    def val_dataloader(self) -> DataLoader:
-        dataset = self.datasets['val']
-        dataset.data_augment([
-            torchvision.transforms.Resize((28, 28)),
-        ])
-        return DataLoader(dataset, batch_size=32, num_workers=2)
-    
-    def test_dataloader(self) -> DataLoader:
-        dataset = self.datasets['test']
-        return DataLoader(dataset, batch_size=32, num_workers=2)
-    
+        datasets = self.prepare_dataset()
+        if isinstance(datasets, EasyaiDataset):
+            self._safe_delattr(self.__class__, 'val_dataloader')
+            self._safe_delattr(self.__class__, 'validation_step')
+            self._safe_delattr(self.__class__, 'validation_epoch_end')
+            self._safe_delattr(self.__class__, 'test_dataloader')
+            self._safe_delattr(self.__class__, 'test_step')
+            self._safe_delattr(self.__class__, 'test_epoch_end')
+            self.datasets['train'] = datasets
+        elif isinstance(datasets, (list, tuple)) and len(datasets) <= 3:
+            self.datasets['train'] = datasets[0]
+            self.datasets['val'] = datasets[1]
+            if len(datasets) == 2:
+                self._safe_delattr(self.__class__, 'test_dataloader')
+                self._safe_delattr(self.__class__, 'test_step')
+                self._safe_delattr(self.__class__, 'test_epoch_end')
+            else:
+                self.datasets['test'] = datasets[2]
+
+        elif isinstance(datasets, dict) and \
+                all([x in datasets.keys() for x in ('train', 'val', 'test')]):
+            self.datasets = datasets
+        else:
+            raise ValueError('the return of prepare_dataset is invalid.')
+
+    # Model
     def load_pretrained_model_(self, model_name, num_classes=None, pretrained=True):
         model = getattr(torchvision.models, model_name)(pretrained)
         if num_classes:
@@ -812,28 +945,29 @@ class EasyaiClassifier(pl.LightningModule):
             else:
                 raise NotImplementedError(f'{model_name}')
         return model
-    
+
     def build_model(self):
         return self.load_pretrained_model_('resnet18', 10)
-    
+
+    # Hypes
     @property
     def loss(self):
         if self.criterion is None:
             self.criterion = self.configure_criterion()
         return self.criterion
-    
+
     def configure_criterion(self):
         # default
         loss = nn.CrossEntropyLoss(reduction='mean')
         return loss
-    
+
     def configure_optimizer(self):
         # default
         optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, self.model.parameters()),
             lr=0.001)
         return optimizer
-    
+
     def configure_scheduler(self, optimizer):
         # default
         scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
@@ -843,75 +977,94 @@ class EasyaiClassifier(pl.LightningModule):
         optimizer = self.configure_optimizer()
         scheduler = self.configure_scheduler(optimizer)
         return [optimizer], [scheduler]
-    
-    # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, second_order_closure=None):
-    #     pass
-    
+
     def forward(self, x, *args, **kwargs):
         return self.model(x)
-    
+
     def calculate_acc_(self, y_pred, y_true):
         return (torch.argmax(y_pred, axis=1) == y_true).float().mean()
-    
+
     def step_(self, batch):
-        x, y = batch
+        x, y, _ = batch
         y_hat = self.model(x)
         loss = self.loss(y_hat, y)
         return x, y, y_hat, loss
-    
+
+    def get_dataloader(self, phase, batch_size=32, num_workers=1, drop_last=False, shuffle=False):
+        if phase not in self.datasets.keys():
+            raise RuntimeError(f'get {phase} data loader  error.')
+        return DataLoader(
+                self.datasets[phase],
+                batch_size=batch_size,
+                num_workers=num_workers,
+                drop_last=drop_last,
+                shuffle=shuffle)
+
     ## Train
+    def train_dataloader(self) -> DataLoader:
+        return self.get_dataloader('train',
+                batch_size=32,
+                num_workers=1,
+                drop_last=False,
+                shuffle=False)
+
     def training_step(self, batch, batch_idx):
         x, y, y_hat, loss = self.step_(batch)
         with torch.no_grad():
             accuracy = self.calculate_acc_(y_hat, y)
         log = {'train_loss': loss, 'train_acc': accuracy}
         output = OrderedDict({
-            'loss': loss,  # M
+            'loss': loss,        # M
             'acc': accuracy,     # O
             'progress_bar': log, # O
             "log": log           # O
         })
         return output
-    
-    # def training_step_end(self, *args, **kwargs):
-    #     pass
-    
+
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
-        log = {'train_loss': avg_loss, 'train_acc': avg_acc, 'step': self.current_epoch}
+        log = {'train_loss': avg_loss, 'train_acc': avg_acc}
         return {'progress_bar': log, 'log': log}
-    
-    ## Valid
+
+    # ## Valid
+    def val_dataloader(self) -> DataLoader:
+        return self.get_dataloader('val',
+                batch_size=32,
+                num_workers=2,
+                drop_last=False,
+                shuffle=False)
+
     def validation_step(self, batch, batch_idx):
         x, y, y_hat, loss = self.step_(batch)
         accuracy = self.calculate_acc_(y_hat, y)
         return {'val_loss': loss, 'val_acc': accuracy}
-    
-    # def validation_step_end(self, outputs):
-    #     pass
-    
+
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
-        log = {'val_loss': avg_loss, 'val_acc': avg_acc, 'step': self.current_epoch}
+        log = {'val_loss': avg_loss, 'val_acc': avg_acc}
         return {'progress_bar': log, 'log': log}
-    
+
     ## Test
+    def test_dataloader(self) -> DataLoader:
+        return self.get_dataloader('test',
+                batch_size=32,
+                num_workers=1,
+                drop_last=False,
+                shuffle=False)
+
     def test_step(self, batch, batch_idx):
         x, y, y_hat, loss = self.step_(batch)
         accuracy = self.calculate_acc_(y_hat, y)
         return {'test_loss': loss, 'test_acc': accuracy}
-    
-    # def test_step_end(self, *args, **kwargs):
-    #     pass
-    
+
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
         avg_acc = torch.stack([x['test_acc'] for x in outputs]).mean()
         log = {'test_loss': avg_loss, 'test_acc': avg_acc}
         return {'progress_bar': log, 'log': log}
-    
+
 
 class EasyaiTrainer(pl.Trainer):
     def __init__(self, *args, **kwargs):
