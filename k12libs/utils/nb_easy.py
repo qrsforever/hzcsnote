@@ -717,6 +717,7 @@ def k12ai_train_execute(framework='k12cv', task='cls', network='resnet50',
 ############################### Easyai ###################################
 
 from torchvision.transforms import ( # noqa
+        Resize,
         Compose,
         ToTensor,
         Normalize,
@@ -725,8 +726,8 @@ from torchvision.transforms import ( # noqa
         RandomRotation,
         RandomGrayscale,
         RandomResizedCrop,
-        RandomHorizontalFlip,
-        RandomVerticalFlip)
+        RandomVerticalFlip,
+        RandomHorizontalFlip)
 
 class IDataTransforms(object):
 
@@ -737,6 +738,10 @@ class IDataTransforms(object):
     @staticmethod
     def shuffle_order(transforms: List):
         return RandomOrder(transforms)
+
+    @staticmethod
+    def image_resize(size):
+        return Resize(size=size)
 
     @staticmethod
     def image_to_tensor():
@@ -783,9 +788,11 @@ class IDataTransforms(object):
         return RandomVerticalFlip(p=p)
 
 
-class EasyaiDataset(ABC, Dataset, IDataTransforms):
-    def __init__(self, **kwargs):
-        self.augtrans, self.imgtrans = None, self.image_to_tensor()
+class EasyaiDataset(ABC, Dataset):
+    def __init__(self, mean=None, std=None, **kwargs):
+        self.mean, self.std = mean, std
+        self.augtrans = None
+        self.imgtrans = ToTensor()
 
         # reader
         data = self.data_reader(**kwargs)
@@ -796,31 +803,29 @@ class EasyaiDataset(ABC, Dataset, IDataTransforms):
         else:
             raise ValueError('The return of data_reader must be List or Dict')
 
-        # transform
-        trans = self.data_augment(**kwargs)
-        if trans is not None:
-            if isinstance(trans, (tuple, list)) and len(trans) == 2:
-                if hasattr(trans[0], '__call__'):
-                    self.augtrans = trans[0]
-                if hasattr(trans[1], '__call__'):
-                    self.imgtrans = trans[1]
-            elif isinstance(trans, dict) and \
-                    all([x in trans.keys() for x in ('augtrans', 'imgtrans')]):
-                self.augtrans, self.imgtrans = trans['augtrans'], trans['imgtrans']
-            else:
-                print('Warning: data augment is not working')
-
     @abstractmethod
     def data_reader(self, **kwargs) -> Union[Tuple[List, List, List], Dict[str, List]]:
         """
         (M)
         """
 
-    def data_augment(self, **kwargs) -> Union[Callable, Tuple[Callable], Dict[str, Callable]]:
-        """
-        (O)
-        """
-        return None
+    def set_aug_trans(self, transforms:Union[list, None], random_order=False):
+        if transforms:
+            if any([not hasattr(x, '__call__') for x in transforms]):
+                raise ValueError(f'set_aug_trans: transforms params is invalid.')
+            if random_order:
+                self.augtrans = RandomOrder(transforms)
+            else:
+                self.augtrans = Compose(transforms)
+
+    def set_img_trans(self, input_size:Union[Tuple[int, int], int, None], normalize=True):
+        trans = []
+        if input_size:
+            trans.append(Resize(input_size))
+        trans.append(ToTensor())
+        if normalize and self.mean and self.std:
+            trans.append(Normalize(mean=self.mean, std=self.std))
+        self.imgtrans = Compose(trans)
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
@@ -832,7 +837,7 @@ class EasyaiDataset(ABC, Dataset, IDataTransforms):
         return len(self.images)
 
 
-class EasyaiClassifier(pl.LightningModule):
+class EasyaiClassifier(pl.LightningModule, IDataTransforms):
     def __init__(self):
         super(EasyaiClassifier, self).__init__()
         self.model = self.build_model()
@@ -863,24 +868,13 @@ class EasyaiClassifier(pl.LightningModule):
                         label_list.append(item['label'])
                 return image_list, label_list
 
-            def data_augment(self, path, phase):
-                augtrans, imgtrans = None, None
-
-                # data augment transform (compose_order or shuffle_order)
-                augtrans = self.shuffle_order([
-                    self.random_brightness(factor=0.3),
-                    self.random_rotation(degrees=30)
-                ])
-
-                # image to tensor transform (only using compose_order)
-                imgtrans = self.compose_order([
-                    self.image_to_tensor(),
-                    self.normalize_tensor(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-                ])
-                return augtrans, imgtrans
-
         root = f'{K12AI_DATASETS_ROOT}/cv/{dataset_name}'
-        return {x:JsonfileDataset(path=root, phase=x) for x in ('train', 'val', 'test')}
+        datasets = {
+            'train': JsonfileDataset(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), path=root, phase='train'),
+            'val': JsonfileDataset(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), path=root, phase='val'),
+            'test': JsonfileDataset(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), path=root, phase='test'),
+        }
+        return datasets
 
     def prepare_dataset(self) -> Union[EasyaiDataset, List[EasyaiDataset], Dict[str, EasyaiDataset]]:
         return self.load_presetting_dataset_('rmnist')
@@ -990,11 +984,18 @@ class EasyaiClassifier(pl.LightningModule):
         loss = self.loss(y_hat, y)
         return x, y, y_hat, loss
 
-    def get_dataloader(self, phase, batch_size=32, num_workers=1, drop_last=False, shuffle=False):
+    def get_dataloader(self, phase,
+                       data_augment=None, random_order=False,
+                       normalize=False, input_size=None,
+                       batch_size=32, num_workers=1,
+                       drop_last=False, shuffle=False):
         if phase not in self.datasets.keys():
             raise RuntimeError(f'get {phase} data loader  error.')
+        dataset = self.datasets[phase]
+        dataset.set_aug_trans(transforms=data_augment, random_order=random_order)
+        dataset.set_img_trans(input_size=input_size, normalize=normalize)
         return DataLoader(
-                self.datasets[phase],
+                dataset,
                 batch_size=batch_size,
                 num_workers=num_workers,
                 drop_last=drop_last,
@@ -1002,11 +1003,20 @@ class EasyaiClassifier(pl.LightningModule):
 
     ## Train
     def train_dataloader(self) -> DataLoader:
-        return self.get_dataloader('train',
-                batch_size=32,
-                num_workers=1,
-                drop_last=False,
-                shuffle=False)
+        return self.get_dataloader(
+            phase='train',
+            data_augment=[
+                self.random_resized_crop(size=(128, 128)),
+                self.random_brightness(factor=0.3),
+                self.random_rotation(degrees=30)
+            ],
+            random_order=False,
+            input_size=128,
+            normalize=True,
+            batch_size=32,
+            num_workers=1,
+            drop_last=False,
+            shuffle=False)
 
     def training_step(self, batch, batch_idx):
         x, y, y_hat, loss = self.step_(batch)
@@ -1027,9 +1037,10 @@ class EasyaiClassifier(pl.LightningModule):
         log = {'train_loss': avg_loss, 'train_acc': avg_acc}
         return {'progress_bar': log, 'log': log}
 
-    # ## Valid
+    ## Valid
     def val_dataloader(self) -> DataLoader:
         return self.get_dataloader('val',
+                input_size=128,
                 batch_size=32,
                 num_workers=2,
                 drop_last=False,
@@ -1049,6 +1060,7 @@ class EasyaiClassifier(pl.LightningModule):
     ## Test
     def test_dataloader(self) -> DataLoader:
         return self.get_dataloader('test',
+                input_size=128,
                 batch_size=32,
                 num_workers=1,
                 drop_last=False,
@@ -1067,5 +1079,17 @@ class EasyaiClassifier(pl.LightningModule):
 
 
 class EasyaiTrainer(pl.Trainer):
-    def __init__(self, *args, **kwargs):
-        super(EasyaiTrainer, self).__init__(*args, **kwargs, gpus=[0])
+    def __init__(self, max_epochs: int = 30, max_steps: Optional[int] = None,
+            logger: bool = True, tb_port: Optional[int] = None,
+            log_save_interval: int = 100, progress_bar_rate: int = 10,
+            log_gpu_memory: Optional[str] = None, model_summary_mode: str = 'top', # 'full', 'top'
+            root_dir: str = '/data/tmp'):
+        super(EasyaiTrainer, self).__init__(max_epochs=max_epochs, max_steps=max_steps,
+                logger=logger,
+                log_save_interval=log_save_interval, progress_bar_refresh_rate=progress_bar_rate,
+                log_gpu_memory=log_gpu_memory, weights_summary=model_summary_mode,
+                default_root_dir=root_dir, gpus=[0])
+
+        if tb_port:
+            k12ai_set_notebook(cellw=95)
+            k12ai_start_tensorboard(tb_port, root_dir, clear=True)
