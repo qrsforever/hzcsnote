@@ -1,0 +1,42 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/codemirror.min.css">
+    <link rel="stylesheet" href="css/monokai.min.css">
+    <script src="js/codemirror.min.js"></script>
+    <script src="js/python.min.js"></script>
+</head>
+<body>
+    <textarea id="code" name="code"></textarea>
+    <button onclick="run()">运行</button>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            mode : "python",
+            theme: 'monokai',
+            indentUnit : 4,
+            smartIndent : true,
+            tabSize : 4,
+            readOnly : false,
+            showCursorWhenSelecting : true,
+            styleActiveLine: true,
+            matchBrackets: true,
+            lineWrapping: true,
+            lineNumbers : true
+        });
+
+        editor.setSize('auto','400px');
+        editor.setOption("extraKeys", {
+        // Tab键换成4个空格
+        Tab: function(cm) {
+            var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+            cm.replaceSelection(spaces);
+        }});
+        editor.setValue("\ndef main():\n\ta = 10")
+
+        function run() {
+            var data = editor.getValue();
+            console.log(data);
+        };
+    </script>
+</body>
+</html>
