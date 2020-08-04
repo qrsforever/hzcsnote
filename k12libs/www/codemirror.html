@@ -3,12 +3,19 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="css/codemirror.min.css">
     <link rel="stylesheet" href="css/monokai.min.css">
+    <link rel="stylesheet" href="css/idea.min.css">
     <script src="js/codemirror.min.js"></script>
     <script src="js/python.min.js"></script>
 </head>
 <body>
+    <span><b>Python Code:</b></span>
     <textarea id="code" name="code"></textarea>
+    <br>
     <button onclick="run()">运行</button>
+    <br>
+    <br>
+    <span><b>Console Log:</b></span>
+    <textarea id="logger" name="logger"></textarea>
     <script>
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
             mode : "python",
@@ -33,9 +40,19 @@
         }});
         editor.setValue("\ndef main():\n\ta = 10")
 
+        var logger = CodeMirror.fromTextArea(document.getElementById("logger"), {
+            theme: 'idea',
+            readOnly : true,
+            showCursorWhenSelecting : true,
+            lineWrapping: false,
+            lineNumbers : false
+        });
+        logger.setSize('auto','300px');
+
         function run() {
             var data = editor.getValue();
             console.log(data);
+            logger.getValue("")
         };
     </script>
 </body>
