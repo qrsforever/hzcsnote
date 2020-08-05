@@ -40,7 +40,7 @@
             var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
             cm.replaceSelection(spaces);
         }});
-        editor.setValue("print('Hello World!)")
+        editor.setValue("print('Hello World!')")
 
         var logger = CodeMirror.fromTextArea(document.getElementById("logger"), {
             theme: 'idea',
@@ -52,10 +52,25 @@
         logger.setSize('auto','300px');
 
         function message_pop() {
-            console.log("11111")
             $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=talentai.console",
                   function(data) {
-                      console.log(data)
+                      if (data != '') {
+                          jsondata = $.parseJSON(data)
+                          if (!jsondata.hasOwnProperty('data')) {
+                              return
+                          }
+                          jsondata = jsondata['data']
+                          if (jsondata.hasOwnProperty('status')) {
+                              state = jsondata['status']
+                              if (state != 'running') {
+                                    clearInterval(intervalId)
+                              }
+                          }
+                          if (jsondata.hasOwnProperty('log')) {
+                              console.log(jsondata)
+                              logger.setValue(logger.getValue() + jsondata['log'])
+                          }
+                      }
                   });
         }
 
@@ -79,7 +94,7 @@
             $.post("http://116.85.5.40:8119/k12ai/framework/execute",
                    JSON.stringify(params), function(response){
                    }, "json");
-            logger.setValue("2222")
+            logger.setValue("")
             intervalId = setInterval("message_pop()", 3000)
         };
     </script>
