@@ -96,7 +96,7 @@ AIURL = 'http://{}:{}'.format(host, 8119) # K12AI API
 SSURL = 'http://{}:{}'.format(netip, 8500) # Consul
 TBURL = 'http://{}:{}'.format(host, 6006) # Tensorboard
 DSURL = 'http://{}:{}'.format(netip, 9090) # Dataset
-MDURL = 'http://{}:{}'.format(netip, 9091) # Model Diagram
+W3URL = 'http://{}:{}'.format(netip, 9091) # Model Diagram
 
 K12AI_HOST_ADDR = host
 K12AI_WLAN_ADDR = consul_addr

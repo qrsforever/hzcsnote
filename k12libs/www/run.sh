@@ -1,4 +1,4 @@
-pid=`ps -eo pid,args | grep "http.server 9091" | grep -v grep | cut -d\  -f 2`
+pid=`ps -eo pid,args | grep "http.server 9091" | grep -v grep | cut -d\  -f 1`
 if [[ x$pid != x ]]
 then
     echo "kill -9 $pid"

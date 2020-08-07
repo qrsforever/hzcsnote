@@ -7,21 +7,37 @@
     <script src="js/jquery.min.js" type="text/javascript"></script>
     <script src="js/codemirror.min.js"></script>
     <script src="js/python.min.js"></script>
+    <style>
+        .CodeMirror{
+          border: 2px solid #0f9d58;
+          margin: 8px 0; 
+          font-size: 16px;
+          width: 100%;
+          height: 100%;
+        }
+    </style>
 </head>
 <body>
     <span><b>Python Code:</b></span>
     <textarea id="code" name="code"></textarea>
     <br>
-    <button onclick="run()">运行</button>
+    <button onclick="run()">运行</button> <button onclick="stop()">停止</button>
     <br>
     <br>
     <span><b>Console Log:</b></span>
     <textarea id="logger" name="logger"></textarea>
     <script>
-        var intervalId = null;
+        const user = "16601548608";
+        const uuid = "123456";
+        const appId = "k12pyr." + user + "." + uuid;
+        const urlParams = new URLSearchParams(window.location.search);
+        const defcode = urlParams.get('default');
+
+        var tokenId = 100001;
+        var gtimeId = null;
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
             mode : "python",
-            theme: 'monokai',
+            theme: "monokai",
             indentUnit : 4,
             smartIndent : true,
             tabSize : 4,
@@ -29,73 +45,123 @@
             showCursorWhenSelecting : true,
             styleActiveLine: true,
             matchBrackets: true,
+            autofocus: true,
             lineWrapping: true,
             lineNumbers : true
         });
 
         editor.setSize('auto','400px');
         editor.setOption("extraKeys", {
-        // Tab键换成4个空格
-        Tab: function(cm) {
-            var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-            cm.replaceSelection(spaces);
-        }});
-        editor.setValue("print('Hello World!')")
+            "Ctrl-Space": "autocomplete",
+            "Ctrl-S": function() {console.log("save");},
+            // Tab to 4 spaces
+            Tab: function(cm) {
+                var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+                cm.replaceSelection(spaces);
+            }});
+
+        if (defcode != undefined) {
+            editor.setValue(defcode)
+        } else {
+            editor.setValue("print('Hello World!')")
+        }
 
         var logger = CodeMirror.fromTextArea(document.getElementById("logger"), {
-            theme: 'idea',
+            mode : "text/plain",
+            theme: "idea",
             readOnly : true,
             showCursorWhenSelecting : true,
-            lineWrapping: false,
+            lineWrapping: true,
             lineNumbers : false
         });
-        logger.setSize('auto','300px');
+        logger.setSize('auto','400px');
 
         function message_pop() {
-            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=talentai.console",
-                  function(data) {
-                      if (data != '') {
-                          jsondata = $.parseJSON(data)
-                          if (!jsondata.hasOwnProperty('data')) {
-                              return
+            console.log("call pop")
+            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".console",
+                  function(response) {
+                      if (gtimeId != null) {
+                          clearTimeout(gtimeId);
+                          gtimeId = null;
+                      }
+                      var data = $.parseJSON(response);
+                      for (it of data) {
+                          jsondata = $.parseJSON(it)
+                          if (jsondata['token'] != tokenId) {
+                              continue
                           }
-                          jsondata = jsondata['data']
-                          if (jsondata.hasOwnProperty('status')) {
-                              state = jsondata['status']
-                              if (state != 'running') {
-                                    clearInterval(intervalId)
+                          var logdata = jsondata["data"];
+                          if (logdata.hasOwnProperty("log")) {
+                              logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
+                          }
+                          if (logdata.hasOwnProperty('status')) {
+                              state = logdata['status'];
+                              if (state != "running") {
+                                  return;
                               }
                           }
-                          if (jsondata.hasOwnProperty('log')) {
-                              console.log(jsondata)
-                              logger.setValue(logger.getValue() + jsondata['log'])
-                          }
                       }
+                      if (data.length == 0) {
+                          gtimeId = setTimeout("message_pop()", 1000);
+                      } else {
+                          message_pop();  // call self
+                      }
+                  }).fail(function () {
+                      console.log('restapi call fail, check network connnet.');
+                      if (gtimeId != null) {
+                          clearTimeout(gtimeId);
+                          gtimeId = null;
+                      }
+                      gtimeId = setTimeout("message_pop()", 5000);
                   });
         }
 
         function run() {
-            if (intervalId != null) {
-                clearInterval(intervalId)
+            tokenId = (100001 + Math.ceil(Math.random()*100000)).toString()
+            if (gtimeId != null) {
+                clearTimeout(gtimeId);
+                gtimeId = null;
             }
-            
+            logger.setValue('')
             var data = editor.getValue();
             var params = {
-                "token": "123456",
+                "appId": appId,
+                "token": tokenId,
                 "op": "runcode.start",
-                "user": "16601548608",
+                "user": user,
                 "service_name": "k12pyr",
-                "service_uuid": "123456",
+                "service_uuid": uuid,
                 "service_params": {
                     "code": editor.getValue(),
                     "_k12.tb_logdir": "/data/tmp"
                 }
+            };
+            $.post("http://116.85.5.40:8119/k12ai/framework/execute",
+                   JSON.stringify(params), function(response){
+                       if (response['code'] != 100000) {
+                           logger.setValue(JSON.stringify(response))
+                       }
+                   }, "json");
+            gtimeId = setTimeout("message_pop()", 1000);
+        }
+
+        function stop() {
+            if (gtimeId != null) {
+                clearTimeout(gtimeId);
+                gtimeId = null;
             }
+            var data = editor.getValue();
+            var params = {
+                "appId": appId,
+                "token": tokenId,
+                "op": "runcode.stop",
+                "user": user,
+                "service_name": "k12pyr",
+                "service_uuid": uuid
+            };
             $.post("http://116.85.5.40:8119/k12ai/framework/execute",
                    JSON.stringify(params), function(response){
                    }, "json");
-            logger.setValue("")
-            intervalId = setInterval("message_pop()", 3000)
         };
     </script>
 </body>

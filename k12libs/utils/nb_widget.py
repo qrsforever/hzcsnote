@@ -693,7 +693,7 @@ class K12WidgetGenerator():
             elif __id_ == 'network.net_def':
                 if self.model_templ:
                     html = config.get('html', '')
-                    wdg = HTML(value=f'<iframe src="{html}?{self.templ_params}" width=98% height="777px">',
+                    wdg = HTML(value=f'<iframe src="{html}/drawnet.html?{self.templ_params}" width=98% height="777px">',
                             layout={'width': '99%', 'height': 'auto'})
                 else:
                     return
