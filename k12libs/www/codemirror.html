@@ -93,6 +93,8 @@
                           var logdata = jsondata["data"];
                           if (logdata.hasOwnProperty("log")) {
                               logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
+                              logger.focus();
+                              logger.setCursor(logger.lineCount(), 0);
                           }
                           if (logdata.hasOwnProperty('status')) {
                               state = logdata['status'];
