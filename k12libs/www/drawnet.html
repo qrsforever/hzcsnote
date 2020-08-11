@@ -25,15 +25,15 @@
                         box-sizing: border-box;
             }
 
-            .wrapper { 
-                padding: 20px; 
-                margin: 15px 0; 
-                background-color: #0f9d58; 
-            } 
-      
-            textarea { 
-                font-size: 20px; 
-                width: 100%; 
+            .wrapper {
+                padding: 20px;
+                margin: 15px 0;
+                background-color: #0f9d58;
+            }
+
+            textarea {
+                font-size: 20px;
+                width: 100%;
                 height: 100%;
             }
         </style>
@@ -63,6 +63,9 @@
                     <li role="presentation" class="nav-item"><a href="#main_training"
                             aria-controls="main_training" role="tab" data-toggle="tab"
                             class="nav-link">ProtoData</a></li>
+                    <li role="presentation" class="nav-item"><a href="#main_pycode"
+                            aria-controls="main_pycode" role="tab" data-toggle="tab"
+                            class="nav-link">PyCode</a></li>
                 </ul>
                 <!-- Tab panes -->
                 <div class="tab-content">
@@ -190,7 +193,7 @@
                     <div role="tabpanel" class="tab-pane fade" id="main_parameters">
                         <button class="btn btn-primary" onclick="onGenGoJSData()">生成GoJSData</button>
                         <div class="btn-toolbar list-toolbar">
-                            <div class="wrapper"> 
+                            <div class="wrapper">
                                 <textArea cols="120" rows="20" id="gojsdata"></textArea>
                             </div>
                         </div>
@@ -198,8 +201,16 @@
                     <div role="tabpanel" class="tab-pane fade" id="main_training">
                         <button class="btn btn-primary" onclick="onGenProtoData()">生成ProtoData</button>
                         <div class="btn-toolbar list-toolbar">
-                            <div class="wrapper"> 
+                            <div class="wrapper">
                                 <textArea cols="120" rows="20" id="protodata"></textArea>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="main_pycode">
+                        <button class="btn btn-primary" onclick="onGenPyCode()">生成PyCode</button>
+                        <div class="btn-toolbar list-toolbar">
+                            <div class="wrapper">
+                                <textArea cols="120" rows="20" id="pycode"></textArea>
                             </div>
                         </div>
                     </div>
@@ -336,11 +347,28 @@
                 return
             }
             $("#protodata").text(protoData["datastr"]);
-            if (urlParams.has('flask')) {
+            if (urlParams.has("flask")) {
                 let jsonData = {"msgtype": "protodata", "tag": urlParams.get("tag"), "protodata": protoData}
-                protoData = JSON.stringify(jsonData, undefined, 4)
-                $.post(urlParams.get('flask'), protoData, function(response) {
-                }, "json" );
+                msgData = JSON.stringify(jsonData, undefined, 4)
+                $.post(urlParams.get("flask"), msgData, function(response) {
+                }, "json");
+            }
+        }
+
+        function onGenPyCode() {
+            if (urlParams.has("flask")) {
+                let jsonData = {"msgtype": "genpycode", "net_def": $("#protodata").val()}
+                console.log(jsonData)
+                msgData = JSON.stringify(jsonData, undefined, 4)
+                $.post(urlParams.get("flask"), msgData, function(response) {
+                    if (response.hasOwnProperty("pycode")) {
+                        $("#pycode").text(response["pycode"]);
+                    } else if (respons.hasOwnProperty("error")) {
+                        $("#pycode").text(response["error"]);
+                    } else {
+                        $("#pycode").text("inner error!");
+                    }
+                }, "json");
             }
         }
 

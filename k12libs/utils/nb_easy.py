@@ -8,6 +8,7 @@
 # @date 2019-12-06 12:16:50
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Sequence # noqa
+import sys
 import os
 import base64
 import hashlib
@@ -337,9 +338,19 @@ def _http_handle():
             ctx = g_contexts.get(tag, None)
             if ctx:
                 ctx.protodata = reqjson[msgtype]['datastr']
+        elif msgtype == 'genpycode':
+            net_def = reqjson['net_def']
+            sys.path.append(k12ai_get_app_dir('cv'))
+            from vulkan.builders.net_builder import NetBuilder
+            net = NetBuilder(net_def).build_net()
+            net.write_net('/tmp/net_def.py')
+            sys.path.remove(k12ai_get_app_dir('cv'))
+            with open('/tmp/net_def.py', 'r') as fr:
+                response = {'pycode': str(fr.read())}
+                return json.dumps(response)
     except Exception as err:
-        print("{}".format(err))
-        return ''
+        err = {'error': format(err)}
+        return json.dumps(err)
     return ''
 
 def _start_work_process(context):
@@ -480,7 +491,12 @@ def _init_project_schema(context, params):
         context.templ_params = f'jfile={context.model_templ}&flask=http://{netip}:{flask_port}/k12ai/notebook/message&tag={context.tag}'
         global g_flask_process
         if g_flask_process is None or not g_flask_process.is_alive():
-            g_flask_process = threading.Thread(target=app.run,
+            def _run_flask(*args, **kwargs):
+                try:
+                    app.run(*args, **kwargs)
+                except Exception:
+                    pass
+            g_flask_process = threading.Thread(target=_run_flask,
                     kwargs={"host": flask_host, "port": flask_port})
             g_flask_process.start()
 
