@@ -78,29 +78,35 @@
 
         function message_pop() {
             console.log("call pop")
-            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".console",
+            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error",
                   function(response) {
                       if (gtimeId != null) {
                           clearTimeout(gtimeId);
                           gtimeId = null;
                       }
                       var data = $.parseJSON(response);
+                      console.log(data)
                       for (it of data) {
                           jsondata = $.parseJSON(it)
                           if (jsondata['token'] != tokenId) {
                               continue
                           }
-                          var logdata = jsondata["data"];
-                          if (logdata.hasOwnProperty("log")) {
-                              logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
-                              logger.focus();
-                              logger.setCursor(logger.lineCount(), 0);
-                          }
-                          if (logdata.hasOwnProperty('status')) {
-                              state = logdata['status'];
-                              if (state != "running") {
-                                  return;
+                          if (jsondata["data"].hasOwnProperty("expand")) {
+                              var logdata = jsondata["data"]["expand"];
+                              if (logdata.hasOwnProperty("log")) {
+                                  logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
+                                  logger.focus();
+                                  logger.setCursor(logger.lineCount(), 0);
                               }
+                              if (logdata.hasOwnProperty('status')) {
+                                  state = logdata['status'];
+                                  if (state == "finished") {
+                                      return;
+                                  }
+                              }
+                          } else {
+                              logger.setValue("message format error!")
+                              return
                           }
                       }
                       if (data.length == 0) {
@@ -124,7 +130,7 @@
                 clearTimeout(gtimeId);
                 gtimeId = null;
             }
-            logger.setValue('')
+            logger.setValue("")
             var data = editor.getValue();
             var params = {
                 "appId": appId,
