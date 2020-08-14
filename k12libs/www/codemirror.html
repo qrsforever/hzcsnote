@@ -33,7 +33,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const defcode = urlParams.get('default');
 
-        var tokenId = 100001;
+        var tokenId = null;
         var gtimeId = null;
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
             mode : "python",
@@ -50,7 +50,7 @@
             lineNumbers : true
         });
 
-        editor.setSize('auto','400px');
+        editor.setSize('auto','600px');
         editor.setOption("extraKeys", {
             "Ctrl-Space": "autocomplete",
             "Ctrl-S": function() {console.log("save");},
@@ -74,10 +74,10 @@
             lineWrapping: true,
             lineNumbers : false
         });
-        logger.setSize('auto','400px');
+        logger.setSize('auto','600px');
 
         function message_pop() {
-            console.log("call pop")
+            // console.log("call pop")
             $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error",
                   function(response) {
                       if (gtimeId != null) {
@@ -95,8 +95,8 @@
                               var logdata = jsondata["data"]["expand"];
                               if (logdata.hasOwnProperty("log")) {
                                   logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
-                                  logger.focus();
-                                  logger.setCursor(logger.lineCount(), 0);
+                                  // logger.focus();
+                                  // logger.setCursor(logger.lineCount(), 0);
                               }
                               if (logdata.hasOwnProperty('status')) {
                                   state = logdata['status'];
@@ -125,12 +125,13 @@
         }
 
         function run() {
-            tokenId = (100001 + Math.ceil(Math.random()*100000)).toString()
+            if (tokenId == null) {
+                tokenId = (100001 + Math.ceil(Math.random()*100000)).toString()
+            }
             if (gtimeId != null) {
                 clearTimeout(gtimeId);
                 gtimeId = null;
             }
-            logger.setValue("")
             var data = editor.getValue();
             var params = {
                 "appId": appId,
@@ -146,11 +147,20 @@
             };
             $.post("http://116.85.5.40:8119/k12ai/framework/execute",
                    JSON.stringify(params), function(response){
-                       if (response['code'] != 100000) {
-                           logger.setValue(JSON.stringify(response))
+                       switch (response['code']) {
+                           case 100000:
+                               logger.setValue(JSON.stringify(response) + "\n\n");
+                               gtimeId = setTimeout("message_pop()", 1000);
+                               break;
+                           case 100204:
+                               logger.replaceRange(JSON.stringify(response) + "\n\n", CodeMirror.Pos(logger.lastLine()));
+                               gtimeId = setTimeout("message_pop()", 100);
+                               break;
+                           default:
+                               logger.replaceRange(JSON.stringify(response) + "\n\n", CodeMirror.Pos(logger.lastLine()));
                        }
+                       logger.focus();
                    }, "json");
-            gtimeId = setTimeout("message_pop()", 1000);
         }
 
         function stop() {
