@@ -922,7 +922,7 @@ function validateShape(nodes,links){
       channel = after_compute.channel;
       w = after_compute.w;
       h = after_compute.h;
-      let shape = '(None';
+      let shape = '(32';  // batch_size
       if(channel != null)
         shape += `,${channel}`;
       if(w != null)

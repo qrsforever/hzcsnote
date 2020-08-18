@@ -109,6 +109,42 @@ K12AI_TBLOG_ROOT = '/data/tblogs'
 K12AI_PRETRAINED_ROOT = '/data/pretrained'
 K12AI_NBDATA_ROOT = '/data/nb_data'
 
+def _start_flask_service():
+    global g_flask_process
+    if g_flask_process is None or not g_flask_process.is_alive():
+        def _run_flask(*args, **kwargs):
+            try:
+                app.run(*args, **kwargs)
+            except Exception:
+                pass
+        g_flask_process = threading.Thread(target=_run_flask,
+                kwargs={"host": flask_host, "port": flask_port})
+        g_flask_process.start()
+
+@app.route('/k12ai/notebook/message', methods=['POST', 'GET'])
+def _flask_handle():
+    try:
+        reqjson = json.loads(request.get_data().decode())
+        msgtype = reqjson['msgtype']
+        if msgtype == 'protodata':
+            tag = reqjson['tag']
+            ctx = g_contexts.get(tag, None)
+            if ctx:
+                ctx.protodata = reqjson[msgtype]['datastr']
+        elif msgtype == 'genpycode':
+            net_def = reqjson['net_def']
+            sys.path.append(k12ai_get_app_dir('cv'))
+            from vulkan.builders.net_builder import NetBuilder
+            net = NetBuilder(net_def).build_net()
+            net.write_net('/tmp/net_def.py')
+            sys.path.remove(k12ai_get_app_dir('cv'))
+            with open('/tmp/net_def.py', 'r') as fr:
+                response = {'pycode': str(fr.read())}
+                return json.dumps(response)
+    except Exception as err:
+        err = {'error': format(err)}
+        return json.dumps(err)
+    return ''
 
 def k12ai_set_notebook(cellw=None):
     if cellw:
@@ -152,12 +188,15 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
 
     return f'http://{K12AI_WLAN_ADDR}:{port}'
 
-def k12ai_start_html(uri, width=None, height=None):
+def k12ai_start_html(uri, width=None, height=None, flask=False):
     k12ai_set_notebook(cellw=95)
     if width is None:
         width = '100%'
     if height is None:
         height = 300
+    if flask:
+        uri += f'&flask=http://{netip}:{flask_port}/k12ai/notebook/message'
+        _start_flask_service()
     return IFrame(uri, width=width, height=height)
 
 def _print_json(text, indent):
@@ -328,31 +367,6 @@ def k12ai_json_load(path):
 
 ### Train
 
-@app.route('/k12ai/notebook/message', methods=['POST', 'GET'])
-def _http_handle():
-    try:
-        reqjson = json.loads(request.get_data().decode())
-        msgtype = reqjson['msgtype']
-        if msgtype == 'protodata':
-            tag = reqjson['tag']
-            ctx = g_contexts.get(tag, None)
-            if ctx:
-                ctx.protodata = reqjson[msgtype]['datastr']
-        elif msgtype == 'genpycode':
-            net_def = reqjson['net_def']
-            sys.path.append(k12ai_get_app_dir('cv'))
-            from vulkan.builders.net_builder import NetBuilder
-            net = NetBuilder(net_def).build_net()
-            net.write_net('/tmp/net_def.py')
-            sys.path.remove(k12ai_get_app_dir('cv'))
-            with open('/tmp/net_def.py', 'r') as fr:
-                response = {'pycode': str(fr.read())}
-                return json.dumps(response)
-    except Exception as err:
-        err = {'error': format(err)}
-        return json.dumps(err)
-    return ''
-
 def _start_work_process(context):
     global g_queue, g_result_process, g_contexts
 
@@ -489,16 +503,7 @@ def _init_project_schema(context, params):
 
     if context.model_templ:
         context.templ_params = f'jfile={context.model_templ}&flask=http://{netip}:{flask_port}/k12ai/notebook/message&tag={context.tag}'
-        global g_flask_process
-        if g_flask_process is None or not g_flask_process.is_alive():
-            def _run_flask(*args, **kwargs):
-                try:
-                    app.run(*args, **kwargs)
-                except Exception:
-                    pass
-            g_flask_process = threading.Thread(target=_run_flask,
-                    kwargs={"host": flask_host, "port": flask_port})
-            g_flask_process.start()
+        _start_flask_service()
 
     context.parse_schema(json.loads(response['data']), tb_url=tb_url)
 

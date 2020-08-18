@@ -26,8 +26,8 @@
             }
 
             .wrapper {
-                padding: 20px;
-                margin: 15px 0;
+                padding: 10px;
+                margin: 5px 0;
                 background-color: #0f9d58;
             }
 
@@ -369,6 +369,8 @@
                         $("#pycode").text("inner error!");
                     }
                 }, "json");
+            } else {
+                $("#pycode").text("not found flask parameters")
             }
         }
 
