@@ -331,7 +331,7 @@ class LayerNode{
  * 输入层
  */
 class Input extends LayerNode{
-    constructor(subtype="",name="",id, in_features=""){
+    constructor(subtype="",name="",id, in_features="32,64,64"){
         super(name,id);
         this._type = 'Input';
         this.subtype = 'Input';
@@ -356,8 +356,6 @@ class Input extends LayerNode{
           let h = infos[2]
           if (w == "undefined") {
               w = 64
-          }
-          if (h == "undefined") {
               h = 64
           }
           // if(input_channels != infos[0])
@@ -826,12 +824,17 @@ class BaseFunc extends LayerNode{
                     array.push([inputs[i].out_shapes.channel,inputs[i].out_shapes.w,inputs[i].out_shapes.h]);
                 }
 
+                console.log(inputs.length)
+
                 let dim = -1;
                 if(this.dim == -1)
-                    dim = array[0].length - 1;
+                    // QRS: modify (B, C, W, H)
+                    // dim = array[0].length - 1;
+                    dim = array[0].length;
                 else
                     dim = parseInt(this.dim);
 
+                console.log(dim)
 
                 for(let i = 1; i < array.length; ++i){
                     for(let j = 0; j < array[i].length; ++j){

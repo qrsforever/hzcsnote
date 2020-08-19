@@ -419,10 +419,12 @@ $(function(){
                                 subtype = node.data.info["subtype"];
                                 Object.assign(node.data.info, node.data.params);
                                 if(node.data.info.subtype == 'Input'){
-                                    node.data.info.in_features = "3," + $("#dataset_val_inputsize").val()+","+$("#dataset_val_inputsize").val();
+                                    // node.data.info.in_features = "3," + $("#dataset_val_inputsize").val()+","+$("#dataset_val_inputsize").val();
+                                    node.data.info.in_features = "3, 64, 64";
                                 }
                                 else if(node.data.info.subtype == 'Output'){
-                                    node.data.info.out_features = $("#dataset_class_num").val();
+                                    // node.data.info.out_features = $("#dataset_class_num").val();
+                                    node.data.info.out_features = "10";
                                 }
                                 diagram.model.setDataProperty(node.data, 'text', node.data.info.gettext());
 
@@ -440,10 +442,12 @@ $(function(){
 
                 node.data.info = LayerNode.subfactory(node.data.category,node.data.category,node.data.subtype);
                 if(node.data.info.subtype == 'Input'){
-                    node.data.info.in_features = "3," + $("#dataset_val_inputsize").val()+","+$("#dataset_val_inputsize").val();
+                    // node.data.info.in_features = "3," + $("#dataset_val_inputsize").val()+","+$("#dataset_val_inputsize").val();
+                    node.data.info.in_features = "3,64,64";
                 }
                 else if(node.data.info.subtype == 'Output'){
-                    node.data.info.out_features = $("#dataset_class_num").val();
+                    // node.data.info.out_features = $("#dataset_class_num").val();
+                    node.data.info.out_features = "10";
                 }
 
                 diagram.model.setDataProperty(node.data, 'text', node.data.info.gettext());
