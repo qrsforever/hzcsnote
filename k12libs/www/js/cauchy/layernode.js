@@ -834,11 +834,13 @@ class BaseFunc extends LayerNode{
                 else
                     dim = parseInt(this.dim);
 
-                console.log(dim)
+                if (dim != -1) {
+                    dim = dim - 1;
+                }
 
                 for(let i = 1; i < array.length; ++i){
                     for(let j = 0; j < array[i].length; ++j){
-                        if(j != (dim - 1)){
+                        if(j != dim){
                             if(array[0][j] != array[i][j])
                                 return {code:-1,msg:`Shape不一致，无法Cat`};
                         }
