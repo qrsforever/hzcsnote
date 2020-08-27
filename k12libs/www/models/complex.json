@@ -1,0 +1,1346 @@
+{
+    "class": "GraphLinksModel", 
+    "copiesKey": false, 
+    "linkFromPortIdProperty": "fromPort", 
+    "linkToPortIdProperty": "toPort", 
+    "modelData": {
+        "position": "-254.5079223011429 -87.77722878515635"
+    }, 
+    "nodeDataArray": [
+        {
+            "key": -1, 
+            "text": "Input_3626", 
+            "category": "Input", 
+            "loc": "-88.91637499999999 -46.460749999999976", 
+            "info": {
+                "subtype": "Input", 
+                "name": "Input", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [ ], 
+                "outputs": [
+                    "Conv2d_5085"
+                ], 
+                "in_features": "3,224,224", 
+                "out_shapes": {
+                    "w": "224", 
+                    "h": "224", 
+                    "channel": "3"
+                }
+            }, 
+            "id": "3626", 
+            "outshape": "(32,3,224,224)"
+        }, 
+        {
+            "key": -2, 
+            "text": "BatchNorm2d_9531", 
+            "category": "Norm", 
+            "loc": "-86.97062500000004 149.01212500000003", 
+            "info": {
+                "subtype": "BatchNorm2d", 
+                "name": "Norm", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_5085"
+                ], 
+                "outputs": [
+                    "Relu_5236"
+                ], 
+                "num_features": "64", 
+                "eps": "1e-05", 
+                "momentum": "0.1", 
+                "affine": "True", 
+                "track_running_stats": "True", 
+                "out_shapes": {
+                    "w": 112, 
+                    "h": 112, 
+                    "channel": "64"
+                }
+            }, 
+            "id": "9531", 
+            "outshape": "(32,64,112,112)"
+        }, 
+        {
+            "key": -3, 
+            "text": "Relu_5236", 
+            "category": "Act", 
+            "loc": "-88.44350000000003 239.01212500000008", 
+            "info": {
+                "subtype": "Relu", 
+                "name": "Act", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "BatchNorm2d_9531"
+                ], 
+                "outputs": [
+                    "MaxPool2d_1524"
+                ], 
+                "inplace": "True", 
+                "negative_slope": "0.01", 
+                "min_val": "-1.0", 
+                "max_val": "1.0", 
+                "lambd": "0.5", 
+                "dim": "1", 
+                "out_shapes": {
+                    "w": 112, 
+                    "h": 112, 
+                    "channel": "64"
+                }
+            }, 
+            "id": "5236", 
+            "outshape": "(32,64,112,112)"
+        }, 
+        {
+            "key": -4, 
+            "text": "MaxPool2d_1524", 
+            "category": "Pool", 
+            "loc": "-89.44350000000003 330.69687500000003", 
+            "info": {
+                "subtype": "MaxPool2d", 
+                "name": "Pool", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Relu_5236"
+                ], 
+                "outputs": [
+                    "Conv2d_5022", 
+                    "Conv2d_5992"
+                ], 
+                "kernel_size": "3", 
+                "stride": "2", 
+                "padding": "1", 
+                "dilation": "1", 
+                "return_indices": "False", 
+                "ceil_mode": "False", 
+                "count_include_pad": "True", 
+                "norm_type": "1", 
+                "out_shapes": {
+                    "w": 56, 
+                    "h": 56, 
+                    "channel": "64"
+                }
+            }, 
+            "id": "1524", 
+            "outshape": "(32,64,56,56)"
+        }, 
+        {
+            "key": -5, 
+            "text": "Conv2d_5085", 
+            "category": "Conv", 
+            "loc": "-85.60112500000002 60.85450000000003", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Input_3626"
+                ], 
+                "outputs": [
+                    "BatchNorm2d_9531"
+                ], 
+                "in_channels": "3", 
+                "out_channels": "64", 
+                "kernel_size": "7", 
+                "output_padding": "0", 
+                "stride": "2", 
+                "padding": "3", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 112, 
+                    "h": 112, 
+                    "channel": "64"
+                }
+            }, 
+            "id": "5085", 
+            "outshape": "(32,64,112,112)"
+        }, 
+        {
+            "key": -6, 
+            "text": "Conv2d_5992", 
+            "category": "Conv", 
+            "loc": "134.39887500000003 62.854500000000016", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "MaxPool2d_1524"
+                ], 
+                "outputs": [
+                    "BatchNorm2d_7683"
+                ], 
+                "in_channels": "64", 
+                "out_channels": "128", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "2", 
+                "padding": "1", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "5992", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -7, 
+            "text": "BatchNorm2d_7683", 
+            "category": "Norm", 
+            "loc": "135.87174999999996 148.85450000000003", 
+            "info": {
+                "subtype": "BatchNorm2d", 
+                "name": "Norm", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_5992"
+                ], 
+                "outputs": [
+                    "Relu_3872"
+                ], 
+                "num_features": "128", 
+                "eps": "1e-05", 
+                "momentum": "0.1", 
+                "affine": "True", 
+                "track_running_stats": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "7683", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -8, 
+            "text": "Relu_3872", 
+            "category": "Act", 
+            "loc": "134.87175000000002 237.85450000000003", 
+            "info": {
+                "subtype": "Relu", 
+                "name": "Act", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "BatchNorm2d_7683"
+                ], 
+                "outputs": [
+                    "Conv2d_2007"
+                ], 
+                "inplace": "True", 
+                "negative_slope": "0.01", 
+                "min_val": "-1.0", 
+                "max_val": "1.0", 
+                "lambd": "0.5", 
+                "dim": "1", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "3872", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -9, 
+            "text": "Conv2d_2007", 
+            "category": "Conv", 
+            "loc": "134.00924895833327 331.696875", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Relu_3872"
+                ], 
+                "outputs": [
+                    "BatchNorm2d_9355"
+                ], 
+                "in_channels": "128", 
+                "out_channels": "128", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "1", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "2007", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -10, 
+            "text": "BatchNorm2d_9355", 
+            "category": "Norm", 
+            "loc": "134.02937499999996 427.64262500000007", 
+            "info": {
+                "subtype": "BatchNorm2d", 
+                "name": "Norm", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_2007"
+                ], 
+                "outputs": [
+                    "Add_3637"
+                ], 
+                "num_features": "128", 
+                "eps": "1e-05", 
+                "momentum": "0.1", 
+                "affine": "True", 
+                "track_running_stats": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "9355", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -11, 
+            "text": "Conv2d_5022", 
+            "category": "Conv", 
+            "loc": "-89.82657617187499 426.349751953125", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "MaxPool2d_1524"
+                ], 
+                "outputs": [
+                    "BatchNorm2d_5191"
+                ], 
+                "in_channels": "64", 
+                "out_channels": "128", 
+                "kernel_size": "1", 
+                "output_padding": "0", 
+                "stride": "2", 
+                "padding": "0", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "5022", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -12, 
+            "text": "BatchNorm2d_5191", 
+            "category": "Norm", 
+            "loc": "-89.82657617187499 508.5411269531252", 
+            "info": {
+                "subtype": "BatchNorm2d", 
+                "name": "Norm", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_5022"
+                ], 
+                "outputs": [
+                    "Add_3637"
+                ], 
+                "num_features": "128", 
+                "eps": "1e-05", 
+                "momentum": "0.1", 
+                "affine": "True", 
+                "track_running_stats": "True", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "5191", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -13, 
+            "text": "Add_3637", 
+            "category": "BaseFunc", 
+            "loc": "132.43742382812496 510.85637695312516", 
+            "info": {
+                "subtype": "Add", 
+                "name": "BaseFunc", 
+                "layer_builder": "TorchFuncLayer", 
+                "inputs": [
+                    "BatchNorm2d_5191", 
+                    "BatchNorm2d_9355"
+                ], 
+                "outputs": [
+                    "Conv2d_3293"
+                ], 
+                "dim": "-1", 
+                "start_dim": "0", 
+                "end_dim": "-1", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "128"
+                }
+            }, 
+            "id": "3637", 
+            "outshape": "(32,128,28,28)"
+        }, 
+        {
+            "key": -14, 
+            "text": "Conv2d_3293", 
+            "category": "Conv", 
+            "loc": "381.7517037277835 59.28191583911138", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Add_3637"
+                ], 
+                "outputs": [
+                    "ConstantPad2d_9888"
+                ], 
+                "in_channels": "128", 
+                "out_channels": "256", 
+                "kernel_size": "5", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "1", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 26, 
+                    "h": 26, 
+                    "channel": "256"
+                }
+            }, 
+            "id": "3293", 
+            "outshape": "(32,256,26,26)"
+        }, 
+        {
+            "key": -15, 
+            "text": "ConstantPad2d_9888", 
+            "category": "Padding", 
+            "loc": "380.88997626953164 150.75270205078135", 
+            "info": {
+                "subtype": "ConstantPad2d", 
+                "name": "Padding", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_3293"
+                ], 
+                "outputs": [
+                    "Conv2d_7464"
+                ], 
+                "padding": "1", 
+                "value": "1", 
+                "out_shapes": {
+                    "w": 28, 
+                    "h": 28, 
+                    "channel": "256"
+                }
+            }, 
+            "id": "9888", 
+            "outshape": "(32,256,28,28)"
+        }, 
+        {
+            "key": -16, 
+            "text": "Conv2d_7464", 
+            "category": "Conv", 
+            "loc": "378.45896376953147 238.26915205078137", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "ConstantPad2d_9888"
+                ], 
+                "outputs": [
+                    "AvgPool2d_7939"
+                ], 
+                "in_channels": "256", 
+                "out_channels": "256", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "1", 
+                "dilation": "2", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 26, 
+                    "h": 26, 
+                    "channel": "256"
+                }
+            }, 
+            "id": "7464", 
+            "outshape": "(32,256,26,26)"
+        }, 
+        {
+            "key": -17, 
+            "text": "AvgPool2d_7939", 
+            "category": "Pool", 
+            "loc": "379.6744700195313 331.8631333007813", 
+            "info": {
+                "subtype": "AvgPool2d", 
+                "name": "Pool", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Conv2d_7464"
+                ], 
+                "outputs": [
+                    "Cat_6035", 
+                    "Dropout_4182"
+                ], 
+                "kernel_size": "5", 
+                "stride": "2", 
+                "padding": "1", 
+                "dilation": "1", 
+                "return_indices": "False", 
+                "ceil_mode": "False", 
+                "count_include_pad": "True", 
+                "norm_type": "1", 
+                "out_shapes": {
+                    "w": 12, 
+                    "h": 12, 
+                    "channel": "256"
+                }
+            }, 
+            "id": "7939", 
+            "outshape": "(32,256,12,12)"
+        }, 
+        {
+            "key": -18, 
+            "text": "Dropout_4182", 
+            "category": "Dropout", 
+            "loc": "376.7763414683885 420.76532326562506", 
+            "info": {
+                "subtype": "Dropout", 
+                "name": "Dropout", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "AvgPool2d_7939"
+                ], 
+                "outputs": [
+                    "Conv2d_9250"
+                ], 
+                "inplace": "False", 
+                "p": "0.5", 
+                "out_shapes": {
+                    "w": 12, 
+                    "h": 12, 
+                    "channel": "256"
+                }
+            }, 
+            "id": "4182", 
+            "outshape": "(32,256,12,12)"
+        }, 
+        {
+            "key": -19, 
+            "text": "Conv2d_9250", 
+            "category": "Conv", 
+            "loc": "377.2434575195314 519.0510958007815", 
+            "info": {
+                "subtype": "Conv2d", 
+                "name": "Conv", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Dropout_4182"
+                ], 
+                "outputs": [
+                    "Cat_6035"
+                ], 
+                "in_channels": "256", 
+                "out_channels": "512", 
+                "kernel_size": "3", 
+                "output_padding": "0", 
+                "stride": "1", 
+                "padding": "1", 
+                "dilation": "1", 
+                "groups": "1", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": 12, 
+                    "h": 12, 
+                    "channel": "512"
+                }
+            }, 
+            "id": "9250", 
+            "outshape": "(32,512,12,12)"
+        }, 
+        {
+            "key": -20, 
+            "text": "AdaptiveAvgPool2d_5005", 
+            "category": "Pool", 
+            "loc": "611.8361637695318 147.9432145507813", 
+            "info": {
+                "subtype": "AdaptiveAvgPool2d", 
+                "name": "Pool", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Cat_6035"
+                ], 
+                "outputs": [
+                    "Flatten_6305"
+                ], 
+                "padding": "0", 
+                "dilation": "1", 
+                "return_indices": "False", 
+                "ceil_mode": "False", 
+                "count_include_pad": "True", 
+                "norm_type": "1", 
+                "output_size": "6", 
+                "out_shapes": {
+                    "w": 6, 
+                    "h": 6, 
+                    "channel": 768
+                }
+            }, 
+            "id": "5005", 
+            "outshape": "(32,768,6,6)"
+        }, 
+        {
+            "key": -21, 
+            "text": "Flatten_6305", 
+            "category": "Vulkan", 
+            "loc": "616.8361637695316 236.18371455078136", 
+            "info": {
+                "subtype": "Flatten", 
+                "name": "Vulkan", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "AdaptiveAvgPool2d_5005"
+                ], 
+                "outputs": [
+                    "Linear_2800"
+                ], 
+                "start_dim": "1", 
+                "end_dim": "-1", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": 27648, 
+                    "channel": null
+                }
+            }, 
+            "id": "6305", 
+            "outshape": "(32,27648)"
+        }, 
+        {
+            "key": -22, 
+            "text": "Linear_2800", 
+            "category": "Linear", 
+            "loc": "615.8361637695318 332.7001645507813", 
+            "info": {
+                "subtype": "Linear", 
+                "name": "Linear", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Flatten_6305"
+                ], 
+                "outputs": [
+                    "Dropout_4498"
+                ], 
+                "in_features": "27648", 
+                "out_features": "1000", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "1000", 
+                    "channel": null
+                }
+            }, 
+            "id": "2800", 
+            "outshape": "(32,1000)"
+        }, 
+        {
+            "key": -23, 
+            "text": "Dropout_4498", 
+            "category": "Dropout", 
+            "loc": "615.0516700195318 423.07863955078136", 
+            "info": {
+                "subtype": "Dropout", 
+                "name": "Dropout", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Linear_2800"
+                ], 
+                "outputs": [
+                    "Linear_4456"
+                ], 
+                "inplace": "False", 
+                "p": "0.5", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "1000", 
+                    "channel": null
+                }
+            }, 
+            "id": "4498", 
+            "outshape": "(32,1000)"
+        }, 
+        {
+            "key": -24, 
+            "text": "Linear_4456", 
+            "category": "Linear", 
+            "loc": "605.8361637695318 516.2416083007813", 
+            "info": {
+                "subtype": "Linear", 
+                "name": "Linear", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Dropout_4498"
+                ], 
+                "outputs": [
+                    "Output_9262"
+                ], 
+                "in_features": "1000", 
+                "out_features": "10", 
+                "bias": "True", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "10", 
+                    "channel": null
+                }
+            }, 
+            "id": "4456", 
+            "outshape": "(32,10)"
+        }, 
+        {
+            "key": -25, 
+            "text": "Output_9262", 
+            "category": "Output", 
+            "loc": "835.6206575195315 423.6200833007814", 
+            "info": {
+                "subtype": "Output", 
+                "name": "Output", 
+                "layer_builder": "NNTorchLayer", 
+                "inputs": [
+                    "Linear_4456"
+                ], 
+                "outputs": [ ], 
+                "out_features": "10", 
+                "out_shapes": {
+                    "w": null, 
+                    "h": "10"
+                }
+            }, 
+            "id": "9262", 
+            "outshape": "(32,10)"
+        }, 
+        {
+            "key": -26, 
+            "text": "Cat_6035", 
+            "category": "BaseFunc", 
+            "loc": "616.453125 56.578125", 
+            "info": {
+                "subtype": "Cat", 
+                "name": "BaseFunc", 
+                "layer_builder": "TorchFuncLayer", 
+                "inputs": [
+                    "Conv2d_9250", 
+                    "AvgPool2d_7939"
+                ], 
+                "outputs": [
+                    "AdaptiveAvgPool2d_5005"
+                ], 
+                "dim": "1", 
+                "start_dim": "0", 
+                "end_dim": "-1", 
+                "out_shapes": {
+                    "w": 12, 
+                    "h": 12, 
+                    "channel": 768
+                }
+            }, 
+            "id": "6035", 
+            "outshape": "(32,768,12,12)"
+        }
+    ], 
+    "linkDataArray": [
+        {
+            "from": -2, 
+            "to": -3, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -86.97062500000006, 
+                166.75070125084605, 
+                -86.97062500000006, 
+                176.75070125084605, 
+                -86.97062500000006, 
+                180, 
+                -86.97062500000006, 
+                180, 
+                -86.97062500000006, 
+                196, 
+                -88.44350000000004, 
+                196, 
+                -88.44350000000004, 
+                211.27354874915406, 
+                -88.44350000000004, 
+                221.27354874915406
+            ]
+        }, 
+        {
+            "from": -3, 
+            "to": -4, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -88.44350000000004, 
+                256.7507012508461, 
+                -88.44350000000004, 
+                266.7507012508461, 
+                -89.44350000000004, 
+                266.7507012508461, 
+                -89.44350000000004, 
+                266.7507012508461, 
+                -89.44350000000004, 
+                302.958298749154, 
+                -89.44350000000004, 
+                312.958298749154
+            ]
+        }, 
+        {
+            "from": -1, 
+            "to": -5, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -88.916375, 
+                -28.722173749153946, 
+                -88.916375, 
+                -18.722173749153946, 
+                -88.916375, 
+                -20, 
+                -88.916375, 
+                -20, 
+                -88.916375, 
+                4, 
+                -85.60112500000004, 
+                4, 
+                -85.60112500000004, 
+                33.115923749154, 
+                -85.60112500000004, 
+                43.115923749154
+            ]
+        }, 
+        {
+            "from": -5, 
+            "to": -2, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -85.60112500000004, 
+                78.59307625084605, 
+                -85.60112500000004, 
+                88.59307625084605, 
+                -86.97062500000006, 
+                88.59307625084605, 
+                -86.97062500000006, 
+                88.59307625084605, 
+                -86.97062500000006, 
+                121.273548749154, 
+                -86.97062500000006, 
+                131.273548749154
+            ]
+        }, 
+        {
+            "from": -4, 
+            "to": -6, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -89.44350000000004, 
+                348.4354512508461, 
+                -89.44350000000004, 
+                358.4354512508461, 
+                -89.44350000000004, 
+                358.4354512508461, 
+                12, 
+                358.4354512508461, 
+                12, 
+                36, 
+                134.39887500000003, 
+                36, 
+                134.39887500000003, 
+                35.115923749153986, 
+                134.39887500000003, 
+                45.115923749153986
+            ]
+        }, 
+        {
+            "from": -6, 
+            "to": -7, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                134.39887500000003, 
+                80.59307625084605, 
+                134.39887500000003, 
+                90.59307625084605, 
+                135.87174999999996, 
+                90.59307625084605, 
+                135.87174999999996, 
+                90.59307625084605, 
+                135.87174999999996, 
+                121.115923749154, 
+                135.87174999999996, 
+                131.115923749154
+            ]
+        }, 
+        {
+            "from": -7, 
+            "to": -8, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                135.87174999999996, 
+                166.59307625084605, 
+                135.87174999999996, 
+                176.59307625084605, 
+                134.87175000000002, 
+                176.59307625084605, 
+                134.87175000000002, 
+                176.59307625084605, 
+                134.87175000000002, 
+                210.115923749154, 
+                134.87175000000002, 
+                220.115923749154
+            ]
+        }, 
+        {
+            "from": -8, 
+            "to": -9, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                134.87175000000002, 
+                255.59307625084605, 
+                134.87175000000002, 
+                265.593076250846, 
+                134.00924895833327, 
+                265.593076250846, 
+                134.00924895833327, 
+                265.593076250846, 
+                134.00924895833327, 
+                303.9582987491539, 
+                134.00924895833327, 
+                313.9582987491539
+            ]
+        }, 
+        {
+            "from": -9, 
+            "to": -10, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                134.00924895833327, 
+                349.43545125084603, 
+                134.00924895833327, 
+                359.43545125084603, 
+                134.02937499999996, 
+                359.43545125084603, 
+                134.02937499999996, 
+                359.43545125084603, 
+                134.02937499999996, 
+                399.904048749154, 
+                134.02937499999996, 
+                409.904048749154
+            ]
+        }, 
+        {
+            "from": -4, 
+            "to": -11, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -89.44350000000004, 
+                348.4354512508461, 
+                -89.44350000000004, 
+                358.4354512508461, 
+                -89.44350000000004, 
+                378.5233134765625, 
+                -89.826576171875, 
+                378.5233134765625, 
+                -89.826576171875, 
+                398.61117570227896, 
+                -89.826576171875, 
+                408.61117570227896
+            ]
+        }, 
+        {
+            "from": -11, 
+            "to": -12, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                -89.826576171875, 
+                444.08832820397106, 
+                -89.826576171875, 
+                454.08832820397106, 
+                -89.826576171875, 
+                454.08832820397106, 
+                -89.826576171875, 
+                454.08832820397106, 
+                -89.826576171875, 
+                480.8025507022791, 
+                -89.826576171875, 
+                490.8025507022791
+            ]
+        }, 
+        {
+            "from": -12, 
+            "to": -13, 
+            "fromPort": "B", 
+            "toPort": "L", 
+            "points": [
+                -89.826576171875, 
+                526.2797032039712, 
+                -89.826576171875, 
+                536.2797032039712, 
+                -89.826576171875, 
+                540, 
+                12, 
+                540, 
+                12, 
+                510.85637695312516, 
+                34.69884757727893, 
+                510.85637695312516, 
+                44.69884757727893, 
+                510.85637695312516
+            ]
+        }, 
+        {
+            "from": -10, 
+            "to": -13, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                134.02937499999996, 
+                445.3812012508461, 
+                134.02937499999996, 
+                455.3812012508461, 
+                132.43742382812496, 
+                455.3812012508461, 
+                132.43742382812496, 
+                455.3812012508461, 
+                132.43742382812496, 
+                483.1178007022791, 
+                132.43742382812496, 
+                493.1178007022791
+            ]
+        }, 
+        {
+            "from": -13, 
+            "to": -14, 
+            "fromPort": "R", 
+            "toPort": "L", 
+            "points": [
+                220.176000078971, 
+                510.85637695312516, 
+                230.176000078971, 
+                510.85637695312516, 
+                228, 
+                510.85637695312516, 
+                228, 
+                510.85637695312516, 
+                236, 
+                510.85637695312516, 
+                236, 
+                59.28191583911138, 
+                284.0131274769374, 
+                59.28191583911138, 
+                294.0131274769374, 
+                59.28191583911138
+            ]
+        }, 
+        {
+            "from": -14, 
+            "to": -15, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                381.7517037277835, 
+                77.0204920899574, 
+                381.7517037277835, 
+                87.0204920899574, 
+                380.88997626953164, 
+                87.0204920899574, 
+                380.88997626953164, 
+                87.0204920899574, 
+                380.88997626953164, 
+                123.01412579993533, 
+                380.88997626953164, 
+                133.01412579993533
+            ]
+        }, 
+        {
+            "from": -15, 
+            "to": -16, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                380.88997626953164, 
+                168.49127830162737, 
+                380.88997626953164, 
+                178.49127830162737, 
+                378.45896376953147, 
+                178.49127830162737, 
+                378.45896376953147, 
+                178.49127830162737, 
+                378.45896376953147, 
+                210.53057579993535, 
+                378.45896376953147, 
+                220.53057579993535
+            ]
+        }, 
+        {
+            "from": -16, 
+            "to": -17, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                378.45896376953147, 
+                256.00772830162737, 
+                378.45896376953147, 
+                266.00772830162737, 
+                379.6744700195313, 
+                266.00772830162737, 
+                379.6744700195313, 
+                266.00772830162737, 
+                379.6744700195313, 
+                304.1245570499353, 
+                379.6744700195313, 
+                314.1245570499353
+            ]
+        }, 
+        {
+            "from": -17, 
+            "to": -18, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                379.6744700195313, 
+                349.6017095516274, 
+                379.6744700195313, 
+                359.6017095516274, 
+                379.6744700195313, 
+                376.3142282832032, 
+                376.7763414683885, 
+                376.3142282832032, 
+                376.7763414683885, 
+                393.026747014779, 
+                376.7763414683885, 
+                403.026747014779
+            ]
+        }, 
+        {
+            "from": -18, 
+            "to": -19, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                376.7763414683885, 
+                438.5038995164711, 
+                376.7763414683885, 
+                448.5038995164711, 
+                376.7763414683885, 
+                469.90820953320326, 
+                377.2434575195314, 
+                469.90820953320326, 
+                377.2434575195314, 
+                491.3125195499354, 
+                377.2434575195314, 
+                501.3125195499354
+            ]
+        }, 
+        {
+            "from": -20, 
+            "to": -21, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                611.8361637695318, 
+                165.68179080162733, 
+                611.8361637695318, 
+                175.68179080162733, 
+                611.8361637695318, 
+                172, 
+                611.8361637695318, 
+                172, 
+                611.8361637695318, 
+                196, 
+                616.8361637695316, 
+                196, 
+                616.8361637695316, 
+                208.44513829993534, 
+                616.8361637695316, 
+                218.44513829993534
+            ]
+        }, 
+        {
+            "from": -21, 
+            "to": -22, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                616.8361637695316, 
+                253.92229080162738, 
+                616.8361637695316, 
+                263.92229080162735, 
+                616.8361637695316, 
+                284.4419395507813, 
+                615.8361637695318, 
+                284.4419395507813, 
+                615.8361637695318, 
+                304.9615882999353, 
+                615.8361637695318, 
+                314.9615882999353
+            ]
+        }, 
+        {
+            "from": -22, 
+            "to": -23, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                615.8361637695318, 
+                350.4387408016274, 
+                615.8361637695318, 
+                360.4387408016274, 
+                615.8361637695318, 
+                377.8894020507813, 
+                615.0516700195318, 
+                377.8894020507813, 
+                615.0516700195318, 
+                395.3400632999353, 
+                615.0516700195318, 
+                405.3400632999353
+            ]
+        }, 
+        {
+            "from": -23, 
+            "to": -24, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                615.0516700195318, 
+                440.8172158016274, 
+                615.0516700195318, 
+                450.8172158016274, 
+                615.0516700195318, 
+                469.66012392578136, 
+                605.8361637695318, 
+                469.66012392578136, 
+                605.8361637695318, 
+                488.50303204993526, 
+                605.8361637695318, 
+                498.50303204993526
+            ]
+        }, 
+        {
+            "from": -24, 
+            "to": -25, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                605.8361637695318, 
+                533.9801845516273, 
+                605.8361637695318, 
+                543.9801845516273, 
+                605.8361637695318, 
+                543.9801845516273, 
+                716, 
+                543.9801845516273, 
+                716, 
+                396, 
+                835.6206575195315, 
+                396, 
+                835.6206575195315, 
+                395.88150704993535, 
+                835.6206575195315, 
+                405.88150704993535
+            ]
+        }, 
+        {
+            "from": -19, 
+            "to": -26, 
+            "fromPort": "R", 
+            "toPort": "T", 
+            "points": [
+                464.98203377037737, 
+                519.0510958007815, 
+                474.98203377037737, 
+                519.0510958007815, 
+                496.4675793851887, 
+                519.0510958007815, 
+                496.4675793851887, 
+                28.83954874915397, 
+                616.453125, 
+                28.83954874915397, 
+                616.453125, 
+                38.83954874915397
+            ]
+        }, 
+        {
+            "from": -17, 
+            "to": -26, 
+            "fromPort": "R", 
+            "toPort": "L", 
+            "points": [
+                467.4130462703773, 
+                331.8631333007813, 
+                477.4130462703773, 
+                331.8631333007813, 
+                498.06379750976566, 
+                331.8631333007813, 
+                498.06379750976566, 
+                56.578125, 
+                518.714548749154, 
+                56.578125, 
+                528.714548749154, 
+                56.578125
+            ]
+        }, 
+        {
+            "from": -26, 
+            "to": -20, 
+            "fromPort": "B", 
+            "toPort": "T", 
+            "points": [
+                616.453125, 
+                74.31670125084602, 
+                616.453125, 
+                84.31670125084602, 
+                616.453125, 
+                84, 
+                616.453125, 
+                84, 
+                616.453125, 
+                108, 
+                611.8361637695318, 
+                108, 
+                611.8361637695318, 
+                120.20463829993528, 
+                611.8361637695318, 
+                130.20463829993528
+            ]
+        }
+    ]
+}
