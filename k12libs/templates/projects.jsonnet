@@ -44,7 +44,6 @@ local _projects = {
         {
             task: { name: 'cls', value: self.name },
             networks: [
-                { name: 'alexnet', value: self.name },
                 { name: 'resnet18', value: self.name },
                 { name: 'resnet50', value: self.name },
                 { name: 'resnet101', value: self.name },
@@ -54,11 +53,16 @@ local _projects = {
                 { name: 'vgg19', value: self.name },
                 { name: 'vgg16_bn', value: self.name },
                 { name: 'vgg19_bn', value: self.name },
+                { name: 'alexnet', value: self.name },
                 { name: 'custom_base', value: self.name },
             ],
             datasets: [
-                { name: 'cifar10', value: self.name },
-                { name: 'mnist', value: self.name },
+                { name: 'rmnist', value: self.name },
+                { name: 'rcifar10', value: self.name },
+                { name: 'rflowers', value: self.name },
+                { name: 'rchestxray', value: self.name },
+                { name: 'rfruits', value: self.name },
+                { name: 'rDogsVsCats', value: self.name },
                 { name: 'Animals', value: self.name },
                 { name: 'Boats', value: self.name },
                 { name: 'cactus', value: self.name },

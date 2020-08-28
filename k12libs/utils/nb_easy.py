@@ -45,7 +45,7 @@ from abc import ABC, abstractmethod # noqa
 from collections import OrderedDict
 import numpy as np
 import torch
-import torch.nn as nn
+import torch.nn as nn # noqa
 import torchvision # noqa
 from PIL import Image # noqa
 from torch.nn.modules.module import _addindent
@@ -755,6 +755,8 @@ def k12ai_model_summary(model, input_size: tuple = None):
 
                     m_key = "%s-%i" % (class_name, module_idx + 1)
                     summary[m_key] = OrderedDict()
+                    if isinstance(input[0], list):
+                        print(len(input[0]))
                     summary[m_key]["input_shape"] = list(input[0].size())
                     summary[m_key]["input_shape"][0] = batch_size
                     if isinstance(output, (list, tuple)):
@@ -773,10 +775,11 @@ def k12ai_model_summary(model, input_size: tuple = None):
                         params += torch.prod(torch.LongTensor(list(module.bias.size())))
                     summary[m_key]["nb_params"] = params
 
-                if (
-                    not isinstance(module, nn.Sequential)
-                    and not isinstance(module, nn.ModuleList)
-                ):
+                # if (
+                #     not isinstance(module, nn.Sequential)
+                #     and not isinstance(module, nn.ModuleList)
+                # ):
+                if not any(module.children()):
                     hooks.append(module.register_forward_hook(hook))
 
             # multiple inputs to the network
