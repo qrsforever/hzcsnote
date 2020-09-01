@@ -105,6 +105,8 @@ def k12ai_compute_mean_std(imagelist=None, labellist=None, datadir=None, jfiles=
     mean /= nb_samples
     std /= nb_samples
 
+    mean = [round(x, 4) for x in mean.numpy().tolist()]
+    std = [round(x, 4) for x in std.numpy().tolist()]
     return mean, std
 
 
