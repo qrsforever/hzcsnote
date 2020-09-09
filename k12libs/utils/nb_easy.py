@@ -140,6 +140,15 @@ def _flask_handle():
             with open('/tmp/net_def.py', 'r') as fr:
                 response = {'pycode': str(fr.read())}
                 return json.dumps(response)
+        elif msgtype == 'facedet':
+            host = reqjson['host']
+            port = reqjson['port']
+            api = f'http://{host}:{port}/colorai/face_detection'
+            response = json.loads(requests.post(url=api, json=reqjson).text)
+            if '100200' == response['code']:
+                return json.dumps(response['content'])
+            else:
+                return json.dumps({'error': response['content']})
     except Exception as err:
         err = {'error': format(err)}
         return json.dumps(err)
@@ -188,13 +197,16 @@ def k12ai_start_tensorboard(port, logdir, clear=False, reload_interval=10, heigh
     return f'http://{K12AI_WLAN_ADDR}:{port}'
 
 def k12ai_start_html(uri, width=None, height=None, flask=False):
+    token = '&' if '?' in uri else '?'
+    if not uri.startswith('http'):
+        uri = f'{W3URL}/{uri}'
     k12ai_set_notebook(cellw=95)
     if width is None:
         width = '100%'
     if height is None:
         height = 300
     if flask:
-        uri += f'&flask=http://{netip}:{flask_port}/k12ai/notebook/message'
+        uri += f'{token}flask=http://{netip}:{flask_port}/k12ai/notebook/message'
         _start_flask_service()
     return IFrame(uri, width=width, height=height)
 

@@ -78,14 +78,13 @@
 
         function message_pop() {
             // console.log("call pop")
-            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error",
+            $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".runlog",
                   function(response) {
                       if (gtimeId != null) {
                           clearTimeout(gtimeId);
                           gtimeId = null;
                       }
                       var data = $.parseJSON(response);
-                      console.log(data)
                       for (it of data) {
                           jsondata = $.parseJSON(it)
                           if (jsondata['token'] != tokenId) {
@@ -142,7 +141,7 @@
                 "service_uuid": uuid,
                 "service_params": {
                     "code": editor.getValue(),
-                    "_k12.tb_logdir": "/data/tmp"
+                    "devoloper": true
                 }
             };
             $.post("http://116.85.5.40:8119/k12ai/framework/execute",
