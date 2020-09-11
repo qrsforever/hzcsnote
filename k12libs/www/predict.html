@@ -29,6 +29,8 @@
         <script src="js/jquery.cookie.js" type="text/javascript"></script>
         <script src="js/jquery.form.js" type="text/javascript"></script>
         <script>
+            let host = "116.85.54.39";
+            let port = "8189";
             const urlParams = new URLSearchParams(window.location.search);
             window.onload = function() {
                 if (urlParams.has("default")) {
@@ -59,8 +61,6 @@
             }
             function onDetectFace() {
                 if (urlParams.has("flask")) {
-                    let host = "116.85.54.39";
-                    let port = "8189";
                     if (urlParams.has("host")) {
                         host = urlParams.get("host");
                     }
@@ -81,11 +81,38 @@
                     }, "json");
                 }
             }
+
+            function onClassifyDogCat() {
+                if (urlParams.has("flask")) {
+                    if (urlParams.has("host")) {
+                        host = urlParams.get("host");
+                    }
+                    if (urlParams.has("port")) {
+                        port = urlParams.get("port");
+                    }
+                    let jsonData = {"msgtype": "dogcat", "host": host, "port": parseInt(port), "orig_img": $("#result").val()};
+                    msgData = JSON.stringify(jsonData, undefined, 4);
+                    $.post(urlParams.get("flask"), msgData, function(response) {
+                        if (response.hasOwnProperty("predict")) {
+                            if (response["predict"] == "1") {
+                                $("#result").text("猫");
+                            } else {
+                                $("#result").text("狗");
+                            }
+                        } else if (response.hasOwnProperty("error")) {
+                            $("#img_area").html('<div>执行错误:' + response["error"] + '</div>');
+                        } else {
+                            $("#img_area").html('<div>执行错误:内部错误</div>');
+                        }
+                    }, "json");
+                }
+            }
         </script>
     </head>
     <body>
         <input type="file" value="image" id="file_input" />
         <button onclick="onDetectFace()">脸部探测</button>
+        <button onclick="onClassifyDogCat()">猫狗识别</button>
         <p id="img_area"></p>
         <textarea name="img" id="result" rows=30 cols=200></textarea>
     </body>
