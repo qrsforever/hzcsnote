@@ -59,6 +59,7 @@
                     $("#img_area").html('<div class="sitetip">目标图片:</div><img src="'+this.result+'" alt=""/>');
                 }
             }
+
             function onDetectFace() {
                 if (urlParams.has("flask")) {
                     if (urlParams.has("host")) {
@@ -71,8 +72,31 @@
                     msgData = JSON.stringify(jsonData, undefined, 4);
                     $.post(urlParams.get("flask"), msgData, function(response) {
                         if (response.hasOwnProperty("predict")) {
-                            $("#img_area").html('<div>探测结果:</div><img src="data:image/jpeg;base64,' + response["predict"] + '" alt=""/>');
-                            $("#result").text('data:image/jpeg;base64,' + respnse["predict"]);
+                            $("#img_area").html('<div>探测结果:' + response["num_instances"] + '</div><img src="' + response["predict"] + '" alt=""/>');
+                            $("#result").text('data:image/jpeg;base64,' + response["predict"]);
+                        } else if (response.hasOwnProperty("error")) {
+                            $("#img_area").html('<div>执行错误:' + response["error"] + '</div>');
+                        } else {
+                            $("#img_area").html('<div>执行错误:内部错误</div>');
+                        }
+                    }, "json");
+                }
+            }
+
+            function onDetectLP() {
+                if (urlParams.has("flask")) {
+                    if (urlParams.has("host")) {
+                        host = urlParams.get("host");
+                    }
+                    if (urlParams.has("port")) {
+                        port = urlParams.get("port");
+                    }
+                    let jsonData = {"msgtype": "lpdet", "host": host, "port": parseInt(port), "orig_img": $("#result").val()};
+                    msgData = JSON.stringify(jsonData, undefined, 4);
+                    $.post(urlParams.get("flask"), msgData, function(response) {
+                        if (response.hasOwnProperty("predict")) {
+                            $("#img_area").html('<div>探测结果:' + response["num_instances"] + '</div><img src="' + response["predict"] + '" alt=""/>');
+                            $("#result").text('data:image/jpeg;base64,' + response["predict"]);
                         } else if (response.hasOwnProperty("error")) {
                             $("#img_area").html('<div>执行错误:' + response["error"] + '</div>');
                         } else {
@@ -111,8 +135,9 @@
     </head>
     <body>
         <input type="file" value="image" id="file_input" />
-        <button onclick="onDetectFace()">脸部探测</button>
         <button onclick="onClassifyDogCat()">猫狗识别</button>
+        <button onclick="onDetectFace()">脸部探测</button>
+        <button onclick="onDetectLP()">车牌探测</button>
         <p id="img_area"></p>
         <textarea name="img" id="result" rows=30 cols=200></textarea>
     </body>

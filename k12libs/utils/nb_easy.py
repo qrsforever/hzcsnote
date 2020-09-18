@@ -149,6 +149,15 @@ def _flask_handle():
                 return json.dumps(response['content'])
             else:
                 return json.dumps({'error': response['content']})
+        elif msgtype == 'lpdet':
+            host = reqjson['host']
+            port = reqjson['port']
+            api = f'http://{host}:{port}/colorai/licenseplate_detection'
+            response = json.loads(requests.post(url=api, json=reqjson).text)
+            if '100200' == response['code']:
+                return json.dumps(response['content'])
+            else:
+                return json.dumps({'error': response['content']})
         elif msgtype == 'dogcat':
             host = reqjson['host']
             port = reqjson['port']
