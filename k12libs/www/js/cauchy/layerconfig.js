@@ -2,6 +2,7 @@
 var nodeEnum = [];
 nodeEnum["Input"] = {color: "#094AB2", img: "io-layers.png",subtype:["Input"],defaultsubtype:"Input"};
 nodeEnum["Output"] = {color: "#094AB2", img: "io-layers.png",subtype:["Output"],defaultsubtype:"Output"};
+nodeEnum["SSD"] = {color: "#394D02", img: "core-layers.png",subtype:["SSD"],defaultsubtype:"SSD"};
 nodeEnum["Conv"] = {color: "#3B9F5B", img: "convolutional-layers.png",subtype:["Conv1d","Conv2d","Conv3d","ConvTranspose1d","ConvTranspose2d","ConvTranspose3d"],defaultsubtype:"Conv2d"};
 nodeEnum["Act"] = {color: "#008A00", img: "activations-layers.png",subtype:["Relu","Tanh","LeakyReLU","LogSigmoid","Sigmoid","Softsign","Tanhshrink","Hardshrink","Hardtanh","Relu6","SELU"],defaultsubtype:"Relu"};
 nodeEnum["Padding"] = {color: "#C8533B", img: "convolutional-layers.png",subtype:["ReflectionPad1d","ReflectionPad2d","ReplicationPad1d","ReplicationPad2d","ReplicationPad3d","ZeroPad2d","ConstantPad1d","ConstantPad2d","ConstantPad3d"],defaultsubtype:"ZeroPad2d"};
@@ -20,6 +21,8 @@ nodeParams["Input"] = {};
 nodeParams["Input"].in_features = {type:'listnumber'};
 nodeParams["Output"] = {};
 nodeParams["Output"].out_features = {type:'number'};
+nodeParams["SSD"] = {};
+nodeParams["SSD"].test = {type:'number'};
 
 
 nodeParams["Conv1d"] = {};

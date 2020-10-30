@@ -351,6 +351,7 @@
                 let jsonData = {"msgtype": "protodata", "tag": urlParams.get("tag"), "protodata": protoData}
                 msgData = JSON.stringify(jsonData, undefined, 4)
                 $.post(urlParams.get("flask"), msgData, function(response) {
+                    console.log(response)
                 }, "json");
             }
         }

@@ -321,6 +321,7 @@ class LayerNode{
             case 'Vulkan':return new Vulkan(lev2type,name,id);
             case 'Input':return new Input(lev2type,name,id);
             case 'Output':return new Output(lev2type,name,id);
+            case 'SSD':return new SSD(lev2type,name,id);
             default:return new LayerNode(name,id);
         }
     }
@@ -423,6 +424,19 @@ class Output extends LayerNode{
         }
     }
 }
+
+class SSD extends LayerNode{
+    constructor(subtype="",name="",id){
+        super(name,id);
+        this._type = 'SSD';
+        this.subtype = 'SSD';
+        this.test = 1;
+    }
+    computeShape(obj){
+        return {};
+    }
+}
+
 
 /**
  * 卷积层

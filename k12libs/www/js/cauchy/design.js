@@ -1138,7 +1138,7 @@ function toPrototxt(nodes,links,nettype,netname){
         for (let [ index, val ] of seqnodes.entries()){
             val = val.info;
 
-            if(val._type == 'Input' || val._type == 'Output')
+            if(val._type == 'Input' || val._type == 'Output' || val._type == 'SSD')
                 continue;
             result.datastr = '\n' + val.toProtoStr() + result.datastr;
         }

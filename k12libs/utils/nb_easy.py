@@ -113,7 +113,7 @@ def _start_flask_service():
     if g_flask_process is None or not g_flask_process.is_alive():
         def _run_flask(*args, **kwargs):
             try:
-                app.run(*args, **kwargs)
+                app.run(*args, **kwargs, debug=False)
             except Exception:
                 pass
         g_flask_process = threading.Thread(target=_run_flask,
@@ -130,6 +130,8 @@ def _flask_handle():
             ctx = g_contexts.get(tag, None)
             if ctx:
                 ctx.protodata = reqjson[msgtype]['datastr']
+            else:
+                return json.dumps({'error': 'not found context of %s [%s]' % (tag, list(g_contexts.keys()))})
         elif msgtype == 'genpycode':
             net_def = reqjson['net_def']
             sys.path.append(k12ai_get_app_dir('cv'))
@@ -172,7 +174,7 @@ def _flask_handle():
     except Exception as err:
         err = {'error': format(err)}
         return json.dumps(err)
-    return ''
+    return 'ok'
 
 def k12ai_set_notebook(cellw=None):
     if cellw:
@@ -422,7 +424,7 @@ def _start_work_process(context):
                     result = {}
                     continue
                 elif flag == 2:
-                    timeout = 5
+                    timeout = 50
                 elif flag == 3:
                     context.progress.trainstart.disabled = False
                     context.progress.trainstop.disabled = True
@@ -504,8 +506,9 @@ def _init_project_schema(context, params):
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
-    context.tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
-    context.uuid = hashlib.md5(context.tag.encode()).hexdigest()[0:6]
+    tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
+    context.tag = hashlib.md5(tag.encode()).hexdigest()[0:6]
+    context.uuid = context.tag
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{K12AI_TBLOG_ROOT}/{context.user}/{context.uuid}'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
@@ -623,7 +626,7 @@ def _on_project_trainstop(wdg):
     if response['code'] != 100000:
         return
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, wdg.phase)
-    g_queue.put((context.tag, key, 2))
+    g_queue.put((context.tag, key, 3))
 
 
 def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg_output):
@@ -670,6 +673,7 @@ def _on_project_traininit(context, phase, wdg_start, wdg_stop, wdg_progress, wdg
 
 def k12ai_run_project(lan='en', debug=False, tb_port=None,
         framework=None, task=None, network=None, dataset=None, model_templ=None):
+    k12ai_set_notebook(cellw=95)
     if task is None:
         events = {
                 'project.confirm': _on_project_confirm,
