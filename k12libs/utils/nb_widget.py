@@ -451,7 +451,7 @@ class K12WidgetGenerator():
                 for obj in obj['objs']:
                     self._parse_config(box, obj)
                 _widget_add_child(wdg, box)
-            wdg.selected_index = 0
+            # wdg.selected_index = 0
             return _widget_add_child(widget, wdg)
 
         elif _type == 'navigation':
