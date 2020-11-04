@@ -169,6 +169,15 @@ def _flask_handle():
                 return json.dumps(response['content'])
             else:
                 return json.dumps({'error': response['content']})
+        elif msgtype == 'garbage':
+            host = reqjson['host']
+            port = reqjson['port']
+            api = f'http://{host}:{port}/colorai/garbage_predict'
+            response = json.loads(requests.post(url=api, json=reqjson).text)
+            if '100200' == response['code']:
+                return json.dumps(response['content'])
+            else:
+                return json.dumps({'error': response['content']})
         else:
             return json.dumps({'error': 'unkown type'})
     except Exception as err:

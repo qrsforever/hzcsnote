@@ -131,11 +131,46 @@
                     }, "json");
                 }
             }
+
+            function onClassifyGarbage() {
+                if (urlParams.has("flask")) {
+                    if (urlParams.has("host")) {
+                        host = urlParams.get("host");
+                    }
+                    if (urlParams.has("port")) {
+                        port = urlParams.get("port");
+                    }
+                    let jsonData = {"msgtype": "garbage", "host": host, "port": parseInt(port), "orig_img": $("#result").val()};
+                    msgData = JSON.stringify(jsonData, undefined, 4);
+                    $.post(urlParams.get("flask"), msgData, function(response) {
+                        if (response.hasOwnProperty("predict")) {
+                            switch (response["predict"]) {
+                                case "1":
+                                    $("#result").text("厨余垃圾");
+                                    break;
+                                case "2":
+                                    $("#result").text("可回收物");
+                                    break;
+                                case "3":
+                                    $("#result").text("有害垃圾");
+                                    break;
+                                default:
+                                    $("#result").text("其他垃圾");
+                            }
+                        } else if (response.hasOwnProperty("error")) {
+                            $("#img_area").html('<div>执行错误:' + response["error"] + '</div>');
+                        } else {
+                            $("#img_area").html('<div>执行错误:内部错误</div>');
+                        }
+                    }, "json");
+                }
+            }
         </script>
     </head>
     <body>
         <input type="file" value="image" id="file_input" />
         <button onclick="onClassifyDogCat()">猫狗识别</button>
+        <button onclick="onClassifyGarbage()">垃圾分类</button>
         <button onclick="onDetectFace()">脸部探测</button>
         <button onclick="onDetectLP()">车牌探测</button>
         <p id="img_area"></p>
