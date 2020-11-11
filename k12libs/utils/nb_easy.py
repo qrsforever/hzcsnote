@@ -108,6 +108,13 @@ K12AI_TBLOG_ROOT = '/data/tblogs'
 K12AI_PRETRAINED_ROOT = '/data/pretrained'
 K12AI_NBDATA_ROOT = '/data/nb_data'
 
+## RACE
+
+RACEURL = 'http://{}:{}'.format(netip, 9119) # RaceAI API
+RACE_ROOT = '/raceai'
+RACE_DATA = f'{RACE_ROOT}/data'
+
+
 def _start_flask_service():
     global g_flask_process
     if g_flask_process is None or not g_flask_process.is_alive():
