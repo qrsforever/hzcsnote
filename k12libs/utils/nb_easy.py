@@ -59,7 +59,6 @@ CORS(app, supports_credentials=True)
 
 # Global
 g_queue = None
-g_flask_process = None
 g_result_process = None
 g_contexts = {}
 
@@ -116,16 +115,25 @@ RACE_DATA = f'{RACE_ROOT}/data'
 
 
 def _start_flask_service():
-    global g_flask_process
-    if g_flask_process is None or not g_flask_process.is_alive():
-        def _run_flask(*args, **kwargs):
-            try:
-                app.run(*args, **kwargs, debug=False)
-            except Exception:
-                pass
-        g_flask_process = threading.Thread(target=_run_flask,
-                kwargs={"host": flask_host, "port": flask_port})
-        g_flask_process.start()
+    try:
+        requests.get('http://{}:{}/shutdown'.format(flask_host, flask_port))
+    except Exception:
+        pass
+
+    def _run_flask(*args, **kwargs):
+        try:
+            app.run(*args, **kwargs, debug=False)
+        except Exception:
+            pass
+    threading.Thread(target=_run_flask,
+            kwargs={"host": flask_host, "port": flask_port}).start()
+
+@app.route('/shutdown', methods=['GET'])
+def _flask_shutdown():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 @app.route('/k12ai/notebook/message', methods=['POST', 'GET'])
 def _flask_handle():
@@ -136,11 +144,16 @@ def _flask_handle():
             tag = reqjson['tag']
             ctx = g_contexts.get(tag, None)
             if ctx:
-                ctx.protodata = reqjson[msgtype]['datastr']
+                ctx.protodata = reqjson[msgtype]
+                return json.dumps({'tags': 'context of %s %s' % (tag, list(g_contexts.keys()))})
             else:
-                return json.dumps({'error': 'not found context of %s [%s]' % (tag, list(g_contexts.keys()))})
+                return json.dumps({'error': 'not found context of %s %s' % (tag, list(g_contexts.keys()))})
         elif msgtype == 'genpycode':
             net_def = reqjson['net_def']
+            tag = reqjson['tag']
+            ctx = g_contexts.get(tag, None)
+            if ctx is None:
+                return json.dumps({'error': 'not found context of %s %s' % (tag, list(g_contexts.keys()))})
             sys.path.append(k12ai_get_app_dir('cv'))
             from vulkan.builders.net_builder import NetBuilder
             net = NetBuilder(net_def).build_net()
@@ -271,6 +284,9 @@ def k12ai_count_down(secs):
 def k12ai_get_top_dir():
     return os.path.abspath(
                 os.path.dirname(os.path.abspath(__file__)) + '../../..')
+
+def k12ai_get_www_dir():
+    return os.path.join(k12ai_get_top_dir(), 'k12libs', 'www')
 
 def k12ai_get_app_dir(svr):
     return os.path.join(k12ai_get_top_dir(), svr, 'app')
@@ -428,14 +444,19 @@ def _start_work_process(context):
         timeout = 3
         total_count = 0
         result = {}
+        active_time = 0
         while True:
             try:
                 tag, key, flag = g_queue.get(True, timeout=timeout)
                 context = g_contexts.get(tag, None)
+                active_time = time.time()
                 if flag == 1:
                     with context.progress.output:
                         clear_output()
-                    timeout = 3
+                        context.traindata = {
+                                'tmpfile': os.path.join(k12ai_get_www_dir(), f'cache/metrics_{tag}.json'),
+                                'metrics': []}
+                    timeout = 1
                     total_count = 0
                     result = {}
                     continue
@@ -447,6 +468,12 @@ def _start_work_process(context):
                     context.progress.value = 100.0
                     context.progress.description = '100.0%'
                     timeout = 300
+                    if len(context.traindata['metrics']) > 0:
+                        with context.progress.output:
+                            clear_output(wait=True)
+                            with open(context.traindata['tmpfile'], 'w') as fw:
+                                json.dump(context.traindata['metrics'], fw)
+                            print(f'Download full metrics: {W3URL}/cache/metrics_{tag}.json')
                     continue
                 elif flag == 9:
                     timeout = 1
@@ -454,7 +481,7 @@ def _start_work_process(context):
                 else:
                     timeout = 3
             except Empty:
-                pass
+                timeout = min(1 + int((time.time() - active_time) / 2), 50)
             except AttributeError:
                 pass
 
@@ -470,7 +497,7 @@ def _start_work_process(context):
             try:
                 # error
                 result['error'] = {}
-                data = k12ai_get_data(key, 'error', num=1)
+                data = k12ai_get_data(key, 'error', num=1, rm=True)
                 if data:
                     result['error'] = data[0]['value']
                     code = result['error']['data']['code']
@@ -480,9 +507,10 @@ def _start_work_process(context):
 
                 # metrics
                 if context.progress.phase == 'train':
-                    data = k12ai_get_data(key, 'metrics', num=1, rm=True)
+                    data = k12ai_get_data(key, 'metrics', num=100, rm=True)
+                    result['data'] = data
                     if data:
-                        result['metrics'] = data[0]['value']
+                        result['metrics'] = data[-1]['value']
                         if context.framework == 'k12ml':
                             context.progress.value = 1.0
                         else:
@@ -492,7 +520,7 @@ def _start_work_process(context):
                                         progress = obj['data']['payload']['y'][0]['value']
                                         context.progress.value = progress
                 else: # context.progress.phase == 'evaluate':
-                    data = k12ai_get_data(key, 'metrics', num=10, rm=True)
+                    data = k12ai_get_data(key, 'metrics', num=100, rm=True)
                     if data:
                         result['metrics'] = data[-1]['value']
                         context.progress.value = result['metrics']['data']['progress']
@@ -505,6 +533,7 @@ def _start_work_process(context):
                 if 'metrics' in result:
                     with context.progress.output:
                         clear_output(wait=True)
+                        context.traindata['metrics'].extend([x['value'] for x in result['data']])
                         k12ai_print(result['metrics'])
 
     if not g_result_process or not g_result_process.is_alive():
@@ -516,19 +545,21 @@ def _start_work_process(context):
 def _init_project_schema(context, params):
     context._output('----------Generate Project Schema (take a monment: 5s)--------------')
     context._output(params, 0)
-
     context.user = params.get('project.user', '16601548608')
     context.framework = params.get('project.framework', None)
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
     context.dataset = params.get('project.dataset', None)
-    tag = '%s_%s_%s' % (context.task, context.network, context.dataset)
-    context.tag = hashlib.md5(tag.encode()).hexdigest()[0:6]
+    context.tag = str(id(context))[:6]
+    # context.tag = hashlib.md5(tag.encode()).hexdigest()[0:6]
     context.uuid = context.tag
     context.usercache = f'{K12AI_USERS_ROOT}/{context.user}/{context.uuid}'
     context.tb_logdir = f'{K12AI_TBLOG_ROOT}/{context.user}/{context.uuid}'
     context.dataset_dir = f'{K12AI_DATASETS_ROOT}/{context.framework[3:]}/{context.dataset}'
     context.dataset_url = f'{DSURL}'
+
+    if 'custom' in context.network and not context.model_templ:
+        context.model_templ = 'simple'
 
     g_contexts[context.tag] = context
 

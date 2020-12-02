@@ -54,6 +54,7 @@
             <div>
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs" role="tablist" id="main_tabs">
+                    <li role="presentation" class="nav-item"><span id='username' class="nav-link">who</span></li>
                     <li role="presentation" class="nav-item nav-model"><a href="#main_model"
                             aria-controls="main_model" role="tab" data-toggle="tab"
                             class="nav-link">Diagram</a></li>
@@ -82,7 +83,7 @@
                               width:300px;
                               margin-top:2rem;
                               z-index:99;
-                              max-height:500px;
+                              max-height:510px;
                               min-height:100px;
                               overflow-y:auto;
 
@@ -114,7 +115,7 @@
                             height:100%;
                             width:100%;
 
-                            min-height:600px;
+                            min-height:610px;
                             border:1px solid  #AAA;
 
 
@@ -200,6 +201,7 @@
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="main_training">
                         <button class="btn btn-primary" onclick="onGenProtoData()">生成ProtoData</button>
+                        <button class="btn btn-primary" onclick="onSendProtoData()">传送ProtoData</button>
                         <div class="btn-toolbar list-toolbar">
                             <div class="wrapper">
                                 <textArea cols="120" rows="20" id="protodata"></textArea>
@@ -226,8 +228,13 @@
         let net_def = "";
         let diagram_json = "";
         const urlParams = new URLSearchParams(window.location.search);
+        const tag = urlParams.get('tag');
+        if (tag == undefined) {
+            tag = "unkown"
+        }
+        $("#username").text('User:' + tag)
         const jfile = urlParams.get('jfile')
-        if(jfile != undefined) {
+        if (jfile != undefined) {
             $.ajaxSettings.async = false;
             $.getJSON("models/" + jfile + ".json", function(data){
                 diagram_json = JSON.stringify(data);
@@ -348,7 +355,17 @@
             }
             $("#protodata").text(protoData["datastr"]);
             if (urlParams.has("flask")) {
-                let jsonData = {"msgtype": "protodata", "tag": urlParams.get("tag"), "protodata": protoData}
+                let jsonData = {"msgtype": "protodata", "tag": tag, "protodata": protoData["datastr"]}
+                msgData = JSON.stringify(jsonData, undefined, 4)
+                $.post(urlParams.get("flask"), msgData, function(response) {
+                    console.log(response)
+                }, "json");
+            }
+        }
+
+        function onSendProtoData() {
+            if (urlParams.has("flask")) {
+                let jsonData = {"msgtype": "protodata", "tag": tag, "protodata": $("#protodata").val()}
                 msgData = JSON.stringify(jsonData, undefined, 4)
                 $.post(urlParams.get("flask"), msgData, function(response) {
                     console.log(response)
@@ -358,7 +375,7 @@
 
         function onGenPyCode() {
             if (urlParams.has("flask")) {
-                let jsonData = {"msgtype": "genpycode", "net_def": $("#protodata").val()}
+                let jsonData = {"msgtype": "genpycode", "tag": tag, "net_def": $("#protodata").val()}
                 // console.log(jsonData)
                 msgData = JSON.stringify(jsonData, undefined, 4)
                 $.post(urlParams.get("flask"), msgData, function(response) {
