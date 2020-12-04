@@ -472,7 +472,7 @@ def _start_work_process(context):
                         with context.progress.output:
                             clear_output(wait=True)
                             with open(context.traindata['tmpfile'], 'w') as fw:
-                                json.dump(context.traindata['metrics'], fw)
+                                json.dump(context.traindata['metrics'], fw, ensure_ascii=False)
                             print(f'Download full metrics: {W3URL}/cache/metrics_{tag}.json')
                     continue
                 elif flag == 9:
@@ -495,8 +495,10 @@ def _start_work_process(context):
                 context.progress.description = 'Progress:'
 
             try:
-                # error
+                result['data'] = {}
                 result['error'] = {}
+                result['metrics'] = {}
+                # error
                 data = k12ai_get_data(key, 'error', num=1, rm=True)
                 if data:
                     result['error'] = data[0]['value']
@@ -527,14 +529,13 @@ def _start_work_process(context):
             except Exception:
                 pass
 
-            if len(result) > 0:
-                if 'error' in result:
-                    context._output(result['error'])
-                if 'metrics' in result:
-                    with context.progress.output:
-                        clear_output(wait=True)
-                        context.traindata['metrics'].extend([x['value'] for x in result['data']])
-                        k12ai_print(result['metrics'])
+            if 'error' in result and len(result['error']) > 0:
+                context._output(result['error'])
+            if 'metrics' in result and len(result['metrics']) > 0:
+                with context.progress.output:
+                    clear_output(wait=True)
+                    k12ai_print(result['metrics'])
+                    context.traindata['metrics'].extend([x['value'] for x in result['data']])
 
     if not g_result_process or not g_result_process.is_alive():
         g_result_process = threading.Thread(target=_queue_work, args=())
