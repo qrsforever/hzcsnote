@@ -49,6 +49,8 @@ import torch.nn as nn # noqa
 import torchvision # noqa
 from PIL import Image # noqa
 from torch.nn.modules.module import _addindent
+from minio import Minio
+
 
 app = Flask(__name__)
 app.logger.disabled = True
@@ -112,6 +114,34 @@ K12AI_NBDATA_ROOT = '/data/nb_data'
 RACEURL = 'http://{}:{}'.format(netip, 9119) # RaceAI API
 RACE_ROOT = '/raceai'
 RACE_DATA = f'{RACE_ROOT}/data'
+
+
+## OSS
+
+def k12ai_oss_client(bucket_name, server_url=None, access_key=None, secret_key=None, region='gz'):
+    if server_url is None:
+        server_url = os.environ.get('MINIO_SERVER_URL', 's3-internal.didiyunapi.com')
+    if access_key is None:
+        access_key = os.environ.get('MINIO_ACCESS_KEY', 'AKDD002E38WR1J7RMPTGRIGNVCVINY')
+    if secret_key is None:
+        secret_key = os.environ.get('MINIO_SECRET_KEY', 'ASDDXYWs45ov7MNJbj5Wc2PM9gC0FSqCIkiyQkVC')
+
+    mc = Minio(
+        endpoint=server_url,
+        access_key=access_key,
+        secret_key=secret_key,
+        secure=True)
+
+    if not mc.bucket_exists(bucket_name):
+        mc.make_bucket(bucket_name, location=region)
+
+    return mc
+
+
+def k12ai_oss_put(mclient, bucket_name, src_path, dst_path):
+    file_size = os.stat(src_path).st_size
+    with open(src_path, 'rb') as fr:
+        mclient.put_object(bucket_name, dst_path, fr, file_size)
 
 
 def _start_flask_service():
