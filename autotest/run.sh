@@ -10,4 +10,5 @@ cur_fil=${BASH_SOURCE[0]}
 cur_dir=`cd $(dirname $cur_fil); pwd`
 top_dir=`dirname $cur_dir`
 
-PYTHONPATH=$top_dir:$PYTHONPATH python3 ./selenium/main.py
+# PYTHONPATH=$top_dir:$PYTHONPATH python3 ./selenium/main.py
+# python3 selenium/main.py --help

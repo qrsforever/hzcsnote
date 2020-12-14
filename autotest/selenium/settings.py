@@ -9,8 +9,12 @@
 
 
 import os
+import xlrd
 
-TOP_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
+
+CUR_PATH = os.path.dirname(os.path.realpath(__file__))
+TOP_PATH = os.path.dirname(CUR_PATH)
+PRO_PATH = os.path.dirname(TOP_PATH)
 OUTPUT_PATH = '/tmp/autotest'
 
 # logger
@@ -55,22 +59,32 @@ DO_EVALUATE_PAUSE = DO_TRAIN_PAUSE
 TEST_USERS = [
     ("999999999001", "111111"),
     ("999999999002", "111111"),
-    # ("999999999003", "111111"),
-    # ("999999999004", "111111"),
-    # ("999999999005", "111111"),
-    # ("999999999006", "111111"),
-    # ("999999999007", "111111"),
-    # ("999999999008", "111111"),
-    # ("999999999009", "111111"),
-    # ("999999999010", "111111"),
-    # ("999999999011", "111111"),
-    # ("999999999012", "111111"),
-    # ("999999999013", "111111"),
-    # ("999999999014", "111111"),
-    # ("999999999015", "111111"),
-    # ("999999999016", "111111"),
-    # ("999999999017", "111111"),
-    # ("999999999018", "111111"),
-    # ("999999999019", "111111"),
-    # ("999999999020", "111111"),
+    ("999999999003", "111111"),
+    ("999999999004", "111111"),
+    ("999999999005", "111111"),
+    ("999999999006", "111111"),
+    ("999999999007", "111111"),
+    ("999999999008", "111111"),
+    ("999999999009", "111111"),
+    ("999999999010", "111111"),
 ]
+
+def _read_account_from_file(file):
+    book = xlrd.open_workbook(f'{CUR_PATH}/{file}')
+    sheet = book.sheet_by_index(0)
+    users = []
+    for rowid in range(1, sheet.nrows):
+        username, password = sheet.row_values(rowid)
+        users.append((username, str(password)[:-2]))
+    return users
+
+ACCOUNTS = _read_account_from_file
+
+# CHANGESHA_21_USERS = _read_account_from_file('UA/长沙21中50人账号.xlsx')
+
+# SHANDONG_JZYZ_USERS = _read_account_from_file('UA/山东胶州英姿学校40用户.xlsx')
+
+
+if __name__ == "__main__":
+    users = _read_account_from_file('UA/长沙21中50人账号.xlsx')
+    print(users)

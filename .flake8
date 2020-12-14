@@ -18,6 +18,7 @@ ignore =
     E303
     E305
     E401
+    E402  # module level import not at top of file
     E501
     W503  # line break before binary operator
     W291
