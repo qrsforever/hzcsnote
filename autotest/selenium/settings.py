@@ -38,6 +38,7 @@ HOME_URL = 'http://app.hzcsai.com'
 LOGIN_USERNAME = '/html/body/div/section/main/div[1]/div/div[2]/form[1]/div[1]/div/div/input'
 LOGIN_PASSWORD = '/html/body/div/section/main/div[1]/div/div[2]/form[1]/div[2]/div/div[1]/input'
 LOGIN_CONFIRM = '/html/body/div/section/main/div[1]/div/div[2]/form[1]/div[3]/div/div'
+LOGIN_SHOWNAME = '/html/body/div/div/div/section/header/div/div[3]/div/div/span'
 
 # element course xpath
 COURSES = {
@@ -52,7 +53,7 @@ DO_TRAIN_STOP = '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div[
 
 DO_EVALUATE_NAVI = '/html/body/div/div/div/section/main/div/div[1]/div/div[5]/div[1]'
 DO_EVALUATE_START = DO_TRAIN_START
-DO_EVALUATE_PAUSE = DO_TRAIN_PAUSE
+DO_EVALUATE_STOP = DO_TRAIN_PAUSE
 
 # users account
 
