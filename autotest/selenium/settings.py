@@ -42,7 +42,12 @@ LOGIN_SHOWNAME = '/html/body/div/div/div/section/header/div/div[3]/div/div/span'
 
 # element course xpath
 COURSES = {
-    1: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[1]/div[2]'
+    1: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[1]/div[2]',
+    2: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[2]/div[2]',
+    3: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[3]/div[2]',
+    4: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[4]/div[2]',
+    5: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[5]/div[2]',
+    6: '/html/body/div/div/div/section/main/div/div[2]/div/div/div/div/div[1]/div[6]/div[2]',
 }
 
 # do gpu task

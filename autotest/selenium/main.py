@@ -5,17 +5,24 @@ import os.path as osp
 import time
 import sys
 import argparse
+import traceback
 import multiprocessing
+
+from xvfbwrapper import Xvfb
 
 sys.path.append(osp.dirname(osp.dirname(osp.dirname(osp.realpath(__file__)))))
 
-from xvfbwrapper import Xvfb
 from autotest.selenium.browser import Browser
 from autotest.selenium.utils import trycall
+from autotest.selenium.logger import Logger
+
 import autotest.selenium.settings as settings
+
+logger = Logger('autotest.selenium')
 
 
 def do_login(browser, username, password):
+    logger.info(f'login username: {username}')
     user_elem = trycall(lambda: browser.find_element_by_xpath(settings.LOGIN_USERNAME))
     user_elem.clear()
     user_elem.send_keys(username)
@@ -35,6 +42,7 @@ def do_login(browser, username, password):
 
 
 def do_course(browser, cid, train_time):
+    logger.info(f'course: {cid}')
     btn_elem = trycall(lambda: browser.find_element_by_xpath(settings.COURSES[cid]))
     btn_elem.click()
     time.sleep(3)
@@ -55,7 +63,7 @@ def do_course(browser, cid, train_time):
 
         time.sleep(train_time)
         train_stop_elem.click()
-        time.sleep(3)
+        time.sleep(8)
 
     # evaluate
     evaluate_navi_elem = trycall(lambda: browser.find_element_by_xpath(settings.DO_EVALUATE_NAVI))
@@ -74,14 +82,14 @@ def do_course(browser, cid, train_time):
 
 
 def process_task(username, password, cid, train_time):
+    # with Xvfb(width=800, height=600, colordepth=24) as xvfb: # noqa
+    browser = Browser('firefox').get_driver()
+    browser.get(settings.HOME_URL)
     try:
-        # with Xvfb(width=800, height=600, colordepth=24) as xvfb: # noqa
-        browser = Browser('firefox').get_driver()
-        browser.get(settings.HOME_URL)
         do_login(browser, username, password)
         do_course(browser, cid, train_time)
-    except Exception as e:
-        print(e)
+    except Exception:
+        logger.error(traceback.format_exc())
     finally:
         browser.quit()
 
