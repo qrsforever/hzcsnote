@@ -63,7 +63,7 @@ def do_course(browser, cid, train_time):
 
         time.sleep(train_time)
         train_stop_elem.click()
-        time.sleep(8)
+        time.sleep(20)
 
     # evaluate
     evaluate_navi_elem = trycall(lambda: browser.find_element_by_xpath(settings.DO_EVALUATE_NAVI))
