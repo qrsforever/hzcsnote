@@ -49,7 +49,6 @@ import torch.nn as nn # noqa
 import torchvision # noqa
 from PIL import Image # noqa
 from torch.nn.modules.module import _addindent
-from minio import Minio
 
 
 app = Flask(__name__)
@@ -119,6 +118,7 @@ RACE_DATA = f'{RACE_ROOT}/data'
 ## OSS
 
 def k12ai_oss_client(bucket_name, server_url=None, access_key=None, secret_key=None, region='gz'):
+    from minio import Minio
     if server_url is None:
         server_url = os.environ.get('MINIO_SERVER_URL', 's3-internal.didiyunapi.com')
     if access_key is None:
@@ -182,7 +182,7 @@ def _flask_handle():
             net_def = reqjson['net_def']
             tag = reqjson['tag']
             ctx = g_contexts.get(tag, None)
-            if ctx is None:
+            if ctx is None and 'unkown' != reqjson['tag'] :
                 return json.dumps({'error': 'not found context of %s %s' % (tag, list(g_contexts.keys()))})
             sys.path.append(k12ai_get_app_dir('cv'))
             from vulkan.builders.net_builder import NetBuilder

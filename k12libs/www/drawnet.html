@@ -228,7 +228,7 @@
         let net_def = "";
         let diagram_json = "";
         const urlParams = new URLSearchParams(window.location.search);
-        const tag = urlParams.get('tag');
+        var tag = urlParams.get('tag');
         if (tag == undefined) {
             tag = "unkown"
         }
