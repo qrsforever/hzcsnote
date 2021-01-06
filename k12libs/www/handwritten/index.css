@@ -1,0 +1,232 @@
+.main {
+    width: 100%;
+    height: 100%;
+    background: #F0F4F5;
+}
+
+.content {
+    width: 100%;
+    overflow: hidden;
+}
+
+.content-image {
+    width: 100%;
+    height: 2.74rem;
+    float: left;
+}
+
+.content-image img {
+    width: 100%;
+    height: 100%;
+}
+
+.content-upload {
+    width: 3.5rem;
+    height: 3.2rem;
+    background: #4D5CD1;
+    border-radius: 0.1rem;
+    top: 1.58rem;
+    float: left;
+    margin-top: -1.1rem;
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
+
+#the_stage {
+    width: 3.5rem;
+    height: 3.2rem;
+}
+
+.content-upload > img {
+    width: 100%;
+    height: 100%;
+}
+
+.content-result {
+    width: 3.16rem;
+    height: 1.08rem;
+    background: #F9FAFB;
+    box-shadow: 0 0.1rem 0.18rem 0 #E0E1E1;
+    border-radius: 0.16rem;
+    float: left;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    margin-top: -0.15rem;
+    text-align: center;
+}
+
+.content-result-text {
+    font-size: 0.18rem;
+    font-weight: 500;
+    color: #D2D2D2;
+    line-height: 1.08rem;
+}
+
+.content-buttons {
+    font-size: 0.16rem;
+    text-align: center;
+    margin-top: 0.24rem;
+}
+
+.content-button {
+    display: inline-block;
+    width: 1.5rem;
+    height: 0.5rem;
+    box-shadow: 0 0.08rem 0.1rem 0 #E0E1E1;
+    border-radius: 0.25rem;
+    text-align: center;
+    line-height: 0.5rem;
+    color: #FFFFFF;
+}
+
+.button-delete {
+    background: #FF783B;
+}
+
+.button-save {
+    background: #36C976;
+}
+
+.content-upload-text {
+    margin-top: 0.97rem;
+    text-align: center;
+}
+
+.content-upload-plus {
+    width: 0.8rem;
+    height: 0.8rem;
+    display: inline-block;
+}
+
+.content-upload-plus:before {
+    content: ' ';
+    display: inline-block;
+    width: 0.8rem;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -0.4rem;
+    margin-top: -0.2rem;
+    border-top: 0.1rem solid rgba(255,255,255, 5);
+}
+
+.content-upload-plus:after {
+    content: ' ';
+    display: inline-block;
+    height: 0.8rem;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -0.05rem;
+    margin-top: -0.53rem;
+    border-left: 0.1rem solid rgba(255,255,255, 5);
+}
+
+.content-upload-tips {
+    font-size: 0.14rem;
+    color: #cccccc;
+    line-height: 0.2rem;
+}
+
+.cat-or-dog {
+    background: #CE696F;
+}
+
+.garbage-predict {
+    background: #00cc00;
+}
+
+.face-recognition {
+    background: #F6D983;
+}
+
+.loading {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    background-image: linear-gradient(to bottom, rgba(54, 202, 118, .8), rgba(54, 202, 118, .2));
+    animation: loading 2s linear .1s infinite alternate;
+    border-radius: 0.1rem;
+    width: 100%;
+}
+
+@keyframes loading {
+    from {
+        height: 100%;
+    }
+    to {
+        height: 0;
+    }
+}
+
+.content-result-display {
+    width: 100%;
+    height: 3.5rem;
+    margin-top: 0.33rem;
+    background: #F9FAFB;
+    box-shadow: 0 -0.1rem 0.25rem 0 rgba(0, 0, 0, 0.05);
+    border-radius: 0.2rem 0.2rem 0 0;
+    overflow: hidden;
+}
+
+.content-result-display-text-image {
+    width: 3.11rem;
+    height: 1.33rem;
+    margin-top: 0.26rem;
+    margin-left: 0.15rem;
+}
+
+.content-result-display-text-image img {
+    width: 100%;
+    height: 100%;
+}
+
+.content-result-display-text {
+    width: 100%;
+    height: 100%;
+    padding-left: 0.25rem;
+    /*background-size: cover;*/
+    /*background: url(../image/resultBackground.png) no-repeat center;*/
+    /*background-clip: revert;*/
+}
+
+.content-result-display-correct {
+    font-size: 0.16rem;
+    color: #333435;
+    line-height: 0.22rem;
+}
+
+.content-result-display-correct span {
+    font-size: 0.24rem;
+    font-weight: 600;
+    color: #333435;
+    line-height: 0.33rem;
+}
+
+.content-result-display-tips {
+    display: flex;
+    flex-direction: row;
+    font-size: 0.24rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+}
+
+.content-result-display-tips img {
+    width: 0.4rem;
+    height: 0.56rem;
+    margin-right: 0.13rem;
+}
+
+.content-result-display-tips p {
+    line-height: 0.56rem;
+}
+
+.content-result-display-tips p span {
+    display: inline-block;
+    text-align: center;
+    line-height: 0.38rem;
+    width: 0.76rem;
+    height: 0.38rem;
+    background: #4BD7A4;
+    border-radius: 0.08rem;
+}
