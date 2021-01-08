@@ -35,19 +35,30 @@ __run_command() {
 }
 
 __main() {
-    echo "Select:"
-    echo "0. reboot system"
-    echo "1. update codes"
-    echo "2. restart services"
-    echo "3. run command"
-    echo -n "Input:"
-    read select
-
+    if [[ x$1 == x ]]
+    then
+        echo "Select:"
+        echo "0. reboot system"
+        echo "1. update codes"
+        echo "2. restart services"
+        echo "3. run command"
+        echo -n "Input:"
+        read select
+    else
+        select=$1
+        shift
+    fi
     if [[ x$select == x3 ]]
     then
-        echo -n "Command > "
-        read cmd
+        if [[ x$1 == x ]]
+        then
+            echo -n "Command > "
+            read cmd
+        else
+            cmd=$*
+        fi
     fi
+
     for host in ${HOSTS[@]}
     do
         echo "sync: $host"
@@ -68,4 +79,4 @@ __main() {
     done
 }
 
-__main
+__main $*
