@@ -30,14 +30,24 @@ __restart_services() {
     ssh $1 "cd $SRC_ROOT; sudo ./scripts/k12ai.sh all restart"
 }
 
+__run_command() {
+    ssh $1 "$2"
+}
 
 __main() {
     echo "Select:"
     echo "0. reboot system"
     echo "1. update codes"
     echo "2. restart services"
+    echo "3. run command"
     echo -n "Input:"
     read select
+
+    if [[ x$select == x3 ]]
+    then
+        echo -n "Command > "
+        read cmd
+    fi
     for host in ${HOSTS[@]}
     do
         echo "sync: $host"
@@ -47,6 +57,9 @@ __main() {
                 ;;
             2)
                 __restart_services $host
+                ;;
+            3)
+                __run_command $host "$cmd"
                 ;;
             0)
                 __reboot_system $host
