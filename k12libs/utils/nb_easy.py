@@ -348,23 +348,26 @@ def k12ai_get_data(key, subkey=None, num=1, waitcnt=1, rm=False, http=False):
         client = consul.Consul(consul_addr, consul_port)
         i = 0
         try:
-            while i < waitcnt:
+            out = []
+            while i < waitcnt and num > 0:
                 _, data = client.kv.get(key, recurse=True)
                 if not data:
                     i = i + 1
                     time.sleep(1)
                     continue
                 if len(data) < num:
-                    num = len(data)
-                out = []
-                for item in data[-num:]:
+                    cur_num = len(data)
+                else:
+                    cur_num = num
+                num = num - cur_num
+                for item in data[-cur_num:]:
+                    if rm:
+                        client.kv.delete(item['Key'], recurse=True)
                     out.append({
                         'key': item['Key'],
                         'value': json.loads(str(item['Value'], encoding='utf-8'))
                         })
-                if rm:
-                    client.kv.delete(key, recurse=True)
-                return out
+            return out
         except KeyboardInterrupt:
             print("Interrupted!")
         return None
