@@ -4,6 +4,7 @@ build/
 .python-version
 
 .ipynb_checkpoints
+.jupyter_config/
 .cache/
 *.swp
 .DS_Store
