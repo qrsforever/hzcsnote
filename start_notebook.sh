@@ -58,6 +58,7 @@ __main()
     __start_notebook $K12NB_PROJECT $K12NB_PORT \
         --env PYTHONPATH=$DST_DIR/hzcsnote \
         --volume /data:/data \
+        --volume /data/kaggle:/kaggle \
         --volume /raceai:/raceai \
         --volume /data/pretrained/cv:/root/.cache/torch/hub/checkpoints
 }
