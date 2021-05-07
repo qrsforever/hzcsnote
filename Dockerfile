@@ -34,7 +34,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         statsmodels pyhocon protobuf "jsonnet>=0.10.0" \
         zerorpc python-consul \
         tfrecord plotly opencv-python imutils \
-        watermark xlrd xgboost
+        watermark xlrd xgboost moviepy
 
 RUN pip install  --retries 20 --timeout 120 \
         --trusted-host mirrors.aliyun.com \
@@ -64,9 +64,10 @@ RUN jupyter nbextension enable vim_binding/vim_binding && \
     jupyter nbextension enable skip-traceback/main && \
     jupyter nbextension enable toc2/main
 
-COPY .jupyter_config/jupyter_notebook_config.json ${jupyter_conf_dir}/jupyter_notebook_config.json
-COPY .jupyter_config/notebook.json ${jupyter_conf_dir}/nbconfig/notebook.json
-COPY .jupyter_config/vim_binding ${jupyter_data_dir}/nbextensions/vim_binding
+# Using volumn map
+# COPY .jupyter_config/jupyter_notebook_config.json ${jupyter_conf_dir}/jupyter_notebook_config.json
+# COPY .jupyter_config/notebook.json ${jupyter_conf_dir}/nbconfig/notebook.json
+# COPY .jupyter_config/vim_binding ${jupyter_data_dir}/nbextensions/vim_binding
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 

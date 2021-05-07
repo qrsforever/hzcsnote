@@ -25,7 +25,7 @@ __build_notebook()
 
     if [[ ! -d .jupyter_config ]]
     then
-        git clone https://gitee.com/lidongai/jupyter_config.git .jupyter_config
+        git clone https://github.com.cnpmjs.org/qrsforever/jupyter_config.git .jupyter_config
     fi
     REPOSITORY=$VENDOR/k12nb
     docker build --tag $REPOSITORY --file Dockerfile .

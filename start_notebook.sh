@@ -60,6 +60,8 @@ __main()
         --volume /data:/data \
         --volume /data/kaggle:/kaggle \
         --volume /raceai:/raceai \
+        --volume $TOP_DIR/.jupyter_config/jupyter:/root/.jupyter \
+        --volume $TOP_DIR/.jupyter_config/local/share/jupyter:/root/.local/share/jupyter \
         --volume /data/pretrained/cv:/root/.cache/torch/hub/checkpoints
 }
 
