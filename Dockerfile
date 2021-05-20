@@ -29,6 +29,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         GPUtil psutil \
         crontabs redis flask flask_cors h5py protobuf-compiler \
         torchsummary seaborn hiddenlayer \
+        tensorflow-gpu==2.3 \
         minio onnx onnxruntime netron pydotplus \
         ipywidgets torchviz pydot graphviz cairosvg \
         statsmodels pyhocon protobuf "jsonnet>=0.10.0" \
