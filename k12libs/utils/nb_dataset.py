@@ -11,6 +11,7 @@ import os
 import json
 import torch # noqa
 import numpy as np # noqa
+import random
 from PIL import Image
 from torchvision import transforms, models
 from torch.utils.data import (Dataset, DataLoader)
@@ -94,7 +95,7 @@ def k12ai_compute_mean_std(imagelist=None, labellist=None, datadir=None, jfiles=
     mean = 0.
     std = 0.
     nb_samples = 0.
-    
+
     for i, (data, label, path) in enumerate(loader):
         batch_samples = data.size(0)
         data = data.view(data.size(0), data.size(1), -1)
@@ -108,6 +109,73 @@ def k12ai_compute_mean_std(imagelist=None, labellist=None, datadir=None, jfiles=
     mean = [round(x, 4) for x in mean.numpy().tolist()]
     std = [round(x, 4) for x in std.numpy().tolist()]
     return mean, std
+
+
+def k12ai_generate_jsonfiles(img_path):
+    label_image_dict = {}
+    with os.scandir(img_path) as it:
+        for entry in it:
+            if not entry.is_dir():
+                continue
+            label_image_dict[entry.name] = []
+            with os.scandir(os.path.join(entry.path)) as imgit:
+                for imgentry in imgit:
+                    if not imgentry.is_file():
+                        continue
+                    label_image_dict[entry.name].append(imgentry.path)
+
+    def _gen_json_file(images, phase):
+        prefix = len(img_path) + 1
+        items = []
+        for label, img in images:
+            items.append({'image_path': img[prefix:], 'label': int(label)})
+
+        random.shuffle(items)
+
+        jsonfile = os.path.join(img_path, f'{phase}.json')
+        with open(jsonfile, 'w') as fp:
+            json.dump(items, fp)
+        return len(items)
+
+    def _split_data(label_images):
+        # 6:2:2 split for train:valid:test dataset
+        all_images = []
+        test_images = []
+        valid_images = []
+        train_images = []
+        for i, (label, files) in enumerate(label_images.items()):
+            for img in files:
+                all_images.append((i, img))
+                value = random.random()
+                if value < 0.2: # test
+                    test_images.append((i, img))
+                elif value < 0.4: # val
+                    valid_images.append((i, img))
+                else: # train
+                    train_images.append((i, img))
+        return all_images, train_images, valid_images, test_images
+
+    d_all, d_train, d_valid, d_test = _split_data(label_image_dict)
+
+    _gen_json_file(d_all, 'all')
+    _gen_json_file(d_train, 'train')
+    _gen_json_file(d_valid, 'val')
+    _gen_json_file(d_test, 'test')
+
+    mean, std = k12ai_compute_mean_std(datadir=img_path, jfiles='all.json', resize=(224, 224))
+
+    info = {
+        'num_records': len(d_all),
+        'num_classes': len(label_image_dict),
+        'label_names': list(label_image_dict.keys()),
+        'mean': mean,
+        'std': std,
+    }
+
+    with open(os.path.join(img_path, 'info.json'), 'w') as fw:
+        json.dump(info, fw, indent=4)
+
+    return info
 
 
 def k12ai_load_image(path, resize=None, mean=None, std=None, cuda=True):
