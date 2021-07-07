@@ -46,6 +46,7 @@ RUN PIP_INSTALL="pip install -U --no-cache-dir --retries 20 --timeout 120 \
         --trusted-host pypi.tuna.tsinghua.edu.cn \
         --index-url https://pypi.tuna.tsinghua.edu.cn/simple" && \
     $PIP_INSTALL \
+        autopep8 \
         detectron2 \
         jupyter \
         jupyter_contrib_nbextensions \
