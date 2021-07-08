@@ -432,9 +432,9 @@ class K12WidgetGenerator():
 
         elif _type == 'tab':
             wdg = Tab(layout = self.tab_layout)
-            wdg.titles = [obj['name'][self.lan] for obj in _objs]
+            # wdg.titles = [obj['name'][self.lan] for obj in _objs]
             for i, obj in enumerate(_objs):
-                # wdg.set_title(i, obj['name'][self.lan])
+                wdg.set_title(i, obj['name'][self.lan])
                 box = VBox(layout = self.vlo)
                 for obj in obj['objs']:
                     self._parse_config(box, obj)
@@ -444,9 +444,9 @@ class K12WidgetGenerator():
 
         elif _type == 'accordion':
             wdg = Accordion(layout = self.accordion_layout)
-            wdg.titles = [obj['name'][self.lan] for obj in _objs]
+            # wdg.titles = [obj['name'][self.lan] for obj in _objs]
             for i, obj in enumerate(_objs):
-                # wdg.set_title(i, obj['name'][self.lan])
+                wdg.set_title(i, obj['name'][self.lan])
                 box = VBox(layout = self.vlo)
                 for obj in obj['objs']:
                     self._parse_config(box, obj)
