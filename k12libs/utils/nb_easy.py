@@ -24,6 +24,7 @@ import shlex
 import shutil
 import threading
 import multiprocessing
+import subprocess
 from multiprocessing.queues import Empty
 from functools import reduce
 from flask import Flask, request
@@ -1012,3 +1013,12 @@ def k12ai_model_summary(model, input_size: tuple = None):
 
     str_summary = '\n'.join(lines)
     print(str_summary)
+
+
+## Tools
+def k12ai_run_shell(cmd):
+    try:
+        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    except Exception as err:
+        output = err.output
+    return output.decode()
