@@ -20,6 +20,11 @@ K12NB_WWW_PORT=9091
 K12PYR_PROJECT=k12pyr
 K12PYR_PORT=8178
 
+MINIO_SERVER_URL='s3-internal.didiyunapi.com'
+MINIO_ACCESS_KEY='AKDD002E38WR1J7RMPTGRIGNVCVINY'
+MINIO_SECRET_KEY='ASDDXYWs45ov7MNJbj5Wc2PM9gC0FSqCIkiyQkVC'
+
+
 __start_notebook()
 {
     PROJECT=$1
@@ -53,10 +58,14 @@ __start_notebook()
     fi
 }
 
+
 __main()
 {
     __start_notebook $K12NB_PROJECT $K12NB_PORT \
         --env PYTHONPATH=$DST_DIR/hzcsnote \
+        --env MINIO_SERVER_URL=$MINIO_SERVER_URL \
+        --env MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY \
+        --env MINIO_SECRET_KEY=$MINIO_SECRET_KEY \
         --volume /data:/data \
         --volume /data/kaggle:/kaggle \
         --volume /raceai:/raceai \
