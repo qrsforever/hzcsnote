@@ -35,7 +35,10 @@ def oss_put_jsonfile(path, data):
     data = io.BytesIO(data.encode())
     size = data.seek(0, 2)
     data.seek(0, 0)
-    oss_client.put_object('frepai', path, data, size, content_type='text/json')
+    etag = oss_client.put_object('frepai', path, data, size, content_type='text/json')
+    if not isinstance(etag, str):
+        etag = etag.etag
+    return etag
 
 def oss_get_video_list(prefix):
     objs = oss_client.list_objects('frepai', f'{prefix}/videos/', recursive=False)
@@ -123,13 +126,14 @@ def draw_scale(image, d=50):
         
     return image
 
-def start_inference(btn, w_raceurl, w_task, w_msgkey, w_bar, w_out, w_mp4):
+def start_inference(btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4):
     raceurl = w_raceurl.value
     task = w_task.value
     msgkey = w_msgkey.value
     api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
     api_inference = f'{raceurl}/raceai/framework/inference'
     reqdata = btn.context.get_all_json()
+    video_url = reqdata['cfg']['video']
     requests.get(url=api_popmsg)
     result = json.loads(requests.post(url=api_inference, json=reqdata).text)
     w_out.value = json.dumps(reqdata, indent=4)
@@ -139,7 +143,7 @@ def start_inference(btn, w_raceurl, w_task, w_msgkey, w_bar, w_out, w_mp4):
             return
         
     btn.disabled = True
-    def _run_result(btn, w_bar, w_out, w_mp4):
+    def _run_result(btn, w_acc, w_bar, w_out, w_mp4):
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
@@ -165,9 +169,15 @@ def start_inference(btn, w_raceurl, w_task, w_msgkey, w_bar, w_out, w_mp4):
                 if 'target_mp4' in result:
                     options.append(('target_mp4', result['target_mp4']))
                 w_mp4.options = options
+                if 'ladder' in video_url and 'sumcnt' in result:
+                    result['sumcnt']
+                    count = int(os.path.basename(video_url).split('_')[1][:-4])
+                    if count > 0:
+                        w_acc.value = round(100 * (1 - abs(result['sumcnt'] - count) / count), 2)
         btn.disabled = False
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
+        'w_acc': w_acc,
         'w_bar': w_bar,
         'w_out': w_out,
         'w_mp4': w_mp4
@@ -176,25 +186,75 @@ def start_inference(btn, w_raceurl, w_task, w_msgkey, w_bar, w_out, w_mp4):
 def stop_inference(btn, start_button):
     start_button.disabled = False 
     
-def save_jsonconfig(btn, w_sample, w_load):
-    path = w_sample.value[len(S3_PREFIX):-4] + '.json'
-    data = w_sample.context.get_all_kv(False)
-    oss_put_jsonfile(path, data)
-    w_load.disabled = False
+def save_jsonconfig(btn, w_video, w_load):
+    path = w_video.value[len(S3_PREFIX):-4] + '.json'
+    data = w_video.context.get_all_kv(False)
+    data.pop('cfg.pigeon.msgkey')
+    etag = oss_put_jsonfile(path, data)
+    if etag:
+        w_load.disabled = False
     
-def load_jsonconfig(btn, w_sample):
-    path = w_sample.value.replace('.mp4', '.json')
+def load_jsonconfig(btn, w_video):
+    path = w_video.value.replace('.mp4', '.json')
     response = requests.get(path)
     if response.status_code == 200:
-        w_sample.context.set_widget_values(json.loads(response.content.decode('utf-8')))
+        w_video.context.set_widget_values(json.loads(response.content.decode('utf-8')))
 
-def check_load_button(source, oldval, newval, target):
+def save_group_jsonconfig(btn, w_video, w_load):
+    path = w_video.value
+    if 'live' in path:
+        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+    else:
+        path = os.path.dirname(path)
+    path += '/config.json'
+    data = w_video.context.get_all_kv(False)
+    data.pop('cfg.pigeon.msgkey')
+    etag = oss_put_jsonfile(path[len(S3_PREFIX):], data)
+    if etag:
+        w_load.disabled = False
+    
+def load_group_jsonconfig(btn, w_video):
+    path = w_video.value
+    if 'live' in path:
+        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+    else:
+        path = os.path.dirname(path)
+    path += '/config.json'
+    response = requests.get(path)
+    if response.status_code == 200:
+        w_video.context.set_widget_values(json.loads(response.content.decode('utf-8')))
+        
+def check_load_button(source, oldval, newval, btn_mp4conf, btn_grpconf, w_acc):
+    path = newval
+    # group btn
+    if 'live' in path:
+        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+    else:
+        path = os.path.dirname(path)
+    path += '/config.json'
+    acc = 0.0
+    response = requests.get(path)
+    if response.status_code == 200:
+        if 'live' not in path:
+            conf = json.loads(response.content.decode('utf-8'))
+            if '_cfg.accuracy' in conf:
+                acc = conf['_cfg.accuracy']
+        btn_grpconf.disabled = False
+    else:
+        btn_grpconf.disabled = True
+        
+    # mp4 btn
     path = newval.replace('.mp4', '.json')
     response = requests.get(path)
     if response.status_code == 200:
-        target.disabled = False
+        if 'live' not in path:
+            conf = json.loads(response.content.decode('utf-8'))
+            if '_cfg.accuracy' in conf:
+                acc = conf['_cfg.accuracy']
+        btn_mp4conf.disabled = False
     else:
-        target.disabled = True
+        btn_mp4conf.disabled = True
+    w_acc.value = acc
         
 def get_date_list(source, oldval, newval, target):
     target.options = oss_get_bypath(f'live/{newval}/')[-7:]
@@ -283,6 +343,8 @@ EVENTS = {
     'check_load_button': check_load_button,
     'save_jsonconfig': save_jsonconfig,
     'load_jsonconfig': load_jsonconfig,
+    'save_group_jsonconfig': save_group_jsonconfig,
+    'load_group_jsonconfig': load_group_jsonconfig,
     'get_date_list': get_date_list,
     'get_video_list': get_video_list,
     'get_sample_list': get_sample_list,
