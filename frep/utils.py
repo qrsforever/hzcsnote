@@ -3,8 +3,13 @@ import cv2
 import os
 import io
 import json
+import requests
+import time
 import threading
 from minio import Minio
+
+S3_PREFIX = 'https://frepai.s3.didiyunapi.com/'
+
 
 oss_client = Minio(
     endpoint=os.environ.get('MINIO_SERVER_URL'),
@@ -16,17 +21,29 @@ def oss_get_bypath(path):
     objs = oss_client.list_objects('frepai', path, recursive=False)
     options = []
     for o in objs:
-        object_path = o.object_name[:-1]
+        object_path = o.object_name
+        if object_path[-1] == '/':
+            object_path = object_path[:-1]
         options.append((os.path.basename(object_path), object_path))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
 
+def oss_put_jsonfile(path, data):
+    if isinstance(data, dict):
+        data = json.dumps(data, ensure_ascii=False, indent=4)
+    data = io.BytesIO(data.encode())
+    size = data.seek(0, 2)
+    data.seek(0, 0)
+    oss_client.put_object('frepai', path, data, size, content_type='text/json')
+
 def oss_get_video_list(prefix):
     objs = oss_client.list_objects('frepai', f'{prefix}/videos/', recursive=False)
     options = []
     for o in objs:
-        options.append((os.path.basename(o.object_name)[8:], 'https://frepai.s3.didiyunapi.com/' + o.object_name))
+        if o.object_name[-3:] != 'mp4':
+            continue
+        options.append((os.path.basename(o.object_name)[8:], S3_PREFIX + o.object_name))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
@@ -37,7 +54,9 @@ def oss_get_video_samples(prefix):
     objs = oss_client.list_objects('frepai', prefix, recursive=False)
     options = []
     for o in objs:
-        options.append((os.path.basename(o.object_name), 'https://frepai.s3.didiyunapi.com/' + o.object_name))
+        if o.object_name[-3:] != 'mp4':
+            continue
+        options.append((os.path.basename(o.object_name), S3_PREFIX + o.object_name))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
@@ -61,6 +80,8 @@ def parse_xls_report():
             video_info = table.col_values(video_col)[i+1:]
             for task, count, url in zip(taskt_info, count_info, video_info):
                 if task and count and url:
+                    if isinstance(count, str) and '+' in count:
+                        count = eval(count)
                     filename = os.path.basename(url).replace('.mp4', f'_{int(count)}.mp4')
                     result = requests.get(url.replace('s3', 's3-internal'))
                     oss_client.put_object(
@@ -102,6 +123,79 @@ def draw_scale(image, d=50):
         
     return image
 
+def start_inference(btn, w_raceurl, w_task, w_msgkey, w_bar, w_out, w_mp4):
+    raceurl = w_raceurl.value
+    task = w_task.value
+    msgkey = w_msgkey.value
+    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/raceai/framework/inference'
+    reqdata = btn.context.get_all_json()
+    requests.get(url=api_popmsg)
+    result = json.loads(requests.post(url=api_inference, json=reqdata).text)
+    w_out.value = json.dumps(reqdata, indent=4)
+    if 'errno' in result:
+        if result['errno'] < 0:
+            w_out.value = json.dumps(result, indent=4)
+            return
+        
+    btn.disabled = True
+    def _run_result(btn, w_bar, w_out, w_mp4):
+        cur_try = 0
+        err_max = 60
+        while cur_try < err_max:
+            result = json.loads(requests.get(url=api_popmsg).text)
+            if len(result) == 0:
+                time.sleep(1)
+                cur_try += 1
+                continue
+            result = result[-1]
+            cur_try = 0
+            if result['errno'] != 0:
+                btn.disabled = False
+                w_out.value = json.dumps(result, indent=4)
+                w_bar.value = 100.0
+                break
+            w_bar.value = int(result['progress'])
+            if w_bar.value == 100.0:
+                btn.disabled = False
+                w_out.value = json.dumps(result, indent=4)
+                options = []
+                if 'stride_mp4' in result:
+                    options.append(('stride_mp4', result['stride_mp4']))
+                if 'target_mp4' in result:
+                    options.append(('target_mp4', result['target_mp4']))
+                w_mp4.options = options
+        btn.disabled = False
+    threading.Thread(target=_run_result, kwargs={
+        'btn': btn,
+        'w_bar': w_bar,
+        'w_out': w_out,
+        'w_mp4': w_mp4
+    }).start()
+    
+def stop_inference(btn, start_button):
+    start_button.disabled = False 
+    
+def save_jsonconfig(btn, w_sample, w_load):
+    path = w_sample.value[len(S3_PREFIX):-4] + '.json'
+    data = w_sample.context.get_all_kv(False)
+    oss_put_jsonfile(path, data)
+    w_load.disabled = False
+    
+def load_jsonconfig(btn, w_sample):
+    path = w_sample.value.replace('.mp4', '.json')
+    response = requests.get(path)
+    if response.status_code == 200:
+        w_sample.context.set_widget_values(json.loads(response.content.decode('utf-8')))
+
+def check_load_button(source, oldval, newval, target):
+    path = newval.replace('.mp4', '.json')
+    response = requests.get(path)
+    if response.status_code == 200:
+        target.disabled = False
+    else:
+        target.disabled = True
+        
 def get_date_list(source, oldval, newval, target):
     target.options = oss_get_bypath(f'live/{newval}/')[-7:]
     target.value = target.options[-1][1]
@@ -116,15 +210,33 @@ def get_sample_list(source, oldval, newval, target):
     
 def show_video_frame(source, oldval, newval, target):
     cap = cv2.VideoCapture(newval)
-    fps = round(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # fps = round(cap.get(cv2.CAP_PROP_FPS))
+    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     th = int(0.08 * height)
     if cap.isOpened():
         _, frame_bgr = cap.read()
         frame_bgr = draw_scale(frame_bgr)
         target.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
-        target.image = frame_bgr 
+        target.image = frame_bgr
+        
+def focus_center_changed(source, oldval, newval, target):
+    points = json.loads(newval)
+    w, h = 640, 352 # TODO
+    if len(points) == 4:
+        if 0 < points[0] < 1.0 and 0 < points[1] < 1.0:
+            cx, cy = points[0], points[1]
+        else:
+            cx, cy = round(points[0] / w, 3), round(points[1] / h, 3)
+            
+        if 0 < points[2] < 1.0 and 0 < points[3] < 1.0:
+            dx, dy = points[2], points[3]
+        else:
+            dx, dy = round(points[2] / w, 3), round(points[3] / h, 3)
+            
+        fx1, fy1 = cx - dx, cy - dy
+        fx2, fy2 = cx + dx, cy + dy
+        target.value = '[%.3f,%.3f,%.3f,%.3f]' % (fx1, fy1, fx2, fy2) 
         
 def focus_box_changed(source, oldval, newval, target):
     points = json.loads(newval)
@@ -166,10 +278,16 @@ def center_rate_changed(source, oldval, newval, target):
             target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
 
 EVENTS = {
+    'start_inference': start_inference,
+    'stop_inference': stop_inference,
+    'check_load_button': check_load_button,
+    'save_jsonconfig': save_jsonconfig,
+    'load_jsonconfig': load_jsonconfig,
     'get_date_list': get_date_list,
     'get_video_list': get_video_list,
     'get_sample_list': get_sample_list,
     'show_video_frame': show_video_frame,
+    'focus_center_changed': focus_center_changed,
     'focus_box_changed': focus_box_changed,
     'black_box_changed': black_box_changed,
     'center_rate_changed': center_rate_changed,
