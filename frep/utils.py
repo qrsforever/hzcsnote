@@ -77,7 +77,7 @@ def parse_xls_report():
                 continue
             taskt_col = rowdata.index('任务类型')
             count_col = rowdata.index('审核次数')
-            video_col = rowdata.index('源视频地址')
+            video_col = rowdata.index('视频源地址')
             taskt_info = table.col_values(taskt_col)[i+1:]
             count_info = table.col_values(count_col)[i+1:]
             video_info = table.col_values(video_col)[i+1:]
@@ -126,13 +126,15 @@ def draw_scale(image, d=50):
         
     return image
 
-def start_inference(btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4):
+SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
+
+def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4):
     raceurl = w_raceurl.value
     task = w_task.value
     msgkey = w_msgkey.value
     api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
     api_inference = f'{raceurl}/raceai/framework/inference'
-    reqdata = btn.context.get_all_json()
+    reqdata = context.get_all_json()
     video_url = reqdata['cfg']['video']
     requests.get(url=api_popmsg)
     result = json.loads(requests.post(url=api_inference, json=reqdata).text)
@@ -170,7 +172,6 @@ def start_inference(btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4
                     options.append(('target_mp4', result['target_mp4']))
                 w_mp4.options = options
                 if 'ladder' in video_url and 'sumcnt' in result:
-                    result['sumcnt']
                     count = int(os.path.basename(video_url).split('_')[1][:-4])
                     if count > 0:
                         w_acc.value = round(100 * (1 - abs(result['sumcnt'] - count) / count), 2)
@@ -183,37 +184,43 @@ def start_inference(btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4
         'w_mp4': w_mp4
     }).start()
     
-def stop_inference(btn, start_button):
+def stop_inference(context, btn, start_button):
     start_button.disabled = False 
     
-def save_jsonconfig(btn, w_video, w_load):
+def save_jsonconfig(context, btn, w_video, w_load):
     path = w_video.value[len(S3_PREFIX):-4] + '.json'
+    context.logger(f'save_jsonconfig: {path}')
     data = w_video.context.get_all_kv(False)
-    data.pop('cfg.pigeon.msgkey')
+    for wid in SAVE_IGNORE_WIDS:
+        data.pop(wid, None)
     etag = oss_put_jsonfile(path, data)
     if etag:
         w_load.disabled = False
+    context.logger(f'save_jsonconfig:{path}')
     
-def load_jsonconfig(btn, w_video):
+def load_jsonconfig(context, btn, w_video):
     path = w_video.value.replace('.mp4', '.json')
+    context.logger(f'load_jsonconfig: {path}')
     response = requests.get(path)
     if response.status_code == 200:
-        w_video.context.set_widget_values(json.loads(response.content.decode('utf-8')))
-
-def save_group_jsonconfig(btn, w_video, w_load):
+        context.set_widget_values(json.loads(response.content.decode('utf-8')))   
+    
+def save_group_jsonconfig(context, btn, w_video, w_load):
     path = w_video.value
     if 'live' in path:
         path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
     else:
         path = os.path.dirname(path)
     path += '/config.json'
-    data = w_video.context.get_all_kv(False)
-    data.pop('cfg.pigeon.msgkey')
+    data = context.get_all_kv(False)
+    for wid in SAVE_IGNORE_WIDS:
+        data.pop(wid, None)
     etag = oss_put_jsonfile(path[len(S3_PREFIX):], data)
     if etag:
         w_load.disabled = False
+    context.logger(f'save_group_jsonconfig:{path}')
     
-def load_group_jsonconfig(btn, w_video):
+def load_group_jsonconfig(context, btn, w_video):
     path = w_video.value
     if 'live' in path:
         path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
@@ -222,67 +229,29 @@ def load_group_jsonconfig(btn, w_video):
     path += '/config.json'
     response = requests.get(path)
     if response.status_code == 200:
-        w_video.context.set_widget_values(json.loads(response.content.decode('utf-8')))
-        
-def check_load_button(source, oldval, newval, btn_mp4conf, btn_grpconf, w_acc):
-    path = newval
-    # group btn
-    if 'live' in path:
-        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
-    else:
-        path = os.path.dirname(path)
-    path += '/config.json'
-    acc = 0.0
-    response = requests.get(path)
-    if response.status_code == 200:
-        if 'live' not in path:
-            conf = json.loads(response.content.decode('utf-8'))
-            if '_cfg.accuracy' in conf:
-                acc = conf['_cfg.accuracy']
-        btn_grpconf.disabled = False
-    else:
-        btn_grpconf.disabled = True
-        
-    # mp4 btn
-    path = newval.replace('.mp4', '.json')
-    response = requests.get(path)
-    if response.status_code == 200:
-        if 'live' not in path:
-            conf = json.loads(response.content.decode('utf-8'))
-            if '_cfg.accuracy' in conf:
-                acc = conf['_cfg.accuracy']
-        btn_mp4conf.disabled = False
-    else:
-        btn_mp4conf.disabled = True
-    w_acc.value = acc
-        
-def get_date_list(source, oldval, newval, target):
+        context.set_widget_values(json.loads(response.content.decode('utf-8')))   
+    
+def get_date_list(context, source, oldval, newval, target):
+    context.logger(f'get_date_list:{oldval} {newval}')
     target.options = oss_get_bypath(f'live/{newval}/')[-7:]
     target.value = target.options[-1][1]
     
-def get_video_list(source, oldval, newval, target):
+def get_video_list(context, source, oldval, newval, target):
+    context.logger(f'get_video_list:{oldval} {newval}')
     target.options = oss_get_video_list(newval)
     target.value = target.options[int(len(target.options) / 2)][1]
     
-def get_sample_list(source, oldval, newval, target):
+def get_sample_list(context, source, oldval, newval, target):
+    context.logger(f'get_sample_list:{oldval} {newval}')
     target.options = oss_get_video_samples(newval)
     target.value = target.options[int(len(target.options) / 2)][1]
     
-def show_video_frame(source, oldval, newval, target):
-    cap = cv2.VideoCapture(newval)
-    # fps = round(cap.get(cv2.CAP_PROP_FPS))
-    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    th = int(0.08 * height)
-    if cap.isOpened():
-        _, frame_bgr = cap.read()
-        frame_bgr = draw_scale(frame_bgr)
-        target.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
-        target.image = frame_bgr
-        
-def focus_center_changed(source, oldval, newval, target):
+def focus_center_changed(context, source, oldval, newval, target):
+    context.logger(f'focus_center_changed:{oldval} to {newval}')
     points = json.loads(newval)
     w, h = 640, 352 # TODO
+    if len(points) == 2:
+        points = [0.5, 0.5, points[0], points[1]]
     if len(points) == 4:
         if 0 < points[0] < 1.0 and 0 < points[1] < 1.0:
             cx, cy = points[0], points[1]
@@ -296,12 +265,13 @@ def focus_center_changed(source, oldval, newval, target):
             
         fx1, fy1 = cx - dx, cy - dy
         fx2, fy2 = cx + dx, cy + dy
-        target.value = '[%.3f,%.3f,%.3f,%.3f]' % (fx1, fy1, fx2, fy2) 
-        
-def focus_box_changed(source, oldval, newval, target):
+        target.value = '[%.3f,%.3f,%.3f,%.3f]' % (fx1, fy1, fx2, fy2)        
+            
+def focus_box_changed(context, source, oldval, newval, target):
+    context.logger(f'focus_box_changed:{oldval} to {newval}')
     points = json.loads(newval)
     if target.value and len(points) == 4:
-        img = target.image.copy()
+        img = target.image.copy() # cv2.imdecode(np.frombuffer(target.value, np.uint8), cv2.IMREAD_COLOR)
         h, w, _ = img.shape
         if isinstance(points[0], float):
             fx1, fy1 = int(points[0] * w), int(points[1] * h)
@@ -311,11 +281,12 @@ def focus_box_changed(source, oldval, newval, target):
             fx2, fy2 = points[2], points[3]
         cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 255, 0), 2)
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
-
-def black_box_changed(source, oldval, newval, target):
+        
+def black_box_changed(context, source, oldval, newval, target):
+    context.logger(f'black_box_changed:{oldval} to {newval}')
     points = json.loads(newval)
     if target.value and len(points) == 4:
-        img = target.image
+        img = target.image.copy()
         h, w, _ = img.shape
         if isinstance(points[0], float):
             fx1, fy1 = int(points[0] * w), int(points[1] * h)
@@ -326,21 +297,61 @@ def black_box_changed(source, oldval, newval, target):
         cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 0, 0), 2)
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
         
-def center_rate_changed(source, oldval, newval, target):
-    points = json.loads(newval)
-    if target.value and len(points) == 2:
-        img = target.image.copy()
-        h, w, _ = img.shape
-        if isinstance(points[0], float):
-            fx1, fy1 = int(0.5 * (1 - points[0]) * w), int(0.5 * (1 - points[1]) * h)
-            fx2, fy2 = int(0.5 * (1 + points[0]) * w), int(0.5 * (1 + points[1]) * h)
-            cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 0, 255), 2)
-            target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
+def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image):
+    context.logger(f'show_video_frame:{oldval} to {newval}')
+    
+    cap = cv2.VideoCapture(newval)
+    # fps = round(cap.get(cv2.CAP_PROP_FPS))
+    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    th = int(0.08 * height)
+    if cap.isOpened():
+        _, frame_bgr = cap.read()
+        frame_bgr = draw_scale(frame_bgr)
+        w_image.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
+        w_image.image = frame_bgr 
+        
+    path = newval
+    # group btn
+    if 'live' in path:
+        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+    else:
+        path = os.path.dirname(path)
+    path += '/config.json'
+    response = requests.get(path)
+    if response.status_code == 200:
+        btn_grpconf.disabled = False
+    else:
+        btn_grpconf.disabled = True
+        
+    # mp4 btn
+    path = newval.replace('.mp4', '.json')
+    response = requests.get(path)
+    if response.status_code == 200:
+        btn_mp4conf.disabled = False
+        conf = json.loads(response.content.decode('utf-8'))
+        context.logger(f'{conf}')
+        changed_items = context.set_widget_values(conf)
+        context.logger(f'{changed_items}')
+        # TODO
+        if 'cfg.focus_box' in conf and 'cfg.focus_box' not in changed_items:
+            focus_box_changed(
+                context, context.get_widget_byid('cfg.focus_box'),
+                '[]', json.dumps(conf['cfg.focus_box']), w_image
+            )
+        if 'cfg.black_box' in conf and 'cfg.black_box' not in changed_items:
+            focus_box_changed(
+                context, context.get_widget_byid('cfg.black_box'),
+                '[]', json.dumps(conf['cfg.black_box']), w_image
+            )
+    else:
+        context.get_widget_byid('_cfg.accuracy').value = 0.0
+        btn_mp4conf.disabled = True
+        
 
 EVENTS = {
     'start_inference': start_inference,
     'stop_inference': stop_inference,
-    'check_load_button': check_load_button,
     'save_jsonconfig': save_jsonconfig,
     'load_jsonconfig': load_jsonconfig,
     'save_group_jsonconfig': save_group_jsonconfig,
@@ -352,5 +363,4 @@ EVENTS = {
     'focus_center_changed': focus_center_changed,
     'focus_box_changed': focus_box_changed,
     'black_box_changed': black_box_changed,
-    'center_rate_changed': center_rate_changed,
 }
