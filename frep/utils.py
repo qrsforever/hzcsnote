@@ -128,7 +128,7 @@ def draw_scale(image, d=50):
 
 SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
 
-def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4):
+def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4, w_skewing):
     raceurl = w_raceurl.value
     task = w_task.value
     msgkey = w_msgkey.value
@@ -145,7 +145,7 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
             return
         
     btn.disabled = True
-    def _run_result(btn, w_acc, w_bar, w_out, w_mp4):
+    def _run_result(btn, w_acc, w_bar, w_out, w_mp4, w_skewing):
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
@@ -173,15 +173,22 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
                 w_mp4.options = options
                 if 'ladder' in video_url and 'sumcnt' in result:
                     count = int(os.path.basename(video_url).split('_')[1][:-4])
+                    context.logger(f'inference result: {count}/{result["sumcnt"]}')
                     if count > 0:
                         w_acc.value = round(100 * (1 - abs(result['sumcnt'] - count) / count), 2)
+                    if 'detinfo' in result:
+                        if result['detinfo']['focus_skewing']:
+                            w_skewing.value = w_skewing.options[1][1]
+                        else:
+                            w_skewing.value = w_skewing.options[0][1]
         btn.disabled = False
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'w_acc': w_acc,
         'w_bar': w_bar,
         'w_out': w_out,
-        'w_mp4': w_mp4
+        'w_mp4': w_mp4,
+        'w_skewing': w_skewing,
     }).start()
     
 def stop_inference(context, btn, start_button):
@@ -325,6 +332,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
         btn_grpconf.disabled = True
         
     # mp4 btn
+    skew_wdg = context.get_widget_byid('_cfg.skewing')
     path = newval.replace('.mp4', '.json')
     response = requests.get(path)
     if response.status_code == 200:
@@ -344,8 +352,13 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
                 context, context.get_widget_byid('cfg.black_box'),
                 '[]', json.dumps(conf['cfg.black_box']), w_image
             )
+        if '_cfg.skewing' in conf:
+            skew_wdg.value = conf['_cfg.skewing']
+        else:
+            skew_wdg.value = skew_wdg.options[0][1]
     else:
         context.get_widget_byid('_cfg.accuracy').value = 0.0
+        skew_wdg.value = skew_wdg.options[0][1]
         btn_mp4conf.disabled = True
         
 
