@@ -26,6 +26,9 @@
     <br>
     <span><b>Console Log:</b></span>
     <textarea id="logger" name="logger"></textarea>
+    <span><b>Image Show:</b></span>
+    <br>
+    <img id="imshow" src="data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAABs0lEQVR4nL2SPWhTYRSGn+98P/fe/N0kkNpKIYs4WCEOgrMuioiCOHcQF8VREDdBdHNwcg2dXAqi4OagFOzi4qYOKgQCaQVrLNcmtzkOuaGm7r7TgYeX8/MeKBRhBQSgTFEcqBlYBvEOEj+PiACsgBMakB7CSRM8WAvmEKIKCWIT8OWHd+dZhUtVAgB+SXcr83RFnxMTwNPQfJ4tvMl6kBLjXEfV/YUcj7NnV6ZLVuxt7c9gQIQHn36dFMCBKX3Rt9N5LTQw7b4+JapjOALVDd2e+mpE3rCm79sAJgHS7d+vp07BYW9q/wR1TIoPsJ7vXSxaluCGDu5JRAUEysnnwdeIwlnvjLXbjiE2nOmsnl3P9GN3usOk+uOF+/DyaOvqtY3VnWY+KpFPsl27D0Aa9yaTHdWBap5vvnq3OdJbvjikwJ2+6vfBo/vX24s1OKdbSwepBI4vnF4+hnWA9V39RlSeQQsQIQGpEGwve2KL7IkgSIIJxA5T49RAV1qFTfaojyaZlTF7Saw/IR0tbvnIAUg5ZJQk2ddEhwKtYRhelvEkn7V0BrF4byDAhfNYJ/980f/SH4VcezibkiyPAAAAAElFTkSuQmCC"/>
     <script>
         const user = "16601548608";
         const uuid = "123456";
@@ -50,7 +53,7 @@
             lineNumbers : true
         });
 
-        editor.setSize('auto','600px');
+        editor.setSize('auto','400px');
         editor.setOption("extraKeys", {
             "Ctrl-Space": "autocomplete",
             "Ctrl-S": function() {console.log("save");},
@@ -74,7 +77,7 @@
             lineWrapping: true,
             lineNumbers : false
         });
-        logger.setSize('auto','600px');
+        logger.setSize('auto','400px');
 
         function message_pop() {
             // console.log("call pop")
@@ -85,6 +88,7 @@
                           gtimeId = null;
                       }
                       var data = $.parseJSON(response);
+                      // cosole(data)
                       for (it of data) {
                           jsondata = $.parseJSON(it)
                           if (jsondata['token'] != tokenId) {
@@ -96,6 +100,10 @@
                                   logger.replaceRange(logdata["log"], CodeMirror.Pos(logger.lastLine()));
                                   // logger.focus();
                                   // logger.setCursor(logger.lineCount(), 0);
+                              }
+                              if (logdata.hasOwnProperty("imshow")) {
+                                  imgelem = document.getElementById("imshow");
+                                  imgelem.src = "data:image/jpg;base64," + logdata["imshow"];
                               }
                               if (logdata.hasOwnProperty('status')) {
                                   state = logdata['status'];
@@ -145,7 +153,9 @@
                 }
             };
             $.post("http://116.85.5.40:8119/k12ai/framework/execute",
-                   JSON.stringify(params), function(response){
+                   JSON.stringify(params), function(response) {
+                      imgelem = document.getElementById("imshow");
+                      imgelem.src = "";
                        switch (response['code']) {
                            case 100000:
                                logger.setValue(JSON.stringify(response) + "\n\n");
