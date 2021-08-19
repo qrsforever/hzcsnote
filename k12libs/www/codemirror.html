@@ -26,6 +26,10 @@
     <br>
     <span><b>Console Log:</b></span>
     <textarea id="logger" name="logger"></textarea>
+    <br>
+    <span><b>Error Log:</b></span>
+    <textarea id="errorinfo" name="errorinfo"></textarea>
+    <br>
     <span><b>Image Show:</b></span>
     <br>
     <img id="imshow" src="data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAABs0lEQVR4nL2SPWhTYRSGn+98P/fe/N0kkNpKIYs4WCEOgrMuioiCOHcQF8VREDdBdHNwcg2dXAqi4OagFOzi4qYOKgQCaQVrLNcmtzkOuaGm7r7TgYeX8/MeKBRhBQSgTFEcqBlYBvEOEj+PiACsgBMakB7CSRM8WAvmEKIKCWIT8OWHd+dZhUtVAgB+SXcr83RFnxMTwNPQfJ4tvMl6kBLjXEfV/YUcj7NnV6ZLVuxt7c9gQIQHn36dFMCBKX3Rt9N5LTQw7b4+JapjOALVDd2e+mpE3rCm79sAJgHS7d+vp07BYW9q/wR1TIoPsJ7vXSxaluCGDu5JRAUEysnnwdeIwlnvjLXbjiE2nOmsnl3P9GN3usOk+uOF+/DyaOvqtY3VnWY+KpFPsl27D0Aa9yaTHdWBap5vvnq3OdJbvjikwJ2+6vfBo/vX24s1OKdbSwepBI4vnF4+hnWA9V39RlSeQQsQIQGpEGwve2KL7IkgSIIJxA5T49RAV1qFTfaojyaZlTF7Saw/IR0tbvnIAUg5ZJQk2ddEhwKtYRhelvEkn7V0BrF4byDAhfNYJ/980f/SH4VcezibkiyPAAAAAElFTkSuQmCC"/>
@@ -43,14 +47,14 @@
             theme: "monokai",
             indentUnit : 4,
             smartIndent : true,
-            tabSize : 4,
+            tabSize: 4,
             readOnly : false,
             showCursorWhenSelecting : true,
             styleActiveLine: true,
             matchBrackets: true,
             autofocus: true,
             lineWrapping: true,
-            lineNumbers : true
+            lineNumbers: true,
         });
 
         editor.setSize('auto','400px');
@@ -70,14 +74,26 @@
         }
 
         var logger = CodeMirror.fromTextArea(document.getElementById("logger"), {
-            mode : "text/plain",
+            mode: "text/plain",
             theme: "idea",
             readOnly : true,
             showCursorWhenSelecting : true,
             lineWrapping: true,
             lineNumbers : false
         });
-        logger.setSize('auto','400px');
+        logger.setSize('auto','300px');
+
+        var errorinfo = CodeMirror.fromTextArea(document.getElementById("errorinfo"), {
+            mode: "application/json",
+            indentUnit: 4,
+            smartIndent: true,
+            theme: "idea",
+            readOnly : true,
+            showCursorWhenSelecting : true,
+            lineWrapping: true,
+            lineNumbers : false
+        });
+        errorinfo.setSize('auto','300px');
 
         function message_pop() {
             // console.log("call pop")
@@ -90,11 +106,11 @@
                       var data = $.parseJSON(response);
                       // console.log(data)
                       for (it of data) {
-                          jsondata = $.parseJSON(it)
+                          var jsondata = $.parseJSON(it)
                           if (jsondata['token'] != tokenId) {
                               continue
                           }
-                          jdata = jsondata["data"]
+                          var jdata = jsondata["data"]
                           // TODO only test
                           if (jdata.hasOwnProperty("status")) {
                               switch (jdata["status"]) {
@@ -102,12 +118,23 @@
                                         logger.setValue("starting...." + "\n\n");
                                         break;
                                   case "running":
+                                        errorinfo.setValue("");
                                         logger.replaceRange("running..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
                                         break;
                                   case "finished":
                                         logger.replaceRange("finished..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
                                         $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error", function(err) {
-                                            logger.replaceRange(err, CodeMirror.Pos(logger.lastLine()));
+                                            var errdata = $.parseJSON(err);
+                                            for (it of errdata) {
+                                                var itemdata = $.parseJSON(it)
+                                                if (itemdata['token'] != tokenId) {
+                                                    continue
+                                                }
+                                                if (itemdata["data"]["code"] > 100200) {
+                                                    var jerr = JSON.stringify(itemdata["data"], null, 4)
+                                                    errorinfo.replaceRange(jerr, CodeMirror.Pos(logger.lastLine()));
+                                                }
+                                            }
                                         })
                                         return;
                               }
