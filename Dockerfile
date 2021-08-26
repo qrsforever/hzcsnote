@@ -1,4 +1,4 @@
-FROM ufoym/deepo:1.8.0.dev20210103
+FROM ufoym/deepo:pytorch-py36-cu101
 
 LABEL org.label-schema.name="k12nb"
 
@@ -29,7 +29,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         GPUtil psutil \
         crontabs redis flask flask_cors h5py protobuf-compiler \
         torchsummary seaborn hiddenlayer \
-        tensorflow-gpu==2.3 \
+        tensorflow-gpu==2.3.2  tf2onnx \
         minio onnx onnxruntime netron pydotplus \
         ipywidgets torchviz pydot graphviz cairosvg \
         statsmodels pyhocon protobuf "jsonnet>=0.10.0" \
