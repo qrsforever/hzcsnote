@@ -29,7 +29,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         GPUtil psutil \
         crontabs redis flask flask_cors h5py protobuf-compiler \
         torchsummary seaborn hiddenlayer \
-        tensorflow-gpu==2.3.2  tf2onnx \
         minio onnx onnxruntime netron pydotplus \
         ipywidgets torchviz pydot graphviz cairosvg \
         statsmodels pyhocon protobuf "jsonnet>=0.10.0" \
@@ -47,7 +46,6 @@ RUN PIP_INSTALL="pip install -U --no-cache-dir --retries 20 --timeout 120 \
         --index-url https://pypi.tuna.tsinghua.edu.cn/simple" && \
     $PIP_INSTALL \
         autopep8 \
-        detectron2 \
         jupyter \
         jupyter_contrib_nbextensions \
         jupyter_nbextensions_configurator \
