@@ -144,6 +144,10 @@
                                               break;
                                           case "finished":
                                               logger.replaceRange("finished..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
+                                              if (gtimeId != null) {
+                                                  clearTimeout(gtimeId);
+                                                  gtimeId = null;
+                                              }
                                               return
                                       }
                                   } else {
