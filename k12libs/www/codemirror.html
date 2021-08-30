@@ -111,48 +111,50 @@
                               continue
                           }
                           var jdata = jsondata["data"]
-                          // TODO only test
-                          if (jdata.hasOwnProperty("status")) {
-                              switch (jdata["status"]) {
-                                  case "starting":
-                                        logger.setValue("starting...." + "\n\n");
-                                        break;
-                                  case "running":
-                                        errorinfo.setValue("");
-                                        logger.replaceRange("running..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
-                                        break;
-                                  case "finished":
-                                        logger.replaceRange("finished..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
-                                        $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error", function(err) {
-                                            var errdata = $.parseJSON(err);
-                                            for (it of errdata) {
-                                                var itemdata = $.parseJSON(it)
-                                                if (itemdata['token'] != tokenId) {
-                                                    continue
-                                                }
-                                                if (itemdata["data"]["code"] > 100200) {
-                                                    var jerr = JSON.stringify(itemdata["data"], null, 4)
-                                                    errorinfo.replaceRange(jerr, CodeMirror.Pos(logger.lastLine()));
-                                                }
-                                            }
-                                        })
-                                        return;
-                              }
+                          if (jdata.hasOwnProperty("log")) {
+                              logger.replaceRange(jdata["log"], CodeMirror.Pos(logger.lastLine()));
+                              // logger.focus();
+                              // logger.setCursor(logger.lineCount(), 0);
+                          } else if (jdata.hasOwnProperty("imshow")) {
+                              imgelem = document.getElementById("imshow");
+                              imgelem.src = "data:image/jpg;base64," + jdata["imshow"];
                           } else {
-                              if (jdata.hasOwnProperty("log")) {
-                                  logger.replaceRange(jdata["log"], CodeMirror.Pos(logger.lastLine()));
-                                  // logger.focus();
-                                  // logger.setCursor(logger.lineCount(), 0);
-                              } else if (jdata.hasOwnProperty("imshow")) {
-                                  imgelem = document.getElementById("imshow");
-                                  imgelem.src = "data:image/jpg;base64," + jdata["imshow"];
-                              } else {
-                                  logger.setValue("message format error (html)!")
-                                  return
-                              }
+                              logger.setValue("message format error (html)!")
+                              return
                           }
                       }
                       if (data.length == 0) {
+                          $.get("http://116.85.5.40:8119/k12ai/private/popmsg?key=" + appId + ".error", function(err) {
+                              var errdata = $.parseJSON(err);
+                              for (it of errdata) {
+                                  var jsondata = $.parseJSON(it)
+                                  if (jsondata['token'] != tokenId) {
+                                      continue
+                                  }
+                                  var jdata = jsondata["data"]
+                                  // console.log(jdata)
+                                  if (jdata["expand"].hasOwnProperty("status")) {
+                                      switch (jdata["expand"]["status"]) {
+                                          case "starting":
+                                              logger.setValue("starting...." + "\n\n");
+                                              break;
+                                          case "running":
+                                              errorinfo.setValue("");
+                                              logger.replaceRange("running..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
+                                              break;
+                                          case "finished":
+                                              logger.replaceRange("finished..." + "\n\n", CodeMirror.Pos(logger.lastLine()));
+                                              return
+                                      }
+                                  } else {
+                                      if (jdata["code"] > 100200) {
+                                          var jerr = JSON.stringify(jdata, null, 4)
+                                          errorinfo.replaceRange(jerr, CodeMirror.Pos(logger.lastLine()));
+                                          return
+                                      }
+                                  }
+                              }
+                          })
                           gtimeId = setTimeout("message_pop()", 1000);
                       } else {
                           message_pop();  // call self
