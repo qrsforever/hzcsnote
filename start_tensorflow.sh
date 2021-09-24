@@ -40,7 +40,7 @@ __start_notebook()
         TARGET_NOTE_DIR=$DST_DIR/hzcsnote
         if [[ $PROJECT == $K12NB_PROJECT ]]
         then
-            xvfb_args="xvfb-run -a -s \"-screen 0 1400x900x24\""
+            xvfb_args="" # "xvfb-run -a -s \"-screen 0 1400x900x24\""
         else
             xvfb_args=""
         fi
