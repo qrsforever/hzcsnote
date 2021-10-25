@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>_only_test_</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>test_conv3d</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14256,19 +14256,26 @@ a.anchor-link {
     </script>
     <!-- End of mathjax configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><h1>Contents<span class="tocSkip"></span></h1></p>
+<div class="toc"><ul class="toc-item"><li><span><a href="#Load-Repnet-Model" data-toc-modified-id="Load-Repnet-Model-1"><span class="toc-item-num">1&nbsp;&nbsp;</span>Load Repnet Model</a></span></li><li><span><a href="#Define-a-Simple-Conv3D" data-toc-modified-id="Define-a-Simple-Conv3D-2"><span class="toc-item-num">2&nbsp;&nbsp;</span>Define a Simple Conv3D</a></span></li><li><span><a href="#Repnet-Model-Part2-(Conv3D-+-BN)" data-toc-modified-id="Repnet-Model-Part2-(Conv3D-+-BN)-3"><span class="toc-item-num">3&nbsp;&nbsp;</span>Repnet Model Part2 (Conv3D + BN)</a></span></li><li><span><a href="#Convert-to-Onnx" data-toc-modified-id="Convert-to-Onnx-4"><span class="toc-item-num">4&nbsp;&nbsp;</span>Convert to Onnx</a></span><ul class="toc-item"><li><span><a href="#tf2onnx:-from_keras" data-toc-modified-id="tf2onnx:-from_keras-4.1"><span class="toc-item-num">4.1&nbsp;&nbsp;</span>tf2onnx: from_keras</a></span></li><li><span><a href="#tf2onnx:-from_function" data-toc-modified-id="tf2onnx:-from_function-4.2"><span class="toc-item-num">4.2&nbsp;&nbsp;</span>tf2onnx: from_function</a></span></li><li><span><a href="#tf2onnx:-load-saved_models" data-toc-modified-id="tf2onnx:-load-saved_models-4.3"><span class="toc-item-num">4.3&nbsp;&nbsp;</span>tf2onnx: load saved_models</a></span></li></ul></li><li><span><a href="#FAQs" data-toc-modified-id="FAQs-5"><span class="toc-item-num">5&nbsp;&nbsp;</span>FAQs</a></span></li></ul></div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">reload_ext</span> watermark
 <span class="o">%</span><span class="k">reload_ext</span> autoreload
 <span class="o">%</span><span class="k">autoreload</span> 2
 <span class="o">%</span><span class="k">watermark</span> -p numpy,sklearn,pandas
-<span class="o">%</span><span class="k">watermark</span> -p cv2,PIL,matplotlib
+<span class="o">%</span><span class="k">watermark</span> -p ipywidgets,cv2,PIL,matplotlib,plotly,netron
 <span class="o">%</span><span class="k">watermark</span> -p torch,torchvision,torchaudio
-<span class="o">%</span><span class="k">watermark</span> -p tensorflow,tensorboard
+<span class="o">%</span><span class="k">watermark</span> -p tensorflow,tensorboard,tflite
+<span class="o">%</span><span class="k">watermark</span> -p onnx,tf2onnx,onnxruntime,tensorrt,tvm
 <span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="o">%</span><span class="k">config</span> InlineBackend.figure_format=&#39;retina&#39;
 <span class="o">%</span><span class="k">config</span> IPCompleter.use_jedi = False
@@ -14278,37 +14285,57 @@ a.anchor-link {
 <span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s1">&#39;&lt;style&gt;.container { width:</span><span class="si">%d%%</span><span class="s1"> !important; }&lt;/style&gt;&#39;</span> <span class="o">%</span> <span class="mi">90</span><span class="p">))</span>
 
 <span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">io</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">base64</span><span class="o">,</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">base64</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">os.path</span> <span class="k">as</span> <span class="nn">osp</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">argparse</span><span class="o">,</span> <span class="nn">shlex</span><span class="o">,</span> <span class="nn">signal</span>
 
-<span class="k">def</span> <span class="nf">_IMPORT_</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="o">.</span><span class="n">exit</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">_IGNORE_</span>
+
+<span class="k">def</span> <span class="nf">_IMPORT</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">segs</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-        <span class="n">g</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span>
-        <span class="k">if</span> <span class="s1">&#39;github.com&#39;</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="n">uri</span> <span class="o">=</span> <span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;github.com&#39;</span><span class="p">,</span> <span class="s1">&#39;raw.githubusercontent.com&#39;</span><span class="p">)</span>
-            <span class="n">mod</span> <span class="o">=</span> <span class="n">uri</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="s1">&#39;master&#39;</span><span class="p">]:</span>
-                <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;https://&#39;</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;/main/&#39;</span> <span class="o">+</span> <span class="n">mod</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
-                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
-                    <span class="k">break</span>
-        <span class="k">elif</span> <span class="s1">&#39;gitee.com&#39;</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="n">mod</span> <span class="o">=</span> <span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;/raw/main/&#39;</span><span class="p">,</span> <span class="s1">&#39;/raw/master/&#39;</span><span class="p">]:</span>
-                <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;https://&#39;</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
-                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
-                    <span class="k">break</span>
-        <span class="k">elif</span> <span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">segs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fr</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;https://&#39;</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">8</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">as</span> <span class="n">fr</span><span class="p">:</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">fr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="n">exec</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;blob/main/&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;blob/master/&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;raw.githubusercontent.com&#39;</span><span class="p">):</span>
+                <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;https://&#39;</span> <span class="o">+</span> <span class="n">x</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
+            <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;github.com&#39;</span><span class="p">):</span>
+                <span class="n">uri</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;github.com&#39;</span><span class="p">,</span> <span class="s1">&#39;raw.githubusercontent.com&#39;</span><span class="p">)</span>
+                <span class="n">mod</span> <span class="o">=</span> <span class="n">uri</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="s1">&#39;master&#39;</span><span class="p">]:</span>
+                    <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;https://&#39;</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:])</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
+                        <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;gitee.com&#39;</span><span class="p">):</span>
+                <span class="n">mod</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;/raw/main/&#39;</span><span class="p">,</span> <span class="s1">&#39;/raw/master/&#39;</span><span class="p">]:</span>
+                    <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;https://&#39;</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
+                        <span class="k">break</span>
+        <span class="n">exec</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">globals</span><span class="p">())</span>
     <span class="k">except</span><span class="p">:</span>
         <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">_DIR</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dumps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">y</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">y</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">))[</span><span class="mi">8</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span> <span class="k">if</span> <span class="n">dumps</span> <span class="k">else</span> <span class="n">attrs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14331,14 +14358,23 @@ a.anchor-link {
 <pre>numpy 1.19.5
 sklearn 0.0
 pandas 1.1.5
+ipywidgets 7.6.3
 cv2 4.5.3
 PIL 8.3.1
 matplotlib 3.3.4
+plotly 5.3.0
+netron 5.1.6
 torch 1.8.1+cu101
 torchvision 0.9.1+cu101
 torchaudio not installed
 tensorflow 2.6.0
 tensorboard 2.6.0
+tflite not installed
+onnx 1.10.1
+tf2onnx 1.10.0
+onnxruntime 1.8.1
+tensorrt not installed
+tvm not installed
 </pre>
 </div>
 </div>
@@ -14366,7 +14402,50 @@ tensorboard 2.6.0
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">display_html</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">IPython</span> <span class="kn">import</span> <span class="n">display</span>
+    <span class="kn">from</span> <span class="nn">html</span> <span class="kn">import</span> <span class="n">escape</span> <span class="k">as</span> <span class="n">html_escape</span>
+    <span class="n">frame_id</span> <span class="o">=</span> <span class="s1">&#39;erlangai-frame-</span><span class="si">{:08x}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">64</span><span class="p">))</span>
+    <span class="n">shell</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">      &lt;iframe id=&#39;%HTML_ID%&#39; width=&#39;100%&#39; height=&#39;%HEIGHT%&#39; frameborder=&#39;0&#39;&gt;</span>
+<span class="s1">      &lt;/iframe&gt;</span>
+<span class="s1">      &lt;script&gt;</span>
+<span class="s1">        (function() {</span>
+<span class="s1">          const frame = document.getElementById(%JSON_ID%);</span>
+<span class="s1">          const url = new URL(%URL%, window.location);</span>
+<span class="s1">          const port = %PORT%;</span>
+<span class="s1">          if (port) {</span>
+<span class="s1">            url.port = port;</span>
+<span class="s1">          }</span>
+<span class="s1">          frame.src = url;</span>
+<span class="s1">        })();</span>
+<span class="s1">      &lt;/script&gt;</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+    <span class="n">replacements</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;%HTML_ID%&#39;</span><span class="p">,</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">frame_id</span><span class="p">,</span> <span class="n">quote</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s1">&#39;%JSON_ID%&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">frame_id</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s1">&#39;%HEIGHT%&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">height</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;%PORT%&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">port</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;%URL%&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)),</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">replacements</span><span class="p">:</span>
+        <span class="n">shell</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">display</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">shell</span><span class="p">))</span>
+
+<span class="nd">@register_line_magic</span>
+<span class="k">def</span> <span class="nf">netron</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;netron&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--file&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;netron model file&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--port&#39;</span><span class="p">,</span> <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;netron server port&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--height&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;display netron html window hight&#39;</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">netron</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="n">netron</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">),</span> <span class="n">browse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">display_html</span><span class="p">(</span><span class="n">address</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">args</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+ 
 </pre></div>
 
      </div>
@@ -14380,7 +14459,33 @@ tensorboard 2.6.0
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># !pip3 install git+https://github.com/onnx/tensorflow-onnx</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">###</span>
+<span class="c1">### Tensorflow ###</span>
+<span class="c1">###</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tf2onnx</span>
+<span class="kn">import</span> <span class="nn">onnxruntime</span> <span class="k">as</span> <span class="nn">ort</span>
+
+<span class="n">layers</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span>
+<span class="n">regularizers</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">regularizers</span>
+
+<span class="n">DATA_OUTPUT</span> <span class="o">=</span> <span class="s1">&#39;/data/nb_data/test_conv3d&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">DATA_OUTPUT</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14391,20 +14496,55 @@ tensorboard 2.6.0
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div style="text-align: right"> [up](https://github.com/loretoparisi/CapsNet#CapsNet) </div>
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div style="text-align: right"> your-text-here </div>
+<h2 id="Load-Repnet-Model">Load Repnet Model<a class="anchor-link" href="#Load-Repnet-Model">&#182;</a></h2>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/data/nb_data/tf_trt_models&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">_IMPORT</span><span class="p">(</span><span class="s1">&#39;gitee.com/qrsforever/blog_source_codes/AI/tensorflow/misc/ResnetPeriodEstimator&#39;</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">IMAGE_W</span> <span class="o">=</span> <span class="mi">112</span>
+<span class="n">IMAGE_H</span> <span class="o">=</span> <span class="mi">112</span>
+<span class="n">NUM_FRAMES</span> <span class="o">=</span> <span class="mi">64</span>
+
+<span class="n">PATH_TO_CKPT</span><span class="o">=</span><span class="s1">&#39;/data/pretrained/cv/repnet/&#39;</span>
+<span class="n">SAVED_MODEL_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/data/nb_data/test_conv3d&#39;</span>
+<span class="n">MODEL_PART1_OUTFILE</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/model_part1_outputs.npy&#39;</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">MODEL_PART1_OUTFILE</span><span class="p">):</span>
+    <span class="o">!</span><span class="nb">test</span> ! -d <span class="nv">$PATH_TO_CKPT</span> <span class="o">&amp;&amp;</span> mkdir -p <span class="nv">$PATH_TO_CKPT</span> <span class="o">&amp;&amp;</span> <span class="err">\</span>
+        <span class="n">wget</span> <span class="o">-</span><span class="n">P</span> <span class="err">$</span><span class="n">PATH_TO_CKPT</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">storage</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repnet_ckpt</span><span class="o">/</span><span class="n">checkpoint</span> <span class="o">&amp;&amp;</span> \
+        <span class="n">wget</span> <span class="o">-</span><span class="n">P</span> <span class="err">$</span><span class="n">PATH_TO_CKPT</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">storage</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repnet_ckpt</span><span class="o">/</span><span class="n">ckpt</span><span class="o">-</span><span class="mf">88.</span><span class="n">data</span><span class="o">-</span><span class="mi">00000</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="mi">00002</span> <span class="o">&amp;&amp;</span> \
+        <span class="n">wget</span> <span class="o">-</span><span class="n">P</span> <span class="err">$</span><span class="n">PATH_TO_CKPT</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">storage</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repnet_ckpt</span><span class="o">/</span><span class="n">ckpt</span><span class="o">-</span><span class="mf">88.</span><span class="n">data</span><span class="o">-</span><span class="mi">00001</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="mi">00002</span> <span class="o">&amp;&amp;</span> \
+        <span class="n">wget</span> <span class="o">-</span><span class="n">P</span> <span class="err">$</span><span class="n">PATH_TO_CKPT</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">storage</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repnet_ckpt</span><span class="o">/</span><span class="n">ckpt</span><span class="o">-</span><span class="mf">88.</span><span class="n">index</span>
 </pre></div>
 
      </div>
@@ -14415,20 +14555,16 @@ tensorboard 2.6.0
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">urllib</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="c1"># import tensorflow.contrib.tensorrt as trt</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tf_trt_models.classification</span> <span class="kn">import</span> <span class="n">download_classification_checkpoint</span><span class="p">,</span> <span class="n">build_classification_graph</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">ResnetPeriodEstimator</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">call</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">call</span><span class="p">)</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Checkpoint</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">PATH_TO_CKPT</span><span class="si">}</span><span class="s1">/ckpt-88&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">expect_partial</span><span class="p">()</span>
+<span class="n">test_inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">NUM_FRAMES</span><span class="p">,</span> <span class="n">IMAGE_H</span><span class="p">,</span> <span class="n">IMAGE_W</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">test_inputs_tensor</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">test_inputs</span><span class="p">)</span>
+<span class="n">test_outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">test_inputs_tensor</span><span class="p">)</span>
+<span class="n">test_outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">test_outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 
      </div>
@@ -14444,27 +14580,15 @@ tensorboard 2.6.0
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
-<pre>
 
-<span class="ansi-red-fg">ModuleNotFoundError</span>Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-5-be0d89e2eee2&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-intense-fg ansi-bold">      9</span> <span class="ansi-green-fg">import</span> matplotlib<span class="ansi-blue-fg">.</span>pyplot <span class="ansi-green-fg">as</span> plt
-<span class="ansi-green-intense-fg ansi-bold">     10</span> <span class="ansi-green-fg">import</span> numpy <span class="ansi-green-fg">as</span> np
-<span class="ansi-green-fg">---&gt; 11</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">from</span> tf_trt_models<span class="ansi-blue-fg">.</span>classification <span class="ansi-green-fg">import</span> download_classification_checkpoint<span class="ansi-blue-fg">,</span> build_classification_graph
 
-<span class="ansi-green-fg">/data/nb_data/tf_trt_models/tf_trt_models/classification.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-green-fg">from</span> <span class="ansi-blue-fg">.</span>graph_utils <span class="ansi-green-fg">import</span> convert_relu6
-<span class="ansi-green-intense-fg ansi-bold">      4</span> 
-<span class="ansi-green-fg">----&gt; 5</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">import</span> nets
-<span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-green-fg">import</span> nets<span class="ansi-blue-fg">.</span>inception
-<span class="ansi-green-intense-fg ansi-bold">      7</span> <span class="ansi-green-fg">import</span> nets<span class="ansi-blue-fg">.</span>mobilenet_v1
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;nets&#39;</pre>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>(TensorShape([1, 64, 32]), TensorShape([1, 64, 1]))</pre>
 </div>
+
 </div>
 
 </div>
@@ -14477,8 +14601,26 @@ tensorboard 2.6.0
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-<span class="n">a</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">ResnetPart1</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ResnetPart1&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;base_model&#39;</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+            <span class="n">outputs</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;conv4_block3_out&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">IMAGE_H</span><span class="p">,</span> <span class="n">IMAGE_W</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">MODEL_PART1_OUTFILE</span><span class="p">):</span>
+    <span class="n">model1</span> <span class="o">=</span> <span class="n">ResnetPart1</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">model_part1_outputs</span> <span class="o">=</span> <span class="n">model1</span><span class="p">(</span><span class="n">test_inputs_tensor</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">MODEL_PART1_OUTFILE</span><span class="p">,</span> <span class="n">model_part1_outputs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">model_part1_outputs</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))[:</span><span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">90</span><span class="p">,</span> <span class="n">model_part1_outputs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">model_part1_outputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/model_part1_outputs.npy&#39;</span><span class="p">)</span>
+    
+<span class="n">model_part1_outputs</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 
      </div>
@@ -14500,13 +14642,7 @@ tensorboard 2.6.0
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>array([[[ 0.58821943, -1.50195305, -0.90961352,  1.75272841],
-        [ 0.46158129,  1.84278592, -0.09306837,  0.88936903],
-        [ 1.06113171,  0.39046257, -0.81616548,  1.35797164]],
-
-       [[-0.12363995, -0.22676362, -0.26167725, -0.72338734],
-        [ 0.71351646,  0.17375196, -0.42233735, -1.60346074],
-        [-1.66129064,  0.5178923 , -1.34733753, -0.87103162]]])</pre>
+<pre>(64, 7, 7, 1024)</pre>
 </div>
 
 </div>
@@ -14515,13 +14651,48 @@ tensorboard 2.6.0
 
 </div>
 
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Define-a-Simple-Conv3D">Define a Simple Conv3D<a class="anchor-link" href="#Define-a-Simple-Conv3D">&#182;</a></h2>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.4</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># from tf2onnx import logging, utils</span>
+<span class="c1"># </span>
+<span class="c1"># logging.basicConfig(level=5)</span>
+<span class="c1"># utils.set_debug_mode(True)</span>
+<span class="c1"># </span>
+<span class="k">class</span> <span class="nc">ModelCNN3D</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ModelCNN3D&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_conv_layer</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv3D</span><span class="p">(</span>
+            <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;temporal_conv_layer&#39;</span><span class="p">,</span>
+            <span class="n">dilation_rate</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">kernel_regularizer</span><span class="o">=</span><span class="n">regularizers</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">),</span>
+            <span class="n">kernel_initializer</span><span class="o">=</span><span class="s1">&#39;he_normal&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_bn_layers</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;temporal_bn_layers&#39;</span><span class="p">)</span>                  
+        
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_conv_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_bn_layers</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+    
+<span class="n">testmodel</span> <span class="o">=</span> <span class="n">ModelCNN3D</span><span class="p">()</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">testmodel</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+<span class="n">tf2onnx</span><span class="o">.</span><span class="n">convert</span><span class="o">.</span><span class="n">from_keras</span><span class="p">(</span>
+    <span class="n">testmodel</span><span class="p">,</span>
+    <span class="n">input_signature</span><span class="o">=</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">TensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">),),</span>
+    <span class="n">opset</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/testmodel.onnx&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+
+<span class="o">%</span><span class="k">netron</span> -f {SAVED_MODEL_ROOT}/testmodel.onnx --height 360
 </pre></div>
 
      </div>
@@ -14537,19 +14708,41 @@ tensorboard 2.6.0
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>WARNING:tensorflow:From /usr/local/lib/python3.6/dist-packages/tf2onnx/tf_loader.py:706: extract_sub_graph (from tensorflow.python.framework.graph_util_impl) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.compat.v1.graph_util.extract_sub_graph`
+Serving &#39;/data/nb_data/test_conv3d/testmodel.onnx&#39; at http://0.0.0.0:38656
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
 
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>array([[[ 0.97054858, -4.25488263, -2.77403381,  3.88182103],
-        [ 0.65395322,  4.10696481, -0.73267092,  1.72342259],
-        [ 2.15282928,  0.47615642, -2.5404137 ,  2.89492911]],
-
-       [[-0.80909987, -1.06690906, -1.15419312, -2.30846834],
-        [ 1.28379115, -0.06562009, -1.55584336, -4.50865186],
-        [-4.65322661,  0.79473075, -3.86834382, -2.67757905]]])</pre>
+      <iframe id='erlangai-frame-7a6cf33f39ae12ca' width='100%' height='360' frameborder='0'>
+      </iframe>
+      <script>
+        (function() {
+          const frame = document.getElementById("erlangai-frame-7a6cf33f39ae12ca");
+          const url = new URL("/", window.location);
+          const port = 38656;
+          if (port) {
+            url.port = port;
+          }
+          frame.src = url;
+        })();
+      </script>
+    
 </div>
 
 </div>
@@ -14558,15 +14751,36 @@ tensorboard 2.6.0
 
 </div>
 
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Repnet-Model-Part2-(Conv3D-+-BN)">Repnet Model Part2 (Conv3D + BN)<a class="anchor-link" href="#Repnet-Model-Part2-(Conv3D-+-BN)">&#182;</a></h2>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.4</span>
-<span class="n">a</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">ResnetPart2_0</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ResnetPart2_0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_conv_layer</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv3D</span><span class="p">(</span>
+            <span class="mi">512</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;temporal_conv_layer&#39;</span><span class="p">,</span>
+            <span class="n">dilation_rate</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">temporal_conv_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_weights</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_bn_layers</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="c1"># default</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;temporal_bn_layers&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">temporal_bn_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_weights</span><span class="p">())</span>                  
+        
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">as_list</span><span class="p">()[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_conv_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_bn_layers</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="n">model2_0</span> <span class="o">=</span> <span class="n">ResnetPart2_0</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">model_part2_outputs</span> <span class="o">=</span> <span class="n">model2_0</span><span class="p">(</span><span class="n">model_part1_outputs</span><span class="p">)</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">model_part2_outputs</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))[:</span><span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">90</span><span class="p">,</span> <span class="n">model_part2_outputs</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 
      </div>
@@ -14588,13 +14802,9 @@ tensorboard 2.6.0
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>array([[[ 0.97054858, -4.25488263, -2.77403381,  3.88182103],
-        [ 0.65395322,  4.10696481, -0.73267092,  1.72342259],
-        [ 2.15282928,  0.47615642, -2.5404137 ,  2.89492911]],
-
-       [[-0.80909987, -1.06690906, -1.15419312, -2.30846834],
-        [ 1.28379115, -0.06562009, -1.55584336, -4.50865186],
-        [-4.65322661,  0.79473075, -3.86834382, -2.67757905]]])</pre>
+<pre>(&lt;tf.Tensor: shape=(3,), dtype=float32, numpy=array([0.        , 1.0429665 , 0.54142964], dtype=float32)&gt;,
+ &#39;------------------------------------------------------------------------------------------&#39;,
+ TensorShape([1, 64, 512]))</pre>
 </div>
 
 </div>
@@ -14603,6 +14813,484 @@ tensorboard 2.6.0
 
 </div>
 
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Convert-to-Onnx">Convert to Onnx<a class="anchor-link" href="#Convert-to-Onnx">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="tf2onnx:-from_keras">tf2onnx: from_keras<a class="anchor-link" href="#tf2onnx:-from_keras">&#182;</a></h3>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model2_proto_0</span> <span class="o">=</span> <span class="n">tf2onnx</span><span class="o">.</span><span class="n">convert</span><span class="o">.</span><span class="n">from_keras</span><span class="p">(</span>
+    <span class="n">model2_0</span><span class="p">,</span>
+    <span class="n">input_signature</span><span class="o">=</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">TensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">model_part1_outputs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">),),</span>
+    <span class="n">opset</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/model2_0.onnx&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">model2_proto_0</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="n">model2_proto_0</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">model2_proto_0</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">output</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>ResnetPart2_0/Reshape
+ResnetPart2_0/temporal_conv_layer/Conv3D__14
+Conv__18
+ResnetPart2_0/temporal_bn_layers/FusedBatchNormV3
+ResnetPart2_0/Relu
+ResnetPart2_0/Max
+ResnetPart2_0/temporal_bn_layers/FusedBatchNormV3__17
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>([name: &#34;x&#34;
+ type {
+   tensor_type {
+     elem_type: 1
+     shape {
+       dim {
+         dim_value: 64
+       }
+       dim {
+         dim_value: 7
+       }
+       dim {
+         dim_value: 7
+       }
+       dim {
+         dim_value: 1024
+       }
+     }
+   }
+ }
+ ],
+ [name: &#34;output_1&#34;
+ type {
+   tensor_type {
+     elem_type: 1
+     shape {
+       dim {
+         dim_value: 1
+       }
+       dim {
+         dim_value: 64
+       }
+       dim {
+         dim_value: 512
+       }
+     }
+   }
+ }
+ ])</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">netron</span> -f {SAVED_MODEL_ROOT}/model2_0.onnx --height 360
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>Serving &#39;/data/nb_data/test_conv3d/model2_0.onnx&#39; at http://0.0.0.0:43430
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+
+      <iframe id='erlangai-frame-6df71d22db46a055' width='100%' height='360' frameborder='0'>
+      </iframe>
+      <script>
+        (function() {
+          const frame = document.getElementById("erlangai-frame-6df71d22db46a055");
+          const url = new URL("/", window.location);
+          const port = 43430;
+          if (port) {
+            url.port = port;
+          }
+          frame.src = url;
+        })();
+      </script>
+    
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[15]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sess</span> <span class="o">=</span> <span class="n">ort</span><span class="o">.</span><span class="n">InferenceSession</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/model2_0.onnx&#39;</span><span class="p">)</span>  
+<span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="n">sess</span><span class="o">.</span><span class="n">get_inputs</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">model_part1_outputs</span><span class="p">}</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">sess</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()]</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+<span class="n">predictions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>(1, 64, 512)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="tf2onnx:-from_function">tf2onnx: from_function<a class="anchor-link" href="#tf2onnx:-from_function">&#182;</a></h3>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[16]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">func2_0</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">model2_0</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="n">func2_proto_0</span> <span class="o">=</span> <span class="n">tf2onnx</span><span class="o">.</span><span class="n">convert</span><span class="o">.</span><span class="n">from_function</span><span class="p">(</span>
+    <span class="n">function</span><span class="o">=</span><span class="n">func2_0</span><span class="p">,</span>
+    <span class="n">input_signature</span><span class="o">=</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">TensorSpec</span><span class="p">(</span><span class="n">model_part1_outputs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">model_part1_outputs</span><span class="o">.</span><span class="n">dtype</span><span class="p">),),</span>
+    <span class="n">opset</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/func2_0.onnx&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">netron</span> -f {SAVED_MODEL_ROOT}/func2_0.onnx --height 360
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>Serving &#39;/data/nb_data/test_conv3d/func2_0.onnx&#39; at http://0.0.0.0:45724
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+
+      <iframe id='erlangai-frame-b69b392cd76b42ba' width='100%' height='360' frameborder='0'>
+      </iframe>
+      <script>
+        (function() {
+          const frame = document.getElementById("erlangai-frame-b69b392cd76b42ba");
+          const url = new URL("/", window.location);
+          const port = 45724;
+          if (port) {
+            url.port = port;
+          }
+          frame.src = url;
+        })();
+      </script>
+    
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="tf2onnx:-load-saved_models">tf2onnx: load saved_models<a class="anchor-link" href="#tf2onnx:-load-saved_models">&#182;</a></h3>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[18]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model2_0</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="si">}</span><span class="s1">/model2_0&#39;</span><span class="p">,</span> <span class="n">save_format</span><span class="o">=</span><span class="s1">&#39;tf&#39;</span><span class="p">,</span> <span class="n">include_optimizer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>INFO:tensorflow:Assets written to: /data/nb_data/test_conv3d/model2_0/assets
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[19]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>python3 -m tf2onnx.convert --opset <span class="m">11</span> <span class="err">\</span>
+    <span class="o">--</span><span class="n">tag</span> <span class="n">serve</span> <span class="o">--</span><span class="n">signature_def</span> <span class="n">serving_default</span> \
+    <span class="o">--</span><span class="n">saved</span><span class="o">-</span><span class="n">model</span> <span class="p">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="p">}</span><span class="o">/</span><span class="n">model2_0</span> <span class="o">--</span><span class="n">output</span> <span class="p">{</span><span class="n">SAVED_MODEL_ROOT</span><span class="p">}</span><span class="o">/</span><span class="n">model2_0</span><span class="o">/</span><span class="n">model2</span><span class="o">.</span><span class="n">onnx</span> 
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>/usr/lib/python3.6/runpy.py:125: RuntimeWarning: &#39;tf2onnx.convert&#39; found in sys.modules after import of package &#39;tf2onnx&#39;, but prior to execution of &#39;tf2onnx.convert&#39;; this may result in unpredictable behaviour
+  warn(RuntimeWarning(msg))
+2021-10-21 20:44:32,350 - INFO - Signatures found in model: [serving_default].
+2021-10-21 20:44:32,350 - INFO - Output names: [&#39;output_1&#39;]
+WARNING:tensorflow:From /usr/local/lib/python3.6/dist-packages/tf2onnx/tf_loader.py:706: extract_sub_graph (from tensorflow.python.framework.graph_util_impl) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.compat.v1.graph_util.extract_sub_graph`
+2021-10-21 20:44:34,264 - WARNING - From /usr/local/lib/python3.6/dist-packages/tf2onnx/tf_loader.py:706: extract_sub_graph (from tensorflow.python.framework.graph_util_impl) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.compat.v1.graph_util.extract_sub_graph`
+2021-10-21 20:44:35,735 - INFO - Using tensorflow=2.6.0, onnx=1.10.1, tf2onnx=1.10.0/42e800
+2021-10-21 20:44:35,736 - INFO - Using opset &lt;onnx, 11&gt;
+2021-10-21 20:44:43,166 - INFO - Computed 2 values for constant folding
+2021-10-21 20:44:47,377 - INFO - folding node using tf type=StridedSlice, name=StatefulPartitionedCall/ResnetPart2_0/temporal_conv_layer/Conv3D/strided_slice_1
+2021-10-21 20:44:47,377 - INFO - folding node using tf type=StridedSlice, name=StatefulPartitionedCall/ResnetPart2_0/temporal_conv_layer/Conv3D/strided_slice_2
+2021-10-21 20:44:48,138 - INFO - Optimizing ONNX model
+2021-10-21 20:44:48,868 - INFO - After optimization: Cast -1 (4-&gt;3), Const -53 (84-&gt;31), Gather +1 (1-&gt;2), Identity -9 (9-&gt;0), Squeeze -7 (9-&gt;2), Unsqueeze -15 (21-&gt;6)
+2021-10-21 20:44:48,985 - INFO - 
+2021-10-21 20:44:48,985 - INFO - Successfully converted TensorFlow model /data/nb_data/test_conv3d/model2_0 to ONNX
+2021-10-21 20:44:48,985 - INFO - Model inputs: [&#39;input_1&#39;]
+2021-10-21 20:44:48,985 - INFO - Model outputs: [&#39;output_1&#39;]
+2021-10-21 20:44:48,986 - INFO - ONNX model is saved at /data/nb_data/test_conv3d/model2_0/model2.onnx
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[20]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">netron</span> -f {SAVED_MODEL_ROOT}/model2_0/model2.onnx --height 360
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>Serving &#39;/data/nb_data/test_conv3d/model2_0/model2.onnx&#39; at http://0.0.0.0:42880
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+
+      <iframe id='erlangai-frame-a3314f34a020555a' width='100%' height='360' frameborder='0'>
+      </iframe>
+      <script>
+        (function() {
+          const frame = document.getElementById("erlangai-frame-a3314f34a020555a");
+          const url = new URL("/", window.location);
+          const port = 42880;
+          if (port) {
+            url.port = port;
+          }
+          frame.src = url;
+        })();
+      </script>
+    
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="FAQs">FAQs<a class="anchor-link" href="#FAQs">&#182;</a></h2><ul>
+<li><a href="https://github.com/onnx/tensorflow-onnx/issues/1749">Conversion of tranpose into reshape goes wrong after 3D NDHWC convolution (FusedBatchNormV3) </a></li>
+</ul>
+
+</div>
 </div>
 </body>
 

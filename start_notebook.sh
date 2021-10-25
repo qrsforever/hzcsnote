@@ -49,9 +49,8 @@ __start_notebook()
             xvfb_args=""
         fi
         docker run -dit --runtime nvidia --name ${JNAME} --restart unless-stopped --shm-size 10g \
-            --volume $SOURCE_NOTE_DIR:$TARGET_NOTE_DIR \
-            --entrypoint /bin/bash ${@:3:$#} --network host --hostname ${JNAME} ${REPOSITORY} \
-            -c "umask 0000; jupyter notebook --no-browser --notebook-dir=$TARGET_NOTE_DIR --allow-root --ip=0.0.0.0 --port=$PORT"
+            -v $SOURCE_NOTE_DIR:$TARGET_NOTE_DIR -v $SOURCE_NOTE_DIR/entrypoint.sh:/entrypoint.sh \
+            ${@:3:$#} --network host --hostname ${JNAME} --entrypoint /entrypoint.sh ${REPOSITORY}
             # -c "umask 0000; $xvfb_args jupyter notebook --no-browser --notebook-dir=$TARGET_NOTE_DIR --allow-root --ip=0.0.0.0 --port=$PORT"
     else
         echo "$JNAME: already run!!!"

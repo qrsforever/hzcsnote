@@ -60,3 +60,5 @@ RUN PIP_INSTALL="pip install -U --no-cache-dir --retries 20 --timeout 120 \
 # COPY .jupyter_config/vim_binding ${jupyter_data_dir}/nbextensions/vim_binding
 
 CMD ["/bin/bash"]
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
