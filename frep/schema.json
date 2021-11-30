@@ -1,0 +1,972 @@
+{
+    "type": "page",
+    "objs": [
+        {
+            "type": "tab",
+            "objs": [
+                {
+                    "name": "CFG",
+                    "objs": [
+                        {
+                            "type": "H",
+                            "objs": [
+                                {
+                                    "_id_": "task",
+                                    "type": "string",
+                                    "name": "Task",
+                                    "default": "zmq.repnet_tf.inference",
+                                    "width": "30%",
+                                    "readonly": true
+                                },
+                                {
+                                    "_id_": "cfg.pigeon.msgkey",
+                                    "type": "string",
+                                    "name": "Mssage Key",
+                                    "default": "zmq.repnet_tf.test",
+                                    "width": "30%",
+                                    "readonly": true
+                                },
+                                {
+                                    "_id_": "__cfg.race_url",
+                                    "type": "string",
+                                    "name": "Race URL",
+                                    "default": "http://host:port",
+                                    "width": "30%",
+                                    "readonly": true
+                                }
+                            ]
+                        },
+                        {
+                            "type": "accordion",
+                            "objs": [
+                                {
+                                    "name": "Video Configuration",
+                                    "objs": [
+                                        {
+                                            "type": "navigation",
+                                            "objs": [
+                                                {
+                                                    "type": "H",
+                                                    "name": "Real Time",
+                                                    "objs": [
+                                                        {
+                                                            "_id_": "__cfg.devices",
+                                                            "type": "string-enum",
+                                                            "name": "Devices",
+                                                            "default": "006b246f536d",
+                                                            "width": 400,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "压弯",
+                                                                    "value": "00e685ef87b4"
+                                                                },
+                                                                {
+                                                                    "name": "弯折",
+                                                                    "value": "00ee44217446"
+                                                                },
+                                                                {
+                                                                    "name": "切割",
+                                                                    "value": "00cf60a8f512"
+                                                                },
+                                                                {
+                                                                    "name": "磨擦",
+                                                                    "value": "004309167638"
+                                                                },
+                                                                {
+                                                                    "name": "打孔",
+                                                                    "value": "006b246f536d"
+                                                                },
+                                                                {
+                                                                    "name": "站冲",
+                                                                    "value": "0031059d1d11"
+                                                                },
+                                                                {
+                                                                    "name": "组装",
+                                                                    "value": "002b359e3931"
+                                                                },
+                                                                {
+                                                                    "name": "焊接",
+                                                                    "value": "00232ee8876d"
+                                                                },
+                                                                {
+                                                                    "name": "翻边",
+                                                                    "value": "00047dd87188"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "_id_": "__cfg.date",
+                                                            "type": "string-enum",
+                                                            "name": "Date",
+                                                            "default": "live/00e685ef87b4/20210816",
+                                                            "width": 400,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "20210810",
+                                                                    "value": "live/00e685ef87b4/20210810"
+                                                                },
+                                                                {
+                                                                    "name": "20210811",
+                                                                    "value": "live/00e685ef87b4/20210811"
+                                                                },
+                                                                {
+                                                                    "name": "20210812",
+                                                                    "value": "live/00e685ef87b4/20210812"
+                                                                },
+                                                                {
+                                                                    "name": "20210816",
+                                                                    "value": "live/00e685ef87b4/20210816"
+                                                                },
+                                                                {
+                                                                    "name": "20210817",
+                                                                    "value": "live/00e685ef87b4/20210817"
+                                                                },
+                                                                {
+                                                                    "name": "20210823",
+                                                                    "value": "live/00e685ef87b4/20210823"
+                                                                },
+                                                                {
+                                                                    "name": "20210827",
+                                                                    "value": "live/00e685ef87b4/20210827"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "_id_": "__cfg.video",
+                                                            "type": "string-enum",
+                                                            "name": "Video",
+                                                            "width": 400,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "NONE",
+                                                                    "value": "NONE"
+                                                                }
+                                                            ],
+                                                            "default": "NONE"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "H",
+                                                    "name": "History Sample",
+                                                    "objs": [
+                                                        {
+                                                            "_id_": "__cfg.types",
+                                                            "type": "string-enum",
+                                                            "name": "Types",
+                                                            "default": "datasets/ladder/焊接",
+                                                            "width": 400,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "坐姿冲床",
+                                                                    "value": "datasets/ladder/坐姿冲床"
+                                                                },
+                                                                {
+                                                                    "name": "大棍打孔",
+                                                                    "value": "datasets/ladder/大棍打孔"
+                                                                },
+                                                                {
+                                                                    "name": "小棍打孔",
+                                                                    "value": "datasets/ladder/小棍打孔"
+                                                                },
+                                                                {
+                                                                    "name": "机器切割",
+                                                                    "value": "datasets/ladder/机器切割"
+                                                                },
+                                                                {
+                                                                    "name": "焊接",
+                                                                    "value": "datasets/ladder/焊接"
+                                                                },
+                                                                {
+                                                                    "name": "站立冲床",
+                                                                    "value": "datasets/ladder/站立冲床"
+                                                                },
+                                                                {
+                                                                    "name": "组装",
+                                                                    "value": "datasets/ladder/组装"
+                                                                },
+                                                                {
+                                                                    "name": "翻边",
+                                                                    "value": "datasets/ladder/翻边"
+                                                                },
+                                                                {
+                                                                    "name": "铁片塑形",
+                                                                    "value": "datasets/ladder/铁片塑形"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "_id_": "__cfg.sample",
+                                                            "type": "string-enum",
+                                                            "name": "Sample",
+                                                            "default": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803114041_57.mp4",
+                                                            "width": 400,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "20210728162057_40.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210728162057_40.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20210728173100_41.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210728173100_41.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20210803113041_44.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803113041_44.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20210803114041_57.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803114041_57.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20210803115042_38.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803115042_38.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20210803130045_57.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803130045_57.mp4"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "_id_": "_cfg.skewing",
+                                                            "type": "string-enum",
+                                                            "name": "Skewing",
+                                                            "width": 200,
+                                                            "readonly": true,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "No",
+                                                                    "value": "No"
+                                                                },
+                                                                {
+                                                                    "name": "Yes",
+                                                                    "value": "Yes"
+                                                                }
+                                                            ],
+                                                            "default": "No"
+                                                        },
+                                                        {
+                                                            "_id_": "_cfg.accuracy",
+                                                            "type": "float",
+                                                            "name": "Accuracy(%)",
+                                                            "width": 200,
+                                                            "readonly": true,
+                                                            "min": 0,
+                                                            "max": 100.0
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "V",
+                                            "objs": [
+                                                {
+                                                    "_id_": "cfg.video",
+                                                    "type": "bytes",
+                                                    "name": "",
+                                                    "default": "http://",
+                                                    "width": 620,
+                                                    "description_width": 0
+                                                },
+                                                {
+                                                    "_id_": "__cfg.play_video",
+                                                    "type": "video",
+                                                    "name": "Play Video",
+                                                    "width": 640,
+                                                    "format": "url"
+                                                }
+                                            ],
+                                            "align_items": "center"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Score Configuration",
+                                    "objs": [
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "cfg.constant_speed",
+                                                    "type": "bool",
+                                                    "name": "Constant Speed"
+                                                },
+                                                {
+                                                    "_id_": "cfg.median_filter",
+                                                    "type": "bool",
+                                                    "name": "Median Filter",
+                                                    "default": true
+                                                },
+                                                {
+                                                    "_id_": "cfg.fully_periodic",
+                                                    "type": "bool",
+                                                    "name": "Fully Periodic"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Algo Configuration",
+                                    "objs": [
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "cfg.batch_size",
+                                                    "type": "int",
+                                                    "name": "Batch Size",
+                                                    "default": 20
+                                                },
+                                                {
+                                                    "_id_": "cfg.temperature",
+                                                    "type": "float",
+                                                    "name": "Temperature",
+                                                    "default": 13.544
+                                                },
+                                                {
+                                                    "_id_": "cfg.strides",
+                                                    "type": "int-array",
+                                                    "name": "Strides",
+                                                    "default": [
+                                                        5,
+                                                        7,
+                                                        11,
+                                                        13
+                                                    ],
+                                                    "width": 400
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Optimize Configuration",
+                                    "objs": [
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "__cfg.btn_group_load",
+                                                    "type": "button",
+                                                    "name": "Load Group Config",
+                                                    "description_width": 200,
+                                                    "style": "danger",
+                                                    "icon": ""
+                                                },
+                                                {
+                                                    "_id_": "__cfg.btn_load",
+                                                    "type": "button",
+                                                    "name": "Load Config",
+                                                    "description_width": 200,
+                                                    "style": "warning",
+                                                    "icon": ""
+                                                },
+                                                {
+                                                    "_id_": "__cfg.accuracy",
+                                                    "type": "label",
+                                                    "name": "ignore",
+                                                    "default": "0.0",
+                                                    "readonly": true
+                                                },
+                                                {
+                                                    "_id_": "__cfg.btn_save",
+                                                    "type": "button",
+                                                    "name": "Save Config",
+                                                    "description_width": 200,
+                                                    "style": "warning",
+                                                    "icon": ""
+                                                },
+                                                {
+                                                    "_id_": "__cfg.btn_group_save",
+                                                    "type": "button",
+                                                    "name": "Save Group Config",
+                                                    "description_width": 200,
+                                                    "style": "danger",
+                                                    "icon": ""
+                                                }
+                                            ],
+                                            "justify_content": "center"
+                                        },
+                                        {
+                                            "type": "V",
+                                            "objs": [
+                                                {
+                                                    "_id_": "__cfg.show_image",
+                                                    "type": "image",
+                                                    "name": "Image",
+                                                    "format": "png"
+                                                }
+                                            ],
+                                            "align_items": "center"
+                                        },
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "_cfg.angle",
+                                                    "type": "bool-trigger",
+                                                    "name": "Rotate Angle",
+                                                    "objs": [
+                                                        {
+                                                            "name": "Enable",
+                                                            "value": true,
+                                                            "trigger": {
+                                                                "type": "_ignore_",
+                                                                "objs": [
+                                                                    {
+                                                                        "_id_": "cfg.angle",
+                                                                        "type": "float",
+                                                                        "name": "Value",
+                                                                        "default": 45,
+                                                                        "min": -180,
+                                                                        "max": 180
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Disable",
+                                                            "value": false,
+                                                            "trigger": {}
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "_id_": "_cfg.focus_box",
+                                                    "type": "bool-trigger",
+                                                    "name": "Focus Box",
+                                                    "objs": [
+                                                        {
+                                                            "name": "Enable",
+                                                            "value": true,
+                                                            "trigger": {
+                                                                "type": "V",
+                                                                "objs": [
+                                                                    {
+                                                                        "_id_": "cfg.detect_focus",
+                                                                        "type": "bool-trigger",
+                                                                        "name": "Auto Detect",
+                                                                        "objs": [
+                                                                            {
+                                                                                "name": "Enable",
+                                                                                "value": true,
+                                                                                "trigger": {
+                                                                                    "type": "_ignore_",
+                                                                                    "objs": [
+                                                                                        {
+                                                                                            "_id_": "cfg.retrieve_count",
+                                                                                            "type": "int",
+                                                                                            "name": "Retrieve Count",
+                                                                                            "default": 100,
+                                                                                            "width": 300
+                                                                                        },
+                                                                                        {
+                                                                                            "_id_": "cfg.box_size",
+                                                                                            "type": "int-array",
+                                                                                            "name": "Box Size",
+                                                                                            "default": [
+                                                                                                10,
+                                                                                                10
+                                                                                            ],
+                                                                                            "width": 300
+                                                                                        },
+                                                                                        {
+                                                                                            "_id_": "cfg.conf_thresh",
+                                                                                            "type": "float",
+                                                                                            "name": "Conf Threshold",
+                                                                                            "default": 0.5,
+                                                                                            "width": 300
+                                                                                        },
+                                                                                        {
+                                                                                            "_id_": "cfg.iou_thresh",
+                                                                                            "type": "float",
+                                                                                            "name": "IOU Threshold",
+                                                                                            "default": 0.5,
+                                                                                            "width": 300
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            {
+                                                                                "name": "Disable",
+                                                                                "value": false,
+                                                                                "trigger": {
+                                                                                    "type": "_ignore_",
+                                                                                    "objs": [
+                                                                                        {
+                                                                                            "_id_": "_cfg.focus_center",
+                                                                                            "type": "float-array",
+                                                                                            "name": "Box Center",
+                                                                                            "default": [
+                                                                                                0.5,
+                                                                                                0.5,
+                                                                                                0.1,
+                                                                                                0.1
+                                                                                            ],
+                                                                                            "width": 300
+                                                                                        },
+                                                                                        {
+                                                                                            "_id_": "cfg.focus_box",
+                                                                                            "type": "float-array",
+                                                                                            "name": "Box Rect",
+                                                                                            "default": [
+                                                                                                0.15,
+                                                                                                0.05,
+                                                                                                0.85,
+                                                                                                0.95
+                                                                                            ],
+                                                                                            "width": 300
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "_id_": "cfg.focus_box_repnum",
+                                                                        "type": "int",
+                                                                        "name": "Replicate",
+                                                                        "default": 1,
+                                                                        "min": 1,
+                                                                        "max": 10
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Disable",
+                                                            "value": false,
+                                                            "trigger": {}
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "_id_": "_cfg.black_box",
+                                                    "type": "bool-trigger",
+                                                    "name": "Black Box",
+                                                    "objs": [
+                                                        {
+                                                            "name": "Enable",
+                                                            "value": true,
+                                                            "trigger": {
+                                                                "type": "V",
+                                                                "objs": [
+                                                                    {
+                                                                        "_id_": "cfg.black_box",
+                                                                        "type": "float-array",
+                                                                        "name": "Rect",
+                                                                        "default": [
+                                                                            0.4,
+                                                                            0.4,
+                                                                            0.6,
+                                                                            0.6
+                                                                        ],
+                                                                        "width": 300
+                                                                    },
+                                                                    {
+                                                                        "_id_": "cfg.black_overlay",
+                                                                        "type": "bool",
+                                                                        "name": "Overlay",
+                                                                        "default": true
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Disable",
+                                                            "value": false,
+                                                            "trigger": {}
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "cfg.rm_still",
+                                                    "type": "bool-trigger",
+                                                    "name": "Remove Still",
+                                                    "default": true,
+                                                    "objs": [
+                                                        {
+                                                            "name": "Enable",
+                                                            "value": true,
+                                                            "trigger": {
+                                                                "type": "_ignore_",
+                                                                "objs": [
+                                                                    {
+                                                                        "_id_": "cfg.area_rate_threshold",
+                                                                        "type": "float",
+                                                                        "name": "Area Threshold",
+                                                                        "default": 0.0005
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Disable",
+                                                            "value": false,
+                                                            "trigger": {}
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "_id_": "cfg.best_stride_video",
+                                                    "type": "bool-trigger",
+                                                    "name": "Save Stride Video",
+                                                    "default": true,
+                                                    "objs": [
+                                                        {
+                                                            "name": "Enable",
+                                                            "value": true,
+                                                            "trigger": {
+                                                                "type": "_ignore_",
+                                                                "objs": [
+                                                                    {
+                                                                        "_id_": "cfg.osd_sims",
+                                                                        "type": "bool",
+                                                                        "name": "OSD Sims",
+                                                                        "default": true
+                                                                    },
+                                                                    {
+                                                                        "_id_": "cfg.osd_feat",
+                                                                        "type": "bool",
+                                                                        "name": "OSD Feat"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Disable",
+                                                            "value": false,
+                                                            "trigger": {}
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "_id_": "cfg.save_video",
+                                                    "type": "bool",
+                                                    "name": "Save Full Video",
+                                                    "default": true
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "RUN",
+                    "objs": [
+                        {
+                            "type": "H",
+                            "objs": [
+                                {
+                                    "_id_": "__cfg.btn_start",
+                                    "type": "button",
+                                    "name": "Start",
+                                    "description_width": 100,
+                                    "style": "primary",
+                                    "icon": ""
+                                },
+                                {
+                                    "_id_": "__cfg.btn_stop",
+                                    "type": "button",
+                                    "name": "Stop",
+                                    "description_width": 100,
+                                    "style": "primary",
+                                    "icon": ""
+                                },
+                                {
+                                    "_id_": "__cfg.progressbar",
+                                    "type": "progressbar",
+                                    "name": "Progress:",
+                                    "width": 600,
+                                    "min": 0.0,
+                                    "max": 100.0,
+                                    "style": "success"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "H",
+                            "objs": [
+                                {
+                                    "_id_": "__cfg.result_output",
+                                    "type": "text",
+                                    "name": "",
+                                    "width": 500,
+                                    "height": 500,
+                                    "description_width": 0
+                                },
+                                {
+                                    "type": "V",
+                                    "objs": [
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "__cfg.video_mp4",
+                                                    "type": "string-enum",
+                                                    "name": "MP4",
+                                                    "width": 150,
+                                                    "description_width": 40,
+                                                    "objs": [
+                                                        {
+                                                            "name": "NONE",
+                                                            "value": "NONE"
+                                                        }
+                                                    ],
+                                                    "default": "NONE"
+                                                },
+                                                {
+                                                    "_id_": "__cfg.video_url",
+                                                    "type": "bytes",
+                                                    "name": "",
+                                                    "default": "http://",
+                                                    "width": 550,
+                                                    "description_width": 0
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "_id_": "__cfg.play_stride_video",
+                                            "type": "video",
+                                            "name": "",
+                                            "width": 720,
+                                            "height": 480,
+                                            "description_width": 0,
+                                            "format": "url"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "jsdlink",
+            "objs": [
+                {
+                    "source": [
+                        "__cfg.video",
+                        "value"
+                    ],
+                    "target": [
+                        "cfg.video",
+                        "value"
+                    ]
+                },
+                {
+                    "source": [
+                        "__cfg.sample",
+                        "value"
+                    ],
+                    "target": [
+                        "cfg.video",
+                        "value"
+                    ]
+                },
+                {
+                    "source": [
+                        "cfg.video",
+                        "bvalue"
+                    ],
+                    "target": [
+                        "__cfg.play_video",
+                        "value"
+                    ]
+                },
+                {
+                    "source": [
+                        "__cfg.video_mp4",
+                        "value"
+                    ],
+                    "target": [
+                        "__cfg.video_url",
+                        "value"
+                    ]
+                },
+                {
+                    "source": [
+                        "__cfg.video_url",
+                        "bvalue"
+                    ],
+                    "target": [
+                        "__cfg.play_stride_video",
+                        "value"
+                    ]
+                },
+                {
+                    "source": [
+                        "_cfg.accuracy",
+                        "value"
+                    ],
+                    "target": [
+                        "__cfg.accuracy",
+                        "value"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "interactive",
+            "objs": [
+                {
+                    "handler": "xxx",
+                    "params": {
+                        "arg1": "cfg.focus_box",
+                        "arg2": "cfg.black_box"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "observe",
+            "objs": [
+                {
+                    "handler": "get_date_list",
+                    "params": {
+                        "source": "__cfg.devices",
+                        "targets": [
+                            "__cfg.date"
+                        ]
+                    }
+                },
+                {
+                    "handler": "get_video_list",
+                    "params": {
+                        "source": "__cfg.date",
+                        "targets": [
+                            "__cfg.video"
+                        ]
+                    }
+                },
+                {
+                    "handler": "get_sample_list",
+                    "params": {
+                        "source": "__cfg.types",
+                        "targets": [
+                            "__cfg.sample"
+                        ]
+                    }
+                },
+                {
+                    "handler": "show_video_frame",
+                    "params": {
+                        "source": "cfg.video",
+                        "targets": [
+                            "__cfg.btn_load",
+                            "__cfg.btn_group_load",
+                            "__cfg.show_image"
+                        ]
+                    }
+                },
+                {
+                    "handler": "focus_center_changed",
+                    "params": {
+                        "source": "_cfg.focus_center",
+                        "targets": [
+                            "cfg.focus_box"
+                        ]
+                    }
+                },
+                {
+                    "handler": "focus_box_changed",
+                    "params": {
+                        "source": "cfg.focus_box",
+                        "targets": [
+                            "__cfg.show_image"
+                        ]
+                    }
+                },
+                {
+                    "handler": "black_box_changed",
+                    "params": {
+                        "source": "cfg.black_box",
+                        "targets": [
+                            "__cfg.show_image"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "onclick",
+            "objs": [
+                {
+                    "handler": "start_inference",
+                    "params": {
+                        "source": "__cfg.btn_start",
+                        "targets": [
+                            "__cfg.race_url",
+                            "task",
+                            "cfg.pigeon.msgkey",
+                            "_cfg.accuracy",
+                            "__cfg.progressbar",
+                            "__cfg.result_output",
+                            "__cfg.video_mp4",
+                            "_cfg.skewing"
+                        ]
+                    }
+                },
+                {
+                    "handler": "stop_inference",
+                    "params": {
+                        "source": "__cfg.btn_stop",
+                        "targets": [
+                            "__cfg.btn_start"
+                        ]
+                    }
+                },
+                {
+                    "handler": "load_jsonconfig",
+                    "params": {
+                        "source": "__cfg.btn_load",
+                        "targets": [
+                            "cfg.video"
+                        ]
+                    }
+                },
+                {
+                    "handler": "save_jsonconfig",
+                    "params": {
+                        "source": "__cfg.btn_save",
+                        "targets": [
+                            "cfg.video",
+                            "__cfg.btn_load"
+                        ]
+                    }
+                },
+                {
+                    "handler": "load_group_jsonconfig",
+                    "params": {
+                        "source": "__cfg.btn_group_load",
+                        "targets": [
+                            "cfg.video"
+                        ]
+                    }
+                },
+                {
+                    "handler": "save_group_jsonconfig",
+                    "params": {
+                        "source": "__cfg.btn_group_save",
+                        "targets": [
+                            "cfg.video",
+                            "__cfg.btn_group_load"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
