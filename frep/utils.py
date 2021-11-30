@@ -17,6 +17,7 @@ oss_client = Minio(
     secret_key=os.environ.get('MINIO_SECRET_KEY'),
     secure=True)
 
+
 def oss_get_bypath(path):
     objs = oss_client.list_objects('frepai', path, recursive=False)
     options = []
@@ -29,6 +30,7 @@ def oss_get_bypath(path):
         options = [('NONE', 'NONE')]
     return options
 
+
 def oss_put_jsonfile(path, data):
     if isinstance(data, dict):
         data = json.dumps(data, ensure_ascii=False, indent=4)
@@ -40,6 +42,7 @@ def oss_put_jsonfile(path, data):
         etag = etag.etag
     return etag
 
+
 def oss_get_video_list(prefix):
     objs = oss_client.list_objects('frepai', f'{prefix}/videos/', recursive=False)
     options = []
@@ -50,6 +53,7 @@ def oss_get_video_list(prefix):
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
+
 
 def oss_get_video_samples(prefix):
     if prefix[-1] != '/':
@@ -63,6 +67,7 @@ def oss_get_video_samples(prefix):
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
+
 
 def parse_xls_report():
     for file in os.listdir('report'):
@@ -78,9 +83,9 @@ def parse_xls_report():
             taskt_col = rowdata.index('任务类型')
             count_col = rowdata.index('审核次数')
             video_col = rowdata.index('视频源地址')
-            taskt_info = table.col_values(taskt_col)[i+1:]
-            count_info = table.col_values(count_col)[i+1:]
-            video_info = table.col_values(video_col)[i+1:]
+            taskt_info = table.col_values(taskt_col)[i + 1:]
+            count_info = table.col_values(count_col)[i + 1:]
+            video_info = table.col_values(video_col)[i + 1:]
             for task, count, url in zip(taskt_info, count_info, video_info):
                 if task and count and url:
                     if isinstance(count, str) and '+' in count:
@@ -93,19 +98,20 @@ def parse_xls_report():
             break
         os.remove(file)
 
+
 def draw_scale(image, d=50):
-    h, w, _ = image.shape 
-    cx, cy = int(w /2), int(h / 2)
+    h, w, _ = image.shape
+    cx, cy = int(w / 2), int(h / 2)
     hor, ver = d / w, d / h
     hor_seq = [(i * d, i * hor) for i in range(1, round(cx / d))]
     ver_seq = [(i * d, i * ver) for i in range(1, round(cy / d))]
-    
+
     # Center
     image = cv2.circle(image, (cx, cy), 5, (255, 0, 0), -1)
-    
+
     circ_color = (0, 0, 0)
     font_color = (200, 250, 200)
-    
+
     # Horizontal
     for shift, scale in hor_seq:
         # Left
@@ -114,7 +120,7 @@ def draw_scale(image, d=50):
         # Right
         cv2.circle(image, ((cx + shift), cy), 3, circ_color, -1)
         cv2.putText(image, '%.2f' % (0.5 + scale), (cx + shift - 15, cy - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
-    
+
     # Vertical
     for shift, scale in ver_seq:
         # Up
@@ -123,10 +129,11 @@ def draw_scale(image, d=50):
         # Down
         cv2.circle(image, (cx, (cy + shift)), 3, circ_color, -1)
         cv2.putText(image, '%.2f' % (0.5 + scale), (cx + 4, cy + shift + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
-        
+
     return image
 
 SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
+
 
 def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4, w_skewing):
     raceurl = w_raceurl.value
@@ -143,8 +150,9 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
         if result['errno'] < 0:
             w_out.value = json.dumps(result, indent=4)
             return
-        
+
     btn.disabled = True
+
     def _run_result(btn, w_acc, w_bar, w_out, w_mp4, w_skewing):
         cur_try = 0
         err_max = 60
@@ -190,10 +198,12 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
         'w_mp4': w_mp4,
         'w_skewing': w_skewing,
     }).start()
-    
+
+
 def stop_inference(context, btn, start_button):
-    start_button.disabled = False 
-    
+    start_button.disabled = False
+
+
 def save_jsonconfig(context, btn, w_video, w_load):
     path = w_video.value[len(S3_PREFIX):-4] + '.json'
     context.logger(f'save_jsonconfig: {path}')
@@ -204,14 +214,16 @@ def save_jsonconfig(context, btn, w_video, w_load):
     if etag:
         w_load.disabled = False
     context.logger(f'save_jsonconfig:{path}')
-    
+
+
 def load_jsonconfig(context, btn, w_video):
     path = w_video.value.replace('.mp4', '.json')
     context.logger(f'load_jsonconfig: {path}')
     response = requests.get(path)
     if response.status_code == 200:
-        context.set_widget_values(json.loads(response.content.decode('utf-8')))   
-    
+        context.set_widget_values(json.loads(response.content.decode('utf-8')))
+
+
 def save_group_jsonconfig(context, btn, w_video, w_load):
     path = w_video.value
     if 'live' in path:
@@ -226,7 +238,8 @@ def save_group_jsonconfig(context, btn, w_video, w_load):
     if etag:
         w_load.disabled = False
     context.logger(f'save_group_jsonconfig:{path}')
-    
+
+
 def load_group_jsonconfig(context, btn, w_video):
     path = w_video.value
     if 'live' in path:
@@ -236,25 +249,30 @@ def load_group_jsonconfig(context, btn, w_video):
     path += '/config.json'
     response = requests.get(path)
     if response.status_code == 200:
-        context.set_widget_values(json.loads(response.content.decode('utf-8')))   
-    
+        context.set_widget_values(json.loads(response.content.decode('utf-8')))
+
+
 def get_date_list(context, source, oldval, newval, target):
     context.logger(f'get_date_list:{oldval} {newval}')
     target.options = oss_get_bypath(f'live/{newval}/')[-7:]
     target.value = target.options[-1][1]
-    
+
+
 def get_video_list(context, source, oldval, newval, target):
     context.logger(f'get_video_list:{oldval} {newval}')
     target.options = oss_get_video_list(newval)
     target.value = target.options[int(len(target.options) / 2)][1]
-    
+
+
 def get_sample_list(context, source, oldval, newval, target):
     context.logger(f'get_sample_list:{oldval} {newval}')
     target.options = oss_get_video_samples(newval)
     target.value = target.options[int(len(target.options) / 2)][1]
-    
+
+
 def focus_center_changed(context, source, oldval, newval, target):
     context.logger(f'focus_center_changed:{oldval} to {newval}')
+    newval = newval if newval.strip()[0] == '[' else '[' + newval + ']'
     points = json.loads(newval)
     w, h = 640, 352 # TODO
     if len(points) == 2:
@@ -264,18 +282,20 @@ def focus_center_changed(context, source, oldval, newval, target):
             cx, cy = points[0], points[1]
         else:
             cx, cy = round(points[0] / w, 3), round(points[1] / h, 3)
-            
+
         if 0 < points[2] < 1.0 and 0 < points[3] < 1.0:
             dx, dy = points[2], points[3]
         else:
             dx, dy = round(points[2] / w, 3), round(points[3] / h, 3)
-            
+
         fx1, fy1 = cx - dx, cy - dy
         fx2, fy2 = cx + dx, cy + dy
-        target.value = '[%.3f,%.3f,%.3f,%.3f]' % (fx1, fy1, fx2, fy2)        
-            
+        target.value = '[%.3f,%.3f,%.3f,%.3f]' % (fx1, fy1, fx2, fy2)
+
+
 def focus_box_changed(context, source, oldval, newval, target):
     context.logger(f'focus_box_changed:{oldval} to {newval}')
+    newval = newval if newval.strip()[0] == '[' else '[' + newval + ']'
     points = json.loads(newval)
     if target.value and len(points) == 4:
         img = target.image.copy() # cv2.imdecode(np.frombuffer(target.value, np.uint8), cv2.IMREAD_COLOR)
@@ -288,9 +308,11 @@ def focus_box_changed(context, source, oldval, newval, target):
             fx2, fy2 = points[2], points[3]
         cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 255, 0), 2)
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
-        
+
+
 def black_box_changed(context, source, oldval, newval, target):
     context.logger(f'black_box_changed:{oldval} to {newval}')
+    newval = newval if newval.strip()[0] == '[' else '[' + newval + ']'
     points = json.loads(newval)
     if target.value and len(points) == 4:
         img = target.image.copy()
@@ -303,21 +325,24 @@ def black_box_changed(context, source, oldval, newval, target):
             fx2, fy2 = points[2], points[3]
         cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 0, 0), 2)
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
-        
+
+
 def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image):
     context.logger(f'show_video_frame:{oldval} to {newval}')
-    
+    if newval == 'NONE':
+        return
+
     cap = cv2.VideoCapture(newval)
     # fps = round(cap.get(cv2.CAP_PROP_FPS))
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    th = int(0.08 * height)
+    # th = int(0.08 * height)
     if cap.isOpened():
         _, frame_bgr = cap.read()
         frame_bgr = draw_scale(frame_bgr)
         w_image.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
-        w_image.image = frame_bgr 
-        
+        w_image.image = frame_bgr
+
     path = newval
     # group btn
     if 'live' in path:
@@ -330,7 +355,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
         btn_grpconf.disabled = False
     else:
         btn_grpconf.disabled = True
-        
+
     # mp4 btn
     skew_wdg = context.get_widget_byid('_cfg.skewing')
     path = newval.replace('.mp4', '.json')
@@ -360,7 +385,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
         context.get_widget_byid('_cfg.accuracy').value = 0.0
         skew_wdg.value = skew_wdg.options[0][1]
         btn_mp4conf.disabled = True
-        
+
 
 EVENTS = {
     'start_inference': start_inference,
