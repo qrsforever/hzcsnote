@@ -6,7 +6,10 @@ import json
 import requests
 import time
 import threading
+import ssl
 from minio import Minio
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 S3_PREFIX = 'https://frepai.s3.didiyunapi.com/'
 
@@ -137,7 +140,7 @@ SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
 
 def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4, w_skewing):
     raceurl = w_raceurl.value
-    task = w_task.value
+    # task = w_task.value
     msgkey = w_msgkey.value
     api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
     api_inference = f'{raceurl}/raceai/framework/inference'
@@ -335,7 +338,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
     cap = cv2.VideoCapture(newval)
     # fps = round(cap.get(cv2.CAP_PROP_FPS))
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # th = int(0.08 * height)
     if cap.isOpened():
         _, frame_bgr = cap.read()
