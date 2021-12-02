@@ -78,6 +78,7 @@
                                                             "_id_": "__cfg.date",
                                                             "type": "string-enum",
                                                             "name": "Date",
+                                                            "default": "live/00232ee8876d/20211202",
                                                             "width": 400,
                                                             "objs": [
                                                                 {
@@ -108,8 +109,7 @@
                                                                     "name": "20211202",
                                                                     "value": "live/00232ee8876d/20211202"
                                                                 }
-                                                            ],
-                                                            "default": "live/00232ee8876d/20211126"
+                                                            ]
                                                         },
                                                         {
                                                             "_id_": "__cfg.video",
@@ -252,6 +252,42 @@
                                                                 {
                                                                     "name": "163032.mp4",
                                                                     "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202163032.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "164536.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202164536.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "170040.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202170040.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "171544.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202171544.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "173048.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202173048.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "174552.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202174552.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "180056.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202180056.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "181600.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202181600.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "183104.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202183104.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "184608.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202184608.mp4"
                                                                 }
                                                             ],
                                                             "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202081321.mp4"
@@ -296,6 +332,22 @@
                                                                 {
                                                                     "name": "20211201094959.mp4",
                                                                     "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211201094959.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211202071313.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211202071313.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211202080333.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211202080333.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211202083345.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211202083345.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211202084349.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211202084349.mp4"
                                                                 }
                                                             ],
                                                             "default": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211201094959.mp4"
@@ -872,6 +924,14 @@
                                             "height": 480,
                                             "description_width": 0,
                                             "format": "url"
+                                        },
+                                        {
+                                            "_id_": "__cfg.embs_sims",
+                                            "type": "string",
+                                            "name": "Sims",
+                                            "default": "http://",
+                                            "width": 720,
+                                            "description_width": 50
                                         }
                                     ]
                                 }
@@ -1004,7 +1064,9 @@
                         "targets": [
                             "__cfg.btn_load",
                             "__cfg.btn_group_load",
-                            "__cfg.show_image"
+                            "__cfg.show_image",
+                            "__cfg.video_mp4",
+                            "__cfg.embs_sims"
                         ]
                     }
                 },
@@ -1087,7 +1149,8 @@
                             "_cfg.accuracy",
                             "__cfg.progressbar",
                             "__cfg.result_output",
-                            "__cfg.video_mp4"
+                            "__cfg.video_mp4",
+                            "__cfg.embs_sims"
                         ]
                     }
                 },

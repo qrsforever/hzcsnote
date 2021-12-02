@@ -1,7 +1,4 @@
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
 import xlrd
-import math
 import cv2
 import os
 import io
@@ -11,7 +8,10 @@ import time
 import threading
 from minio import Minio
 
-S3_PREFIX = 'https://frepai.s3.didiyunapi.com/'
+import warnings
+warnings.filterwarnings('ignore')
+
+S3_PREFIX = 'https://frepai.s3.didiyunapi.com'
 VOD_PATH = 'datasets/vod'
 
 DEVICES = (
@@ -20,6 +20,14 @@ DEVICES = (
     ["00047dd87188", "双人翻边", "SSAC-292170-BAAEC"],
     ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"]
 )
+
+def requests_get(url):
+    try:
+        url = url.replace('frepai.s3.', 'frepai.s3-internal.')
+        return requests.get(url, verify=False)
+    except Exception:
+        pass
+    return None 
 
 
 oss_client = Minio(
@@ -68,7 +76,7 @@ def oss_put_jsonfile(path, data):
 def oss_put_file(src_url, dst_path, ct='video/mp4'):
     for _ in range(2):
         try:
-            result = requests.get(src_url.replace('s3', 's3-internal'))
+            result = requests_get(src_url.replace('s3', 's3-internal'))
             oss_client.put_object(
                 'frepai', dst_path,
                 io.BytesIO(result.content), len(result.content), content_type=ct)
@@ -101,7 +109,7 @@ def oss_get_video_list(prefix):
         oname = os.path.basename(o.object_name)
         hour = int(oname[8:10])
         if hour > 7 and hour < 19:
-            options.append((oname[8:], S3_PREFIX + o.object_name))
+            options.append((oname[8:], f'{S3_PREFIX}/{o.object_name}'))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
@@ -115,7 +123,7 @@ def oss_get_video_samples(prefix):
     for o in objs:
         if o.object_name[-3:] != 'mp4':
             continue
-        options.append((os.path.basename(o.object_name), S3_PREFIX + o.object_name))
+        options.append((os.path.basename(o.object_name), f'{S3_PREFIX}/{o.object_name}'))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
@@ -143,7 +151,7 @@ def parse_xls_report():
                     if isinstance(count, str) and '+' in count:
                         count = eval(count)
                     filename = os.path.basename(url).replace('.mp4', f'_{int(count)}.mp4')
-                    result = requests.get(url.replace('s3', 's3-internal'))
+                    result = requests_get(url)
                     oss_client.put_object(
                         'frepai', f'datasets/ladder/{task}/{filename}',
                         io.BytesIO(result.content), len(result.content), content_type='video/mp4')
@@ -187,7 +195,22 @@ def draw_scale(image, d=50):
 SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
 
 
-def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
+def _parse_sample_video_path(video_url):
+    label = 'unkown'
+    if 'com/live' in video_url:
+        mac = video_url[8:].split('/')[2]
+        for dev in DEVICES:
+            if dev[0] == mac:
+                label = dev[1]
+    elif VOD_PATH in video_url:
+        label = video_url.split('/')[-2]
+
+    return f'{VOD_PATH}/{label}'
+
+
+def start_inference(
+        context, btn, w_raceurl,
+        w_task, w_msgkey, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
     raceurl = w_raceurl.value
     # task = w_task.value
     msgkey = w_msgkey.value
@@ -195,7 +218,7 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w
     api_inference = f'{raceurl}/raceai/framework/inference'
     reqdata = context.get_all_json()
     video_url = reqdata['cfg']['video']
-    requests.get(url=api_popmsg)
+    requests_get(url=api_popmsg)
     result = json.loads(requests.post(url=api_inference, json=reqdata).text)
     w_out.value = json.dumps(reqdata, indent=4)
     if 'errno' in result:
@@ -205,11 +228,11 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w
 
     btn.disabled = True
 
-    def _run_result(btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
+    def _run_result(btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
-            result = json.loads(requests.get(url=api_popmsg).text)
+            result = json.loads(requests_get(url=api_popmsg).text)
             if len(result) == 0:
                 time.sleep(1)
                 cur_try += 1
@@ -236,6 +259,8 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w
                     context.logger(f'inference result: {w_pred.value}')
                     if w_true.value > 0:
                         w_acc.value = round(100 * (1 - abs(w_pred.value - w_true.value) / w_true.value), 2)
+                if 'embs_sims' in result:
+                    w_sim.value = result['embs_sims']
         btn.disabled = False
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
@@ -245,6 +270,7 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w
         'w_bar': w_bar,
         'w_out': w_out,
         'w_mp4': w_mp4,
+        'w_sim': w_sim,
     }).start()
 
 
@@ -253,7 +279,9 @@ def stop_inference(context, btn, start_button):
 
 
 def save_jsonconfig(context, btn, w_video, w_load):
-    path = w_video.value[len(S3_PREFIX):-4] + '.json'
+    mp4_name = os.path.basename(w_video.value)
+    sample_path = _parse_sample_video_path(w_video.value)
+    path = f'{sample_path}/{mp4_name[:-4]}.json'
     context.logger(f'save_jsonconfig: {path}')
     data = context.get_all_kv(False)
     for wid in SAVE_IGNORE_WIDS:
@@ -266,41 +294,38 @@ def save_jsonconfig(context, btn, w_video, w_load):
 
 
 def load_jsonconfig(context, btn, w_video):
-    path = w_video.value.replace('.mp4', '.json')
+    mp4_name = os.path.basename(w_video.value)
+    sample_path = _parse_sample_video_path(w_video.value)
+    path = f'{sample_path}/{mp4_name[:-4]}.json'
     context.logger(f'load_jsonconfig: {path}')
-    response = requests.get(path)
+    response = requests_get(f'{S3_PREFIX}/{path}', verify=False)
     if response.status_code == 200:
         context.set_widget_values(json.loads(response.content.decode('utf-8')))
     else:
         context.logger('load error')
 
 
-def save_group_jsonconfig(context, btn, w_video, w_load):
-    path = w_video.value
-    if 'live' in path:
-        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
-    else:
-        path = os.path.dirname(path)
-    path += '/config.json'
+def save_group_jsonconfig(context, btn_noused, w_video, w_load):
+    sample_path = _parse_sample_video_path(w_video.value)
+    path = f'{sample_path}/config.json'
     data = context.get_all_kv(False)
     for wid in SAVE_IGNORE_WIDS:
         data.pop(wid, None)
+    data.pop('_cfg.accuracy')
+    data.pop('_cfg.true_count')
+    data.pop('_cfg.pred_count')
     context.logger(f'save_group_jsonconfig:{path}')
-    etag = oss_put_jsonfile(path[len(S3_PREFIX):], data)
+    etag = oss_put_jsonfile(path, data)
     if etag:
         w_load.disabled = False
     else:
         context.logger('save group error')
 
 
-def load_group_jsonconfig(context, btn, w_video):
-    path = w_video.value
-    if 'live' in path:
-        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
-    else:
-        path = os.path.dirname(path)
-    path += '/config.json'
-    response = requests.get(path)
+def load_group_jsonconfig(context, btn_noused, w_video):
+    sample_path = _parse_sample_video_path(w_video.value)
+    path = f'{sample_path}/config.json'
+    response = requests_get(f'{S3_PREFIX}/{path}')
     if response.status_code == 200:
         context.set_widget_values(json.loads(response.content.decode('utf-8')))
     else:
@@ -315,6 +340,7 @@ def get_date_list(context, source, oldval, newval, target):
 
 def get_video_list(context, source, oldval, newval, target):
     target.options = oss_get_video_list(newval)
+    context.logger(target.options)
     target.value = target.options[0][1]
     context.logger(f'get_video_list:{oldval} {newval} {target.value}')
 
@@ -382,41 +408,49 @@ def black_box_changed(context, source, oldval, newval, target):
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
 
 
-def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image):
-    context.logger(f'show_video_frame:{oldval} to {newval}')
+def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image, w_mp4, w_sim):
+    context.logger(f'xshow_video_frame:{oldval} to {newval}')
     if newval == 'NONE':
         return
 
     cap = cv2.VideoCapture(newval)
-    # fps = round(cap.get(cv2.CAP_PROP_FPS))
-    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    # th = int(0.08 * height)
     if cap.isOpened():
         _, frame_bgr = cap.read()
         frame_bgr = draw_scale(frame_bgr)
         w_image.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
         w_image.image = frame_bgr
 
-    path = newval
-    # group btn
-    if 'live' in path:
-        path = os.path.dirname(os.path.dirname(os.path.dirname(path)))
-    else:
-        path = os.path.dirname(path)
-    path += '/config.json'
-    response = requests.get(path)
-    if response.status_code == 200:
-        btn_grpconf.disabled = False
-    else:
-        btn_grpconf.disabled = True
+    mp4_name = os.path.basename(newval)
+    sample_path = _parse_sample_video_path(newval)
+    conf = None
 
     # mp4 btn
-    path = newval.replace('.mp4', '.json')
-    response = requests.get(path)
+    path = f'{sample_path}/{mp4_name[:-4]}.json'
+    response = requests_get(f'{S3_PREFIX}/{path}')
+    context.logger(f'show_video_frame: request {S3_PREFIX}/{path} [{response.status_code}]')
     if response.status_code == 200:
         btn_mp4conf.disabled = False
         conf = json.loads(response.content.decode('utf-8'))
+    else:
+        btn_mp4conf.disabled = True
+        if 'vod' in path:
+            context.get_widget_byid('_cfg.accuracy').value = 0.0
+            context.get_widget_byid('_cfg.true_count').value = 0
+            context.get_widget_byid('_cfg.pred_count').value = 0
+
+    # group btn
+    path = f'{sample_path}/config.json'
+    response = requests_get(f'{S3_PREFIX}/{path}')
+    context.logger(f'show_video_frame: request {S3_PREFIX}/{path} [{response.status_code}]')
+    if response.status_code == 200:
+        btn_grpconf.disabled = False
+        if conf is None:
+            conf = json.loads(response.content.decode('utf-8'))
+    else:
+        btn_grpconf.disabled = True
+
+    # set configure
+    if conf:
         context.logger(f'{conf}')
         changed_items = context.set_widget_values(conf)
         context.logger(f'{changed_items}')
@@ -431,12 +465,19 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
                 context, context.get_widget_byid('cfg.black_box'),
                 '[]', json.dumps(conf['cfg.black_box']), w_image
             )
-    else:
-        if 'vod' in path:
-            context.get_widget_byid('_cfg.accuracy').value = 0.0
-            context.get_widget_byid('_cfg.true_count').value = 0
-            context.get_widget_byid('_cfg.pred_count').value = 0
-        btn_mp4conf.disabled = True
+
+    # output files
+    msgkey = context.get_widget_byid('cfg.pigeon.msgkey').value
+    output_path = f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/{msgkey}'
+    options = []
+    if oss_path_exist(f'{output_path}/target-stride.mp4'):
+        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target-stride.mp4'))
+    if oss_path_exist(f'{output_path}/target.mp4'):
+        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target.mp4'))
+    if len(options) > 0:
+        w_mp4.options = options
+    if oss_path_exist(f'{output_path}/embs_sims.npy'):
+        w_sim.value = f'{S3_PREFIX}/{output_path}/embs_sims.npy'
 
 
 def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
@@ -447,18 +488,8 @@ def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
         btn_remove.disabled = True
         return
     mp4_name = os.path.basename(video_url)
-    label = None
-    if 'com/live' in video_url:
-        mac = video_url[8:].split('/')[2]
-        for dev in DEVICES:
-            if dev[0] == mac:
-                label = dev[1]
-    elif VOD_PATH in video_url:
-        label = video_url.split('/')[-2]
-
-    mp4_path = f'{VOD_PATH}/{label}/{mp4_name}'
-
-    if oss_path_exist(mp4_path):
+    sample_path = _parse_sample_video_path(video_url)
+    if oss_path_exist(f'{sample_path}/{mp4_name}'):
         btn_upload.disabled = True
         btn_remove.disabled = False
     else:
@@ -471,21 +502,15 @@ def upload_sample(context, btn_upload, btn_remove, wid_video, wid_result):
     wid_result.value = ''
     video_url = wid_video.value
     mp4_name = os.path.basename(video_url)
-    if 'com/live' in video_url:
-        mac = video_url[8:].split('/')[2]
-        for dev in DEVICES:
-            if dev[0] == mac:
-                label = dev[1]
-    elif VOD_PATH in video_url:
-        label = video_url.split('/')[-2]
+    sample_path = _parse_sample_video_path(video_url)
 
-    if oss_put_file(video_url, f'{VOD_PATH}/{label}/{mp4_name}'):
+    if oss_put_file(video_url, f'{sample_path}/{mp4_name}'):
         btn_upload.disabled = True
         btn_remove.disabled = False
         wid_result.value = 'SUCCESS'
     else:
         wid_result.value = 'FAILD'
-        context.logger(f'put {VOD_PATH}/{label}/{mp4_name} err')
+        context.logger(f'put {sample_path}/{mp4_name} err')
 
 
 def remove_sample(context, btn_remove, btn_upload, wid_video, wid_smplist, wid_result):
@@ -493,31 +518,24 @@ def remove_sample(context, btn_remove, btn_upload, wid_video, wid_smplist, wid_r
     wid_result.value = ''
     video_url = wid_video.value
     mp4_name = os.path.basename(video_url)
-    flag = False
-    if 'com/live' in video_url:
-        mac = video_url[8:].split('/')[2]
-        for dev in DEVICES:
-            if dev[0] == mac:
-                label = dev[1]
-    elif VOD_PATH in video_url:
-        flag = True
-        label = video_url.split('/')[-2]
+    sample_path = _parse_sample_video_path(video_url)
 
-    if oss_del_files(f'{VOD_PATH}/{label}/{mp4_name[:-3]}', recursive=True):
+    if oss_del_files(f'{sample_path}/{mp4_name[:-4]}', recursive=True):
         wid_result.value = 'SUCCESS'
         btn_upload.disabled = False
         btn_remove.disabled = True
-        if flag:
-            wid_smplist.options = oss_get_video_samples(f'{VOD_PATH}/{label}')
-            wid_smplist.value = wid_smplist.options[int(len(wid_smplist.options) / 2)][1]
+        if 'vod' in video_url:
+            wid_smplist.options = oss_get_video_samples(sample_path)
+            wid_smplist.value = wid_smplist.options[0][1]
     else:
         wid_result.value = 'FAIL'
-        context.logger(f'del {VOD_PATH}/{label}/{mp4_name} err')
+        context.logger(f'del {sample_path}/{mp4_name} err')
 
 def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
     context.logger(f'update_rep_count: {newval}, {w_sample.value}')
     if w_acc.value > 0 and newval > 0:
-        w_acc.value = round(100 * w_pred.value / newval, 2)
+        w_acc.value = round(100 * (1 - abs(w_pred.value - newval) / newval), 2)
+        context.logger(f'w_acc: {w_acc.value}')
 
 
 EVENTS = {
