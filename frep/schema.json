@@ -53,83 +53,63 @@
                                                             "_id_": "__cfg.devices",
                                                             "type": "string-enum",
                                                             "name": "Devices",
-                                                            "default": "006b246f536d",
                                                             "width": 400,
                                                             "objs": [
                                                                 {
-                                                                    "name": "压弯",
-                                                                    "value": "00e685ef87b4"
-                                                                },
-                                                                {
-                                                                    "name": "弯折",
-                                                                    "value": "00ee44217446"
-                                                                },
-                                                                {
-                                                                    "name": "切割",
-                                                                    "value": "00cf60a8f512"
-                                                                },
-                                                                {
-                                                                    "name": "磨擦",
-                                                                    "value": "004309167638"
-                                                                },
-                                                                {
-                                                                    "name": "打孔",
-                                                                    "value": "006b246f536d"
-                                                                },
-                                                                {
-                                                                    "name": "站冲",
-                                                                    "value": "0031059d1d11"
-                                                                },
-                                                                {
-                                                                    "name": "组装",
-                                                                    "value": "002b359e3931"
-                                                                },
-                                                                {
-                                                                    "name": "焊接",
+                                                                    "name": "机器焊接",
                                                                     "value": "00232ee8876d"
                                                                 },
                                                                 {
-                                                                    "name": "翻边",
+                                                                    "name": "机器切割",
+                                                                    "value": "00856405d389"
+                                                                },
+                                                                {
+                                                                    "name": "双人翻边",
                                                                     "value": "00047dd87188"
+                                                                },
+                                                                {
+                                                                    "name": "木槌加固",
+                                                                    "value": "002b359e3931"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "default": "00232ee8876d"
                                                         },
                                                         {
                                                             "_id_": "__cfg.date",
                                                             "type": "string-enum",
                                                             "name": "Date",
-                                                            "default": "live/00e685ef87b4/20210816",
                                                             "width": 400,
                                                             "objs": [
                                                                 {
-                                                                    "name": "20210810",
-                                                                    "value": "live/00e685ef87b4/20210810"
+                                                                    "name": "20211126",
+                                                                    "value": "live/00232ee8876d/20211126"
                                                                 },
                                                                 {
-                                                                    "name": "20210811",
-                                                                    "value": "live/00e685ef87b4/20210811"
+                                                                    "name": "20211127",
+                                                                    "value": "live/00232ee8876d/20211127"
                                                                 },
                                                                 {
-                                                                    "name": "20210812",
-                                                                    "value": "live/00e685ef87b4/20210812"
+                                                                    "name": "20211128",
+                                                                    "value": "live/00232ee8876d/20211128"
                                                                 },
                                                                 {
-                                                                    "name": "20210816",
-                                                                    "value": "live/00e685ef87b4/20210816"
+                                                                    "name": "20211129",
+                                                                    "value": "live/00232ee8876d/20211129"
                                                                 },
                                                                 {
-                                                                    "name": "20210817",
-                                                                    "value": "live/00e685ef87b4/20210817"
+                                                                    "name": "20211130",
+                                                                    "value": "live/00232ee8876d/20211130"
                                                                 },
                                                                 {
-                                                                    "name": "20210823",
-                                                                    "value": "live/00e685ef87b4/20210823"
+                                                                    "name": "20211201",
+                                                                    "value": "live/00232ee8876d/20211201"
                                                                 },
                                                                 {
-                                                                    "name": "20210827",
-                                                                    "value": "live/00e685ef87b4/20210827"
+                                                                    "name": "20211202",
+                                                                    "value": "live/00232ee8876d/20211202"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "default": "live/00232ee8876d/20211126"
                                                         },
                                                         {
                                                             "_id_": "__cfg.video",
@@ -138,11 +118,143 @@
                                                             "width": 400,
                                                             "objs": [
                                                                 {
-                                                                    "name": "NONE",
-                                                                    "value": "NONE"
+                                                                    "name": "081321.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202081321.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "082825.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202082825.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "084329.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202084329.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "085833.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202085833.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "091337.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202091337.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "092841.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202092841.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "094345.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202094345.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "095849.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202095849.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "101353.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202101353.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "102857.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202102857.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "104401.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202104401.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "105904.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202105904.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "111408.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202111408.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "112912.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202112912.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "114416.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202114416.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "115920.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202115920.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "121424.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202121424.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "122928.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202122928.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "124432.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202124432.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "125936.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202125936.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "131440.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202131440.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "132945.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202132945.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "134448.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202134448.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "135952.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202135952.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "141456.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202141456.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "143000.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202143000.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "144504.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202144504.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "150008.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202150008.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "151512.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202151512.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "153016.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202153016.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "154520.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202154520.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "160024.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202160024.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "161528.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202161528.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "163032.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202163032.mp4"
                                                                 }
                                                             ],
-                                                            "default": "NONE"
+                                                            "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211202/videos/20211202081321.mp4"
                                                         }
                                                     ]
                                                 },
@@ -154,103 +266,58 @@
                                                             "_id_": "__cfg.types",
                                                             "type": "string-enum",
                                                             "name": "Types",
-                                                            "default": "datasets/ladder/焊接",
-                                                            "width": 400,
+                                                            "width": 300,
                                                             "objs": [
                                                                 {
-                                                                    "name": "坐姿冲床",
-                                                                    "value": "datasets/ladder/坐姿冲床"
+                                                                    "name": "双人翻边",
+                                                                    "value": "datasets/vod/双人翻边"
                                                                 },
                                                                 {
-                                                                    "name": "大棍打孔",
-                                                                    "value": "datasets/ladder/大棍打孔"
-                                                                },
-                                                                {
-                                                                    "name": "小棍打孔",
-                                                                    "value": "datasets/ladder/小棍打孔"
+                                                                    "name": "木槌加固",
+                                                                    "value": "datasets/vod/木槌加固"
                                                                 },
                                                                 {
                                                                     "name": "机器切割",
-                                                                    "value": "datasets/ladder/机器切割"
+                                                                    "value": "datasets/vod/机器切割"
                                                                 },
                                                                 {
-                                                                    "name": "焊接",
-                                                                    "value": "datasets/ladder/焊接"
-                                                                },
-                                                                {
-                                                                    "name": "站立冲床",
-                                                                    "value": "datasets/ladder/站立冲床"
-                                                                },
-                                                                {
-                                                                    "name": "组装",
-                                                                    "value": "datasets/ladder/组装"
-                                                                },
-                                                                {
-                                                                    "name": "翻边",
-                                                                    "value": "datasets/ladder/翻边"
-                                                                },
-                                                                {
-                                                                    "name": "铁片塑形",
-                                                                    "value": "datasets/ladder/铁片塑形"
+                                                                    "name": "机器焊接",
+                                                                    "value": "datasets/vod/机器焊接"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "default": "datasets/vod/双人翻边"
                                                         },
                                                         {
                                                             "_id_": "__cfg.sample",
                                                             "type": "string-enum",
                                                             "name": "Sample",
-                                                            "default": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803114041_57.mp4",
-                                                            "width": 400,
+                                                            "width": 360,
                                                             "objs": [
                                                                 {
-                                                                    "name": "20210728162057_40.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210728162057_40.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20210728173100_41.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210728173100_41.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20210803113041_44.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803113041_44.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20210803114041_57.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803114041_57.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20210803115042_38.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803115042_38.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20210803130045_57.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/ladder/坐姿冲床/20210803130045_57.mp4"
-                                                                }
-                                                            ]
-                                                        },
-                                                        {
-                                                            "_id_": "_cfg.skewing",
-                                                            "type": "string-enum",
-                                                            "name": "Skewing",
-                                                            "width": 200,
-                                                            "readonly": true,
-                                                            "objs": [
-                                                                {
-                                                                    "name": "No",
-                                                                    "value": "No"
-                                                                },
-                                                                {
-                                                                    "name": "Yes",
-                                                                    "value": "Yes"
+                                                                    "name": "20211201094959.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211201094959.mp4"
                                                                 }
                                                             ],
-                                                            "default": "No"
+                                                            "default": "https://frepai.s3.didiyunapi.com/datasets/vod/双人翻边/20211201094959.mp4"
+                                                        },
+                                                        {
+                                                            "_id_": "_cfg.true_count",
+                                                            "type": "int",
+                                                            "name": "True Count",
+                                                            "width": 250
+                                                        },
+                                                        {
+                                                            "_id_": "_cfg.pred_count",
+                                                            "type": "float",
+                                                            "name": "Pred Count",
+                                                            "width": 250,
+                                                            "readonly": true
                                                         },
                                                         {
                                                             "_id_": "_cfg.accuracy",
                                                             "type": "float",
-                                                            "name": "Accuracy(%)",
-                                                            "width": 200,
+                                                            "name": "Acc(%)",
+                                                            "width": 250,
                                                             "readonly": true,
                                                             "min": 0,
                                                             "max": 100.0
@@ -276,6 +343,34 @@
                                                     "name": "Play Video",
                                                     "width": 640,
                                                     "format": "url"
+                                                },
+                                                {
+                                                    "type": "H",
+                                                    "objs": [
+                                                        {
+                                                            "_id_": "__cfg.btn_upload_sample",
+                                                            "type": "button",
+                                                            "name": "Upload Sample",
+                                                            "style": "success",
+                                                            "icon": ""
+                                                        },
+                                                        {
+                                                            "_id_": "__cfg.exe_status",
+                                                            "type": "string",
+                                                            "name": "",
+                                                            "width": 100,
+                                                            "readonly": true,
+                                                            "description_width": 0
+                                                        },
+                                                        {
+                                                            "_id_": "__cfg.btn_remove_sample",
+                                                            "type": "button",
+                                                            "name": "Remove Sample",
+                                                            "style": "success",
+                                                            "icon": ""
+                                                        }
+                                                    ],
+                                                    "justify_content": "center"
                                                 }
                                             ],
                                             "align_items": "center"
@@ -406,33 +501,66 @@
                                             "type": "H",
                                             "objs": [
                                                 {
-                                                    "_id_": "_cfg.angle",
-                                                    "type": "bool-trigger",
-                                                    "name": "Rotate Angle",
+                                                    "type": "V",
                                                     "objs": [
                                                         {
-                                                            "name": "Enable",
-                                                            "value": true,
-                                                            "trigger": {
-                                                                "type": "_ignore_",
-                                                                "objs": [
-                                                                    {
-                                                                        "_id_": "cfg.angle",
-                                                                        "type": "float",
-                                                                        "name": "Value",
-                                                                        "default": 45,
-                                                                        "min": -180,
-                                                                        "max": 180
+                                                            "_id_": "_cfg.angle",
+                                                            "type": "bool-trigger",
+                                                            "name": "Rotate Angle",
+                                                            "objs": [
+                                                                {
+                                                                    "name": "Enable",
+                                                                    "value": true,
+                                                                    "trigger": {
+                                                                        "type": "_ignore_",
+                                                                        "objs": [
+                                                                            {
+                                                                                "_id_": "cfg.angle",
+                                                                                "type": "float",
+                                                                                "name": "Value",
+                                                                                "default": 45,
+                                                                                "min": -180,
+                                                                                "max": 180
+                                                                            }
+                                                                        ]
                                                                     }
-                                                                ]
-                                                            }
+                                                                },
+                                                                {
+                                                                    "name": "Disable",
+                                                                    "value": false,
+                                                                    "trigger": {}
+                                                                }
+                                                            ]
                                                         },
                                                         {
-                                                            "name": "Disable",
-                                                            "value": false,
-                                                            "trigger": {}
+                                                            "_id_": "_cfg.reg_factor",
+                                                            "type": "bool-trigger",
+                                                            "name": "Regress Factor",
+                                                            "objs": [
+                                                                {
+                                                                    "name": "Enable",
+                                                                    "value": true,
+                                                                    "trigger": {
+                                                                        "type": "_ignore_",
+                                                                        "objs": [
+                                                                            {
+                                                                                "_id_": "cfg.reg_factor",
+                                                                                "type": "float",
+                                                                                "name": "Value",
+                                                                                "default": 1
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "name": "Disable",
+                                                                    "value": false,
+                                                                    "trigger": {}
+                                                                }
+                                                            ]
                                                         }
-                                                    ]
+                                                    ],
+                                                    "width": "30%"
                                                 },
                                                 {
                                                     "_id_": "_cfg.focus_box",
@@ -758,7 +886,7 @@
             "objs": [
                 {
                     "source": [
-                        "__cfg.video",
+                        "__cfg.sample",
                         "value"
                     ],
                     "target": [
@@ -768,7 +896,7 @@
                 },
                 {
                     "source": [
-                        "__cfg.sample",
+                        "__cfg.video",
                         "value"
                     ],
                     "target": [
@@ -824,8 +952,7 @@
                 {
                     "handler": "xxx",
                     "params": {
-                        "arg1": "cfg.focus_box",
-                        "arg2": "cfg.black_box"
+                        "rep_count": "_cfg.true_count"
                     }
                 }
             ]
@@ -857,6 +984,16 @@
                         "source": "__cfg.types",
                         "targets": [
                             "__cfg.sample"
+                        ]
+                    }
+                },
+                {
+                    "handler": "check_video_sample",
+                    "params": {
+                        "source": "cfg.video",
+                        "targets": [
+                            "__cfg.btn_upload_sample",
+                            "__cfg.btn_remove_sample"
                         ]
                     }
                 },
@@ -897,12 +1034,46 @@
                             "__cfg.show_image"
                         ]
                     }
+                },
+                {
+                    "handler": "update_rep_count",
+                    "params": {
+                        "source": "_cfg.true_count",
+                        "targets": [
+                            "__cfg.sample",
+                            "_cfg.pred_count",
+                            "_cfg.accuracy"
+                        ]
+                    }
                 }
             ]
         },
         {
             "type": "onclick",
             "objs": [
+                {
+                    "handler": "upload_sample",
+                    "params": {
+                        "source": "__cfg.btn_upload_sample",
+                        "targets": [
+                            "__cfg.btn_remove_sample",
+                            "cfg.video",
+                            "__cfg.exe_status"
+                        ]
+                    }
+                },
+                {
+                    "handler": "remove_sample",
+                    "params": {
+                        "source": "__cfg.btn_remove_sample",
+                        "targets": [
+                            "__cfg.btn_upload_sample",
+                            "cfg.video",
+                            "__cfg.sample",
+                            "__cfg.exe_status"
+                        ]
+                    }
+                },
                 {
                     "handler": "start_inference",
                     "params": {
@@ -911,11 +1082,12 @@
                             "__cfg.race_url",
                             "task",
                             "cfg.pigeon.msgkey",
+                            "_cfg.true_count",
+                            "_cfg.pred_count",
                             "_cfg.accuracy",
                             "__cfg.progressbar",
                             "__cfg.result_output",
-                            "__cfg.video_mp4",
-                            "_cfg.skewing"
+                            "__cfg.video_mp4"
                         ]
                     }
                 },

@@ -1,4 +1,7 @@
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 import xlrd
+import math
 import cv2
 import os
 import io
@@ -6,12 +9,17 @@ import json
 import requests
 import time
 import threading
-import ssl
 from minio import Minio
 
-ssl._create_default_https_context = ssl._create_unverified_context
-
 S3_PREFIX = 'https://frepai.s3.didiyunapi.com/'
+VOD_PATH = 'datasets/vod'
+
+DEVICES = (
+    ["00232ee8876d", "机器焊接", "SSAC-292217-AAFFA"],
+    ["00856405d389", "机器切割", "SSAE-110460-AABAE"],
+    ["00047dd87188", "双人翻边", "SSAC-292170-BAAEC"],
+    ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"]
+)
 
 
 oss_client = Minio(
@@ -21,21 +29,32 @@ oss_client = Minio(
     secure=True)
 
 
-def oss_get_bypath(path):
+def oss_path_exist(path):
+    try:
+        oss_client.stat_object('frepai', path)
+    except Exception:
+        return False
+    return True
+
+
+def oss_get_bypath(path, ignores=['outputs']):
     objs = oss_client.list_objects('frepai', path, recursive=False)
     options = []
     for o in objs:
         object_path = o.object_name
         if object_path[-1] == '/':
             object_path = object_path[:-1]
-        options.append((os.path.basename(object_path), object_path))
+        object_name = os.path.basename(object_path)
+        if object_name in ignores:
+            continue
+        options.append((object_name, object_path))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
 
 
 def oss_put_jsonfile(path, data):
-    if isinstance(data, dict):
+    if isinstance(data, (dict, list)):
         data = json.dumps(data, ensure_ascii=False, indent=4)
     data = io.BytesIO(data.encode())
     size = data.seek(0, 2)
@@ -46,13 +65,43 @@ def oss_put_jsonfile(path, data):
     return etag
 
 
+def oss_put_file(src_url, dst_path, ct='video/mp4'):
+    for _ in range(2):
+        try:
+            result = requests.get(src_url.replace('s3', 's3-internal'))
+            oss_client.put_object(
+                'frepai', dst_path,
+                io.BytesIO(result.content), len(result.content), content_type=ct)
+            return True
+        except Exception:
+            time.sleep(1)
+    return False
+
+
+def oss_del_files(dst_path, recursive=False):
+    try:
+        if recursive:
+            objs = oss_client.list_objects('frepai', dst_path, recursive=True)
+            for o in objs:
+                oss_client.remove_object('frepai', o.object_name)
+        else:
+            oss_client.remove_object('frepai', dst_path)
+        return True
+    except Exception:
+        pass
+    return False
+
+
 def oss_get_video_list(prefix):
     objs = oss_client.list_objects('frepai', f'{prefix}/videos/', recursive=False)
     options = []
     for o in objs:
         if o.object_name[-3:] != 'mp4':
             continue
-        options.append((os.path.basename(o.object_name)[8:], S3_PREFIX + o.object_name))
+        oname = os.path.basename(o.object_name)
+        hour = int(oname[8:10])
+        if hour > 7 and hour < 19:
+            options.append((oname[8:], S3_PREFIX + o.object_name))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
     return options
@@ -138,7 +187,7 @@ def draw_scale(image, d=50):
 SAVE_IGNORE_WIDS = ['cfg.pigeon.msgkey', 'cfg.video', '_cfg.race_url']
 
 
-def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_out, w_mp4, w_skewing):
+def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
     raceurl = w_raceurl.value
     # task = w_task.value
     msgkey = w_msgkey.value
@@ -156,7 +205,7 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
 
     btn.disabled = True
 
-    def _run_result(btn, w_acc, w_bar, w_out, w_mp4, w_skewing):
+    def _run_result(btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
@@ -182,24 +231,20 @@ def start_inference(context, btn, w_raceurl, w_task, w_msgkey, w_acc, w_bar, w_o
                 if 'target_mp4' in result:
                     options.append(('target_mp4', result['target_mp4']))
                 w_mp4.options = options
-                if 'ladder' in video_url and 'sumcnt' in result:
-                    count = int(os.path.basename(video_url).split('_')[1][:-4])
-                    context.logger(f'inference result: {count}/{result["sumcnt"]}')
-                    if count > 0:
-                        w_acc.value = round(100 * (1 - abs(result['sumcnt'] - count) / count), 2)
-                    if 'detinfo' in result:
-                        if result['detinfo']['focus_skewing']:
-                            w_skewing.value = w_skewing.options[1][1]
-                        else:
-                            w_skewing.value = w_skewing.options[0][1]
+                if 'vod' in video_url and 'sumcnt' in result:
+                    w_pred.value = round(result['sumcnt'], 2)
+                    context.logger(f'inference result: {w_pred.value}')
+                    if w_true.value > 0:
+                        w_acc.value = round(100 * (1 - abs(w_pred.value - w_true.value) / w_true.value), 2)
         btn.disabled = False
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
+        'w_true': w_true,
+        'w_pred': w_pred,
         'w_acc': w_acc,
         'w_bar': w_bar,
         'w_out': w_out,
         'w_mp4': w_mp4,
-        'w_skewing': w_skewing,
     }).start()
 
 
@@ -210,13 +255,14 @@ def stop_inference(context, btn, start_button):
 def save_jsonconfig(context, btn, w_video, w_load):
     path = w_video.value[len(S3_PREFIX):-4] + '.json'
     context.logger(f'save_jsonconfig: {path}')
-    data = w_video.context.get_all_kv(False)
+    data = context.get_all_kv(False)
     for wid in SAVE_IGNORE_WIDS:
         data.pop(wid, None)
     etag = oss_put_jsonfile(path, data)
     if etag:
         w_load.disabled = False
-    context.logger(f'save_jsonconfig:{path}')
+    else:
+        context.logger('save error')
 
 
 def load_jsonconfig(context, btn, w_video):
@@ -225,6 +271,8 @@ def load_jsonconfig(context, btn, w_video):
     response = requests.get(path)
     if response.status_code == 200:
         context.set_widget_values(json.loads(response.content.decode('utf-8')))
+    else:
+        context.logger('load error')
 
 
 def save_group_jsonconfig(context, btn, w_video, w_load):
@@ -237,10 +285,12 @@ def save_group_jsonconfig(context, btn, w_video, w_load):
     data = context.get_all_kv(False)
     for wid in SAVE_IGNORE_WIDS:
         data.pop(wid, None)
+    context.logger(f'save_group_jsonconfig:{path}')
     etag = oss_put_jsonfile(path[len(S3_PREFIX):], data)
     if etag:
         w_load.disabled = False
-    context.logger(f'save_group_jsonconfig:{path}')
+    else:
+        context.logger('save group error')
 
 
 def load_group_jsonconfig(context, btn, w_video):
@@ -253,6 +303,8 @@ def load_group_jsonconfig(context, btn, w_video):
     response = requests.get(path)
     if response.status_code == 200:
         context.set_widget_values(json.loads(response.content.decode('utf-8')))
+    else:
+        context.logger('load group error')
 
 
 def get_date_list(context, source, oldval, newval, target):
@@ -262,15 +314,15 @@ def get_date_list(context, source, oldval, newval, target):
 
 
 def get_video_list(context, source, oldval, newval, target):
-    context.logger(f'get_video_list:{oldval} {newval}')
     target.options = oss_get_video_list(newval)
-    target.value = target.options[int(len(target.options) / 2)][1]
+    target.value = target.options[0][1]
+    context.logger(f'get_video_list:{oldval} {newval} {target.value}')
 
 
 def get_sample_list(context, source, oldval, newval, target):
-    context.logger(f'get_sample_list:{oldval} {newval}')
     target.options = oss_get_video_samples(newval)
-    target.value = target.options[int(len(target.options) / 2)][1]
+    target.value = target.options[0][1]
+    context.logger(f'get_sample_list:{oldval} {newval} {target.value}')
 
 
 def focus_center_changed(context, source, oldval, newval, target):
@@ -360,7 +412,6 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
         btn_grpconf.disabled = True
 
     # mp4 btn
-    skew_wdg = context.get_widget_byid('_cfg.skewing')
     path = newval.replace('.mp4', '.json')
     response = requests.get(path)
     if response.status_code == 200:
@@ -380,14 +431,93 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
                 context, context.get_widget_byid('cfg.black_box'),
                 '[]', json.dumps(conf['cfg.black_box']), w_image
             )
-        if '_cfg.skewing' in conf:
-            skew_wdg.value = conf['_cfg.skewing']
-        else:
-            skew_wdg.value = skew_wdg.options[0][1]
     else:
-        context.get_widget_byid('_cfg.accuracy').value = 0.0
-        skew_wdg.value = skew_wdg.options[0][1]
+        if 'vod' in path:
+            context.get_widget_byid('_cfg.accuracy').value = 0.0
+            context.get_widget_byid('_cfg.true_count').value = 0
+            context.get_widget_byid('_cfg.pred_count').value = 0
         btn_mp4conf.disabled = True
+
+
+def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
+    context.logger(f'check_video_sample:{oldval} to {newval}')
+    video_url = newval
+    if video_url == 'NONE':
+        btn_upload.disabled = True
+        btn_remove.disabled = True
+        return
+    mp4_name = os.path.basename(video_url)
+    label = None
+    if 'com/live' in video_url:
+        mac = video_url[8:].split('/')[2]
+        for dev in DEVICES:
+            if dev[0] == mac:
+                label = dev[1]
+    elif VOD_PATH in video_url:
+        label = video_url.split('/')[-2]
+
+    mp4_path = f'{VOD_PATH}/{label}/{mp4_name}'
+
+    if oss_path_exist(mp4_path):
+        btn_upload.disabled = True
+        btn_remove.disabled = False
+    else:
+        btn_upload.disabled = False
+        btn_remove.disabled = True
+
+
+def upload_sample(context, btn_upload, btn_remove, wid_video, wid_result):
+    context.logger(f'upload_sample: {wid_video.value}')
+    wid_result.value = ''
+    video_url = wid_video.value
+    mp4_name = os.path.basename(video_url)
+    if 'com/live' in video_url:
+        mac = video_url[8:].split('/')[2]
+        for dev in DEVICES:
+            if dev[0] == mac:
+                label = dev[1]
+    elif VOD_PATH in video_url:
+        label = video_url.split('/')[-2]
+
+    if oss_put_file(video_url, f'{VOD_PATH}/{label}/{mp4_name}'):
+        btn_upload.disabled = True
+        btn_remove.disabled = False
+        wid_result.value = 'SUCCESS'
+    else:
+        wid_result.value = 'FAILD'
+        context.logger(f'put {VOD_PATH}/{label}/{mp4_name} err')
+
+
+def remove_sample(context, btn_remove, btn_upload, wid_video, wid_smplist, wid_result):
+    context.logger(f'remove_sample: {wid_video.value}')
+    wid_result.value = ''
+    video_url = wid_video.value
+    mp4_name = os.path.basename(video_url)
+    flag = False
+    if 'com/live' in video_url:
+        mac = video_url[8:].split('/')[2]
+        for dev in DEVICES:
+            if dev[0] == mac:
+                label = dev[1]
+    elif VOD_PATH in video_url:
+        flag = True
+        label = video_url.split('/')[-2]
+
+    if oss_del_files(f'{VOD_PATH}/{label}/{mp4_name[:-3]}', recursive=True):
+        wid_result.value = 'SUCCESS'
+        btn_upload.disabled = False
+        btn_remove.disabled = True
+        if flag:
+            wid_smplist.options = oss_get_video_samples(f'{VOD_PATH}/{label}')
+            wid_smplist.value = wid_smplist.options[int(len(wid_smplist.options) / 2)][1]
+    else:
+        wid_result.value = 'FAIL'
+        context.logger(f'del {VOD_PATH}/{label}/{mp4_name} err')
+
+def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
+    context.logger(f'update_rep_count: {newval}, {w_sample.value}')
+    if w_acc.value > 0 and newval > 0:
+        w_acc.value = round(100 * w_pred.value / newval, 2)
 
 
 EVENTS = {
@@ -404,4 +534,8 @@ EVENTS = {
     'focus_center_changed': focus_center_changed,
     'focus_box_changed': focus_box_changed,
     'black_box_changed': black_box_changed,
+    'check_video_sample': check_video_sample,
+    'upload_sample': upload_sample,
+    'remove_sample': remove_sample,
+    'update_rep_count': update_rep_count,
 }
