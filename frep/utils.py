@@ -21,13 +21,25 @@ DEVICES = (
     ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"]
 )
 
-def requests_get(url):
+
+def requests_get(url, verify=False):
     try:
         url = url.replace('frepai.s3.', 'frepai.s3-internal.')
-        return requests.get(url, verify=False)
+        return requests.get(url, verify=verify)
     except Exception:
         pass
-    return None 
+    return None
+
+
+def get_jsonconfig(url, verify=False):
+    try:
+        url = url.replace('frepai.s3.', 'frepai.s3-internal.')
+        response = requests.get(url, verify=verify)
+        if response.status_code == 200:
+            return json.loads(response.content.decode('utf-8'))
+    except Exception:
+        pass
+    return None
 
 
 oss_client = Minio(
@@ -45,7 +57,7 @@ def oss_path_exist(path):
     return True
 
 
-def oss_get_bypath(path, ignores=['outputs']):
+def oss_get_bypath(path, ignores=['outputs', 'counts']):
     objs = oss_client.list_objects('frepai', path, recursive=False)
     options = []
     for o in objs:
@@ -58,28 +70,38 @@ def oss_get_bypath(path, ignores=['outputs']):
         options.append((object_name, object_path))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
-    return options
+    return sorted(options, key=lambda item: item[0], reverse=True)
 
 
-def oss_put_jsonfile(path, data):
+def oss_get_jsonconfig(path):
+    if path.startswith('http'):
+        path = '/'.join(path[8:].split('/')[1:])
+    data = oss_client.get_object('frepai', path)
+    if data:
+        return json.loads(data.data.decode('utf-8'))
+    return {}
+
+
+def oss_put_jsonconfig(path, data):
     if isinstance(data, (dict, list)):
         data = json.dumps(data, ensure_ascii=False, indent=4)
-    data = io.BytesIO(data.encode())
-    size = data.seek(0, 2)
-    data.seek(0, 0)
-    etag = oss_client.put_object('frepai', path, data, size, content_type='text/json')
-    if not isinstance(etag, str):
-        etag = etag.etag
-    return etag
+    with io.BytesIO(data.encode()) as bio:
+        size = bio.seek(0, 2)
+        bio.seek(0, 0)
+        etag = oss_client.put_object('frepai', path, bio, size, content_type='text/json')
+        if not isinstance(etag, str):
+            etag = etag.etag
+        return etag
 
 
 def oss_put_file(src_url, dst_path, ct='video/mp4'):
     for _ in range(2):
         try:
             result = requests_get(src_url.replace('s3', 's3-internal'))
-            oss_client.put_object(
-                'frepai', dst_path,
-                io.BytesIO(result.content), len(result.content), content_type=ct)
+            with io.BytesIO(result.content) as bio:
+                oss_client.put_object(
+                    'frepai', dst_path,
+                    bio, len(result.content), content_type=ct)
             return True
         except Exception:
             time.sleep(1)
@@ -101,6 +123,14 @@ def oss_del_files(dst_path, recursive=False):
 
 
 def oss_get_video_list(prefix):
+    objs = oss_client.list_objects('frepai', f'{prefix}/counts/', recursive=False)
+    crecs = {}
+    for o in objs:
+        if o.object_name[-4:] != 'json':
+            continue
+        segs = os.path.basename(o.object_name)[:-5].split('_')
+        crecs[segs[0] + '.mp4'] = segs[1]
+
     objs = oss_client.list_objects('frepai', f'{prefix}/videos/', recursive=False)
     options = []
     for o in objs:
@@ -109,10 +139,13 @@ def oss_get_video_list(prefix):
         oname = os.path.basename(o.object_name)
         hour = int(oname[8:10])
         if hour > 7 and hour < 19:
-            options.append((oname[8:], f'{S3_PREFIX}/{o.object_name}'))
+            key = oname[8:]
+            if oname in crecs:
+                key += f'        {crecs[oname]}'
+            options.append((key, f'{S3_PREFIX}/{o.object_name}'))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
-    return options
+    return sorted(options, key=lambda item: item[0], reverse=True)
 
 
 def oss_get_video_samples(prefix):
@@ -126,7 +159,7 @@ def oss_get_video_samples(prefix):
         options.append((os.path.basename(o.object_name), f'{S3_PREFIX}/{o.object_name}'))
     if len(options) == 0:
         options = [('NONE', 'NONE')]
-    return options
+    return sorted(options, key=lambda item: item[0], reverse=True)
 
 
 def parse_xls_report():
@@ -286,7 +319,7 @@ def save_jsonconfig(context, btn, w_video, w_load):
     data = context.get_all_kv(False)
     for wid in SAVE_IGNORE_WIDS:
         data.pop(wid, None)
-    etag = oss_put_jsonfile(path, data)
+    etag = oss_put_jsonconfig(path, data)
     if etag:
         w_load.disabled = False
     else:
@@ -315,7 +348,7 @@ def save_group_jsonconfig(context, btn_noused, w_video, w_load):
     data.pop('_cfg.true_count')
     data.pop('_cfg.pred_count')
     context.logger(f'save_group_jsonconfig:{path}')
-    etag = oss_put_jsonfile(path, data)
+    etag = oss_put_jsonconfig(path, data)
     if etag:
         w_load.disabled = False
     else:
@@ -332,15 +365,27 @@ def load_group_jsonconfig(context, btn_noused, w_video):
         context.logger('load group error')
 
 
+def frep_schema_init():
+    device_list = [(name, mac) for mac, name, _ in DEVICES]
+    date_list = oss_get_bypath(f'live/{device_list[0][1]}/')[:7]
+    video_list = oss_get_video_list(date_list[0][1])
+    task_list = oss_get_bypath(f'datasets/vod/')
+    if len(task_list) != len(device_list):
+        for dev in device_list:
+            if dev[0] not in task_list:
+                oss_put_jsonconfig(f'datasets/vod/{dev[0]}/info.json', [])
+    sample_list = oss_get_video_samples(task_list[0][1])
+    return device_list, date_list, video_list, task_list, sample_list
+
+
 def get_date_list(context, source, oldval, newval, target):
     context.logger(f'get_date_list:{oldval} {newval}')
-    target.options = oss_get_bypath(f'live/{newval}/')[-7:]
-    target.value = target.options[-1][1]
+    target.options = oss_get_bypath(f'live/{newval}/')[:7]
+    target.value = target.options[0][1]
 
 
 def get_video_list(context, source, oldval, newval, target):
     target.options = oss_get_video_list(newval)
-    context.logger(target.options)
     target.value = target.options[0][1]
     context.logger(f'get_video_list:{oldval} {newval} {target.value}')
 
@@ -409,7 +454,7 @@ def black_box_changed(context, source, oldval, newval, target):
 
 
 def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image, w_mp4, w_sim):
-    context.logger(f'xshow_video_frame:{oldval} to {newval}')
+    context.logger(f'show_video_frame:{oldval} to {newval}')
     if newval == 'NONE':
         return
 
@@ -467,17 +512,22 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
             )
 
     # output files
-    msgkey = context.get_widget_byid('cfg.pigeon.msgkey').value
-    output_path = f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/{msgkey}'
-    options = []
-    if oss_path_exist(f'{output_path}/target-stride.mp4'):
-        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target-stride.mp4'))
-    if oss_path_exist(f'{output_path}/target.mp4'):
-        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target.mp4'))
-    if len(options) > 0:
-        w_mp4.options = options
-    if oss_path_exist(f'{output_path}/embs_sims.npy'):
-        w_sim.value = f'{S3_PREFIX}/{output_path}/embs_sims.npy'
+    ts = oss_get_bypath(f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/', ignores=[])
+    if len(ts) > 0:
+        if len(ts) > 1 and ts[0][0].startswith('nb'):
+            output_path = ts[1][1] # TODO
+        else:
+            output_path = ts[0][1]
+
+        options = []
+        if oss_path_exist(f'{output_path}/target-stride.mp4'):
+            options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target-stride.mp4'))
+        if oss_path_exist(f'{output_path}/target.mp4'):
+            options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target.mp4'))
+        if len(options) > 0:
+            w_mp4.options = options
+        if oss_path_exist(f'{output_path}/embs_sims.npy'):
+            w_sim.value = f'{S3_PREFIX}/{output_path}/embs_sims.npy'
 
 
 def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
