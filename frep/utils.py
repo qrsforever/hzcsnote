@@ -547,7 +547,7 @@ def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
         btn_remove.disabled = True
 
 
-def upload_sample(context, btn_upload, btn_remove, wid_video, wid_result):
+def upload_sample(context, btn_upload, btn_remove, wid_tsklist, wid_smplist, wid_result, wid_video):
     context.logger(f'upload_sample: {wid_video.value}')
     wid_result.value = ''
     video_url = wid_video.value
@@ -558,12 +558,15 @@ def upload_sample(context, btn_upload, btn_remove, wid_video, wid_result):
         btn_upload.disabled = True
         btn_remove.disabled = False
         wid_result.value = 'SUCCESS'
+        if wid_tsklist.value in sample_path:
+            wid_smplist.options = oss_get_video_samples(sample_path)
+            wid_smplist.value = f'{S3_PREFIX}/{sample_path}/{mp4_name}'
     else:
         wid_result.value = 'FAILD'
         context.logger(f'put {sample_path}/{mp4_name} err')
 
 
-def remove_sample(context, btn_remove, btn_upload, wid_video, wid_smplist, wid_result):
+def remove_sample(context, btn_remove, btn_upload, wid_tsklist, wid_smplist, wid_result, wid_video):
     context.logger(f'remove_sample: {wid_video.value}')
     wid_result.value = ''
     video_url = wid_video.value
@@ -583,7 +586,7 @@ def remove_sample(context, btn_remove, btn_upload, wid_video, wid_smplist, wid_r
 
 def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
     context.logger(f'update_rep_count: {newval}, {w_sample.value}')
-    if w_acc.value > 0 and newval > 0:
+    if newval > 0:
         w_acc.value = round(100 * (1 - abs(w_pred.value - newval) / newval), 2)
         context.logger(f'w_acc: {w_acc.value}')
 
