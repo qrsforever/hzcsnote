@@ -290,8 +290,11 @@ def start_inference(
                 if 'vod' in video_url and 'sumcnt' in result:
                     w_pred.value = round(result['sumcnt'], 2)
                     context.logger(f'inference result: {w_pred.value}')
-                    if w_true.value > 0:
-                        w_acc.value = round(100 * (1 - abs(w_pred.value - w_true.value) / w_true.value), 2)
+                    if w_true.value > 0 and w_pred.value > 0:
+                        if w_pred.value > w_true.value:
+                            w_acc.value = round(100 * w_true.value / w_pred.value, 2)
+                        else:
+                            w_acc.value = round(100 * w_pred.value / w_true.value, 2)
                 if 'embs_sims' in result:
                     w_sim.value = result['embs_sims']
         btn.disabled = False
@@ -478,10 +481,13 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
         conf = json.loads(response.content.decode('utf-8'))
     else:
         btn_mp4conf.disabled = True
-        if 'vod' in path:
+        if 'vod' in newval:
             context.get_widget_byid('_cfg.accuracy').value = 0.0
             context.get_widget_byid('_cfg.true_count').value = 0
             context.get_widget_byid('_cfg.pred_count').value = 0
+        else:
+            config_url = newval.replace('outputs', 'videos').replace('.mp4', '/repnet_tf/config.json')
+            context.logger(f'show_video_frame: raw config {config_url}')
 
     # group btn
     path = f'{sample_path}/config.json'
@@ -586,8 +592,11 @@ def remove_sample(context, btn_remove, btn_upload, wid_tsklist, wid_smplist, wid
 
 def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
     context.logger(f'update_rep_count: {newval}, {w_sample.value}')
-    if newval > 0:
-        w_acc.value = round(100 * (1 - abs(w_pred.value - newval) / newval), 2)
+    if newval > 0 and w_pred.value > 0:
+        if w_pred.value > newval:
+            w_acc.value = round(100 * newval / w_pred.value, 2)
+        else:
+            w_acc.value = round(100 * w_pred.value / newval, 2)
         context.logger(f'w_acc: {w_acc.value}')
 
 
