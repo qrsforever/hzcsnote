@@ -93,8 +93,18 @@ def oss_put_jsonconfig(path, data):
             etag = etag.etag
         return etag
 
+def oss_put_file(src_path, dst_path, ct='binary/octet-stream'):
+    oss_client.fput_object('frepai', dst_path, src_path, content_type=ct)
+    return True
 
-def oss_put_file(src_url, dst_path, ct='video/mp4'):
+def oss_put_bytes(_bytes, dst_path, ct='binary/octet-stream'):
+    with io.BytesIO(_bytes) as bio:
+        oss_client.put_object(
+            'frepai', dst_path,
+            bio, len(_bytes), content_type=ct)
+    return True
+
+def oss_put_urlfile(src_url, dst_path, ct='video/mp4'):
     for _ in range(2):
         try:
             result = requests_get(src_url.replace('s3', 's3-internal'))
@@ -486,7 +496,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
             context.get_widget_byid('_cfg.true_count').value = 0
             context.get_widget_byid('_cfg.pred_count').value = 0
         else:
-            config_url = newval.replace('outputs', 'videos').replace('.mp4', '/repnet_tf/config.json')
+            config_url = newval.replace('videos', 'outputs').replace('.mp4', '/repnet_tf/config.json')
             context.logger(f'show_video_frame: raw config {config_url}')
 
     # group btn
@@ -560,7 +570,7 @@ def upload_sample(context, btn_upload, btn_remove, wid_tsklist, wid_smplist, wid
     mp4_name = os.path.basename(video_url)
     sample_path = _parse_sample_video_path(video_url)
 
-    if oss_put_file(video_url, f'{sample_path}/{mp4_name}'):
+    if oss_put_urlfile(video_url, f'{sample_path}/{mp4_name}'):
         btn_upload.disabled = True
         btn_remove.disabled = False
         wid_result.value = 'SUCCESS'
