@@ -57,7 +57,7 @@ def oss_path_exist(path):
     return True
 
 
-def oss_get_bypath(path, ignores=['outputs', 'counts']):
+def oss_get_bypath(path, ignores=['outputs', 'counts', 'unkown']):
     objs = oss_client.list_objects('frepai', path, recursive=False)
     options = []
     for o in objs:
@@ -251,9 +251,89 @@ def _parse_sample_video_path(video_url):
     return f'{VOD_PATH}/{label}'
 
 
+def group_start_inference(
+        context, btn, w_raceurl, w_task, w_msgkey, 
+        w_samples, w_single_start, w_bar, w_out):
+    N = len(w_samples.options)
+    context.logger(f'group_start_inference count: {N}')
+    raceurl = w_raceurl.value
+    msgkey = w_msgkey.value
+    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/raceai/framework/inference'
+    reqdata = context.get_all_json()
+    reqdata['cfg']['save_video'] = False
+    reqdata['cfg']['best_stride_video'] = False
+
+    btn.disabled = True
+    w_single_start.disabled = True
+    
+    options = []
+    for i, (label, url) in enumerate(w_samples.options, 1):
+        mp4_name = os.path.basename(url)
+        sample_path = _parse_sample_video_path(url)
+        path = f'{sample_path}/{mp4_name[:-4]}.json'
+        response = requests_get(f'{S3_PREFIX}/{path}')
+        t, p, a = 0, 0, 0
+        if response.status_code == 200:
+            conf = json.loads(response.content.decode('utf-8'))
+            t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy']
+        options.append((int((100 * i)/N), url, label, t, p, a))
+
+    def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
+        w_bar.value = 0
+        w_out.value = '{:^30s}|{:^8s}|{:^8s}|{:^8s}|{:^8s}|{:^6s}|{:^10s}\n'.format(
+                'ID', 'ACC', 'True', 'Pred', 'ACC0', 'SIGN', 'Progress')
+        for prg, url, label, true_value, old_count, old_acc in options:
+            train_params['cfg']['video'] = url
+            requests_get(url=api_popmsg)
+            result = json.loads(requests.post(url=api_inference, json=train_params).text)
+            if 'errno' in result:
+                if result['errno'] < 0:
+                    continue
+            cur_try = 0
+            err_max = 20
+            while cur_try < err_max:
+                result = json.loads(requests_get(url=api_popmsg).text)
+                if len(result) == 0:
+                    time.sleep(1)
+                    cur_try += 1
+                    continue
+                cur_try = 0
+                result = result[-1]
+                if result['errno'] == 0 and int(result['progress']) == 100:
+                    w_bar.value = prg
+                    if 'sumcnt' in result:
+                        pred_value = round(result['sumcnt'], 2)
+                        if true_value > 0 and pred_value > 0:
+                            if pred_value > true_value:
+                                acc_value = round(100 * true_value / pred_value, 2)
+                            else:
+                                acc_value = round(100 * pred_value / true_value, 2)
+                    sign = ' '
+                    if acc_value > old_acc:
+                        sign = '+'
+                    else:
+                        sign = '-'
+                    w_out.value += '\n{:^20s}|{:^8.2f}|{:^8d}|{:^8.2f}|{:^8.2f}|{:^5s}|{:^10.2f}%'.format(
+                            label, acc_value, true_value, pred_value, old_acc, sign, prg)
+                    break
+        btn.disabled = False
+        single_btn.disabled = False
+    threading.Thread(target=_run_result, kwargs={
+        'btn': btn,
+        'single_btn': w_single_start,
+        'train_params': reqdata,
+        'api_popmsg': api_popmsg,
+        'api_inference': api_inference,
+        'options': options,
+        'w_bar': w_bar,
+        'w_out': w_out,
+    }).start()
+
+
 def start_inference(
         context, btn, w_raceurl,
-        w_task, w_msgkey, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
+        w_task, w_msgkey, w_true, w_pred, w_acc, w_grp, w_bar, w_out, w_mp4, w_sim):
     raceurl = w_raceurl.value
     # task = w_task.value
     msgkey = w_msgkey.value
@@ -270,8 +350,9 @@ def start_inference(
             return
 
     btn.disabled = True
+    w_grp.disabled = True
 
-    def _run_result(btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
+    def _run_result(btn, grp_btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
@@ -308,8 +389,10 @@ def start_inference(
                 if 'embs_sims' in result:
                     w_sim.value = result['embs_sims']
         btn.disabled = False
+        grp_btn.disabled = False
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
+        'grp_btn': w_grp,
         'w_true': w_true,
         'w_pred': w_pred,
         'w_acc': w_acc,
@@ -320,11 +403,12 @@ def start_inference(
     }).start()
 
 
-def stop_inference(context, btn, start_button):
+def stop_inference(context, btn, start_button, grp_start_button):
     start_button.disabled = False
+    grp_start_button.disabled = False
 
 
-def save_jsonconfig(context, btn, w_video, w_load):
+def save_jsonconfig(context, btn, w_video, w_load, w_del):
     mp4_name = os.path.basename(w_video.value)
     sample_path = _parse_sample_video_path(w_video.value)
     path = f'{sample_path}/{mp4_name[:-4]}.json'
@@ -335,6 +419,7 @@ def save_jsonconfig(context, btn, w_video, w_load):
     etag = oss_put_jsonconfig(path, data)
     if etag:
         w_load.disabled = False
+        w_del.disabled = False
     else:
         context.logger('save error')
 
@@ -349,6 +434,18 @@ def load_jsonconfig(context, btn, w_video):
         context.set_widget_values(json.loads(response.content.decode('utf-8')))
     else:
         context.logger('load error')
+
+
+def delete_jsonconfig(context, btn, w_video, w_load):
+    mp4_name = os.path.basename(w_video.value)
+    sample_path = _parse_sample_video_path(w_video.value)
+    path = f'{sample_path}/{mp4_name[:-4]}.json'
+    context.logger(f'delete_jsonconfig: {path}')
+    if oss_del_files(path):
+        w_load.disabled = True
+        btn.disabled = True
+    else:
+        context.logger('delete error')
 
 
 def save_group_jsonconfig(context, btn_noused, w_video, w_load):
@@ -466,7 +563,7 @@ def black_box_changed(context, source, oldval, newval, target):
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
 
 
-def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, w_image, w_mp4, w_sim):
+def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, btn_grpconf, w_image, w_mp4, w_sim):
     context.logger(f'show_video_frame:{oldval} to {newval}')
     if newval == 'NONE':
         return
@@ -488,9 +585,11 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
     context.logger(f'show_video_frame: request {S3_PREFIX}/{path} [{response.status_code}]')
     if response.status_code == 200:
         btn_mp4conf.disabled = False
+        btn_delconf.disabled = False
         conf = json.loads(response.content.decode('utf-8'))
     else:
         btn_mp4conf.disabled = True
+        btn_delconf.disabled = True
         if 'vod' in newval:
             context.get_widget_byid('_cfg.accuracy').value = 0.0
             context.get_widget_byid('_cfg.true_count').value = 0
@@ -528,7 +627,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_grpconf, 
             )
 
     # output files
-    ts = oss_get_bypath(f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/', ignores=[])
+    ts = oss_get_bypath(f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/', ignores=['unkown'])
     if len(ts) > 0:
         if len(ts) > 1 and ts[0][0].startswith('nb'):
             output_path = ts[1][1] # TODO
@@ -610,11 +709,20 @@ def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
         context.logger(f'w_acc: {w_acc.value}')
 
 
+def on_tabpage_envent(context, source, oldval, newval, w_navi, w_grp_start):
+    if w_navi.value != 1:
+        w_grp_start.disabled = True
+    else:
+        w_grp_start.disabled = False
+
+
 EVENTS = {
+    'group_start_inference': group_start_inference,
     'start_inference': start_inference,
     'stop_inference': stop_inference,
     'save_jsonconfig': save_jsonconfig,
     'load_jsonconfig': load_jsonconfig,
+    'delete_jsonconfig': delete_jsonconfig,
     'save_group_jsonconfig': save_group_jsonconfig,
     'load_group_jsonconfig': load_group_jsonconfig,
     'get_date_list': get_date_list,
@@ -628,4 +736,6 @@ EVENTS = {
     'upload_sample': upload_sample,
     'remove_sample': remove_sample,
     'update_rep_count': update_rep_count,
+
+    'on_tabpage_envent': on_tabpage_envent,
 }
