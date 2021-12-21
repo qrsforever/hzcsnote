@@ -18,7 +18,13 @@ DEVICES = (
     ["00232ee8876d", "机器焊接", "SSAC-292217-AAFFA"],
     ["00856405d389", "机器切割", "SSAE-110460-AABAE"],
     ["00047dd87188", "双人翻边", "SSAC-292170-BAAEC"],
-    ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"]
+    ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"],
+    ["00baf49e6f65", "小型冲床", "SSAE-110478-AAFDC"],
+    ["00fb00f23a41", "激光印章", "SSAC-233524-DFDCC"],
+    ["00a57548b004", "新版1", "SSAE-110468-AFCBD"],
+    ["005cfa60d733", "新版2", "SSAE-110438-CEAAC"],
+    ["00d8c273f993", "新版3", "SSAE-110447-DAEED"],
+    ["00bd4ac291c5", "新版4", "SSAE-110434-ECCFD"],
 )
 
 
@@ -281,8 +287,8 @@ def group_start_inference(
 
     def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
         w_bar.value = 0
-        w_out.value = '{:^30s}|{:^8s}|{:^8s}|{:^8s}|{:^8s}|{:^6s}|{:^10s}\n'.format(
-                'ID', 'ACC', 'True', 'Pred', 'ACC0', 'SIGN', 'Progress')
+        w_out.value = '{:^30s}|{:^8s}|{:^8s}|{:^8s}|{:^8s}|{}\n'.format(
+                'ID', 'ACC', 'Pred', 'True', 'ACC0', 'SIGN')
         for prg, url, label, true_value, old_count, old_acc in options:
             train_params['cfg']['video'] = url
             requests_get(url=api_popmsg)
@@ -312,10 +318,10 @@ def group_start_inference(
                     sign = ' '
                     if acc_value > old_acc:
                         sign = '+'
-                    else:
+                    elif acc_value == old_acc:
                         sign = '-'
-                    w_out.value += '\n{:^20s}|{:^8.2f}|{:^8d}|{:^8.2f}|{:^8.2f}|{:^5s}|{:^10.2f}%'.format(
-                            label, acc_value, true_value, pred_value, old_acc, sign, prg)
+                    w_out.value += '\n{:^20s} | {:^8.2f} | {:^8d} | {:^8.2f} | {:^8.2f} | {}'.format(
+                            label, acc_value, true_value, pred_value, old_acc, sign)
                     break
         btn.disabled = False
         single_btn.disabled = False
@@ -350,9 +356,10 @@ def start_inference(
             return
 
     btn.disabled = True
-    w_grp.disabled = True
 
     def _run_result(btn, grp_btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
+        old_grp_value = grp_btn.disabled
+        grp_btn.disabled = True
         cur_try = 0
         err_max = 60
         while cur_try < err_max:
@@ -389,7 +396,7 @@ def start_inference(
                 if 'embs_sims' in result:
                     w_sim.value = result['embs_sims']
         btn.disabled = False
-        grp_btn.disabled = False
+        grp_btn.disabled = old_grp_value
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'grp_btn': w_grp,

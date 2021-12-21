@@ -73,6 +73,30 @@
                                                                 {
                                                                     "name": "木槌加固",
                                                                     "value": "002b359e3931"
+                                                                },
+                                                                {
+                                                                    "name": "小型冲床",
+                                                                    "value": "00baf49e6f65"
+                                                                },
+                                                                {
+                                                                    "name": "激光印章",
+                                                                    "value": "00fb00f23a41"
+                                                                },
+                                                                {
+                                                                    "name": "新版1",
+                                                                    "value": "00a57548b004"
+                                                                },
+                                                                {
+                                                                    "name": "新版2",
+                                                                    "value": "005cfa60d733"
+                                                                },
+                                                                {
+                                                                    "name": "新版3",
+                                                                    "value": "00d8c273f993"
+                                                                },
+                                                                {
+                                                                    "name": "新版4",
+                                                                    "value": "00bd4ac291c5"
                                                                 }
                                                             ],
                                                             "default": "00232ee8876d"
@@ -84,6 +108,22 @@
                                                             "width": 400,
                                                             "objs": [
                                                                 {
+                                                                    "name": "20211221",
+                                                                    "value": "live/00232ee8876d/20211221"
+                                                                },
+                                                                {
+                                                                    "name": "20211220",
+                                                                    "value": "live/00232ee8876d/20211220"
+                                                                },
+                                                                {
+                                                                    "name": "20211219",
+                                                                    "value": "live/00232ee8876d/20211219"
+                                                                },
+                                                                {
+                                                                    "name": "20211218",
+                                                                    "value": "live/00232ee8876d/20211218"
+                                                                },
+                                                                {
                                                                     "name": "20211217",
                                                                     "value": "live/00232ee8876d/20211217"
                                                                 },
@@ -94,25 +134,9 @@
                                                                 {
                                                                     "name": "20211215",
                                                                     "value": "live/00232ee8876d/20211215"
-                                                                },
-                                                                {
-                                                                    "name": "20211214",
-                                                                    "value": "live/00232ee8876d/20211214"
-                                                                },
-                                                                {
-                                                                    "name": "20211213",
-                                                                    "value": "live/00232ee8876d/20211213"
-                                                                },
-                                                                {
-                                                                    "name": "20211212",
-                                                                    "value": "live/00232ee8876d/20211212"
-                                                                },
-                                                                {
-                                                                    "name": "20211211",
-                                                                    "value": "live/00232ee8876d/20211211"
                                                                 }
                                                             ],
-                                                            "default": "live/00232ee8876d/20211217"
+                                                            "default": "live/00232ee8876d/20211221"
                                                         },
                                                         {
                                                             "_id_": "__cfg.video",
@@ -121,63 +145,71 @@
                                                             "width": 400,
                                                             "objs": [
                                                                 {
-                                                                    "name": "112625.mp4        81.3",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217112625.mp4"
+                                                                    "name": "114953.mp4        11.44",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221114953.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "111121.mp4        97.11",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217111121.mp4"
+                                                                    "name": "113449.mp4        12.85",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221113449.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "105617.mp4        57.25",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217105617.mp4"
+                                                                    "name": "111945.mp4        12.52",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221111945.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "104115.mp4        83.53",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217104115.mp4"
+                                                                    "name": "110441.mp4        11.37",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221110441.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "102141.mp4        0.0",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217102141.mp4"
+                                                                    "name": "104937.mp4        15.14",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221104937.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "100637.mp4        0.0",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217100637.mp4"
+                                                                    "name": "103433.mp4        13.66",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221103433.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "095133.mp4        0.67",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217095133.mp4"
+                                                                    "name": "101929.mp4        15.52",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221101929.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "093629.mp4        4.95",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217093629.mp4"
+                                                                    "name": "100425.mp4        13.59",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221100425.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "092125.mp4        11.32",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217092125.mp4"
+                                                                    "name": "094921.mp4        12.27",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221094921.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "090621.mp4        5.58",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217090621.mp4"
+                                                                    "name": "093417.mp4        13.04",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221093417.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "085117.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217085117.mp4"
+                                                                    "name": "091913.mp4        10.47",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221091913.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "083613.mp4        4.48",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217083613.mp4"
+                                                                    "name": "090409.mp4        13.86",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221090409.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "082109.mp4        0.61",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217082109.mp4"
+                                                                    "name": "084905.mp4        12.6",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221084905.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "080605.mp4        0.57",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217080605.mp4"
+                                                                    "name": "083401.mp4        13.26",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221083401.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "081857.mp4        15.04",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221081857.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "080353.mp4        16.65",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221080353.mp4"
                                                                 }
                                                             ],
-                                                            "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211217/videos/20211217112625.mp4"
+                                                            "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211221/videos/20211221114953.mp4"
                                                         }
                                                     ]
                                                 },
@@ -192,6 +224,10 @@
                                                             "width": 300,
                                                             "objs": [
                                                                 {
+                                                                    "name": "激光印章",
+                                                                    "value": "datasets/vod/激光印章"
+                                                                },
+                                                                {
                                                                     "name": "机器焊接",
                                                                     "value": "datasets/vod/机器焊接"
                                                                 },
@@ -204,15 +240,35 @@
                                                                     "value": "datasets/vod/木槌加固"
                                                                 },
                                                                 {
+                                                                    "name": "新版4",
+                                                                    "value": "datasets/vod/新版4"
+                                                                },
+                                                                {
+                                                                    "name": "新版3",
+                                                                    "value": "datasets/vod/新版3"
+                                                                },
+                                                                {
+                                                                    "name": "新版2",
+                                                                    "value": "datasets/vod/新版2"
+                                                                },
+                                                                {
+                                                                    "name": "新版1",
+                                                                    "value": "datasets/vod/新版1"
+                                                                },
+                                                                {
                                                                     "name": "开发测试",
                                                                     "value": "datasets/vod/开发测试"
+                                                                },
+                                                                {
+                                                                    "name": "小型冲床",
+                                                                    "value": "datasets/vod/小型冲床"
                                                                 },
                                                                 {
                                                                     "name": "双人翻边",
                                                                     "value": "datasets/vod/双人翻边"
                                                                 }
                                                             ],
-                                                            "default": "datasets/vod/机器焊接"
+                                                            "default": "datasets/vod/激光印章"
                                                         },
                                                         {
                                                             "_id_": "__cfg.sample",
@@ -221,23 +277,11 @@
                                                             "width": 360,
                                                             "objs": [
                                                                 {
-                                                                    "name": "20211206154217.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/机器焊接/20211206154217.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20211202104401.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/机器焊接/20211202104401.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20211202091337.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/机器焊接/20211202091337.mp4"
-                                                                },
-                                                                {
-                                                                    "name": "20211130074113.mp4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/机器焊接/20211130074113.mp4"
+                                                                    "name": "NONE",
+                                                                    "value": "NONE"
                                                                 }
                                                             ],
-                                                            "default": "https://frepai.s3.didiyunapi.com/datasets/vod/机器焊接/20211206154217.mp4"
+                                                            "default": "NONE"
                                                         },
                                                         {
                                                             "_id_": "_cfg.true_count",
@@ -822,7 +866,7 @@
                                     "type": "text",
                                     "name": "",
                                     "width": 500,
-                                    "height": 500,
+                                    "height": 550,
                                     "description_width": 0
                                 },
                                 {
