@@ -851,7 +851,8 @@
                                     "_id_": "__cfg.progressbar",
                                     "type": "progressbar",
                                     "name": "Progress:",
-                                    "width": 600,
+                                    "width": 660,
+                                    "description_width": 120,
                                     "min": 0.0,
                                     "max": 100.0,
                                     "style": "success"

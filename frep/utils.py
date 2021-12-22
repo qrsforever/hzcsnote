@@ -272,6 +272,8 @@ def group_start_inference(
 
     btn.disabled = True
     w_single_start.disabled = True
+
+    w_bar.value = 0.0
     
     options = []
     for i, (label, url) in enumerate(w_samples.options, 1):
@@ -283,13 +285,22 @@ def group_start_inference(
         if response.status_code == 200:
             conf = json.loads(response.content.decode('utf-8'))
             t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy']
-        options.append((int((100 * i)/N), url, label, t, p, a))
+        options.append((url, label, t, p, a))
+    if N == 0:
+        w_out.value = 'Error: 0 Files'
+        btn.disabled = False
+        w_single_start.disabled = False
+        w_bar.value = 100
+        return
 
     def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
         w_bar.value = 0
-        w_out.value = '{:^30s}|{:^8s}|{:^8s}|{:^8s}|{:^8s}|{}\n'.format(
-                'ID', 'ACC', 'Pred', 'True', 'ACC0', 'SIGN')
-        for prg, url, label, true_value, old_count, old_acc in options:
+        w_out.value = '{:^30s}|{:^12s}|{:^12s}|{:^12s}|{:^12s}|\t{}\n'.format(
+                'ID', 'ACC', 'Pred', 'True', 'PRV ACC', 'SIGN')
+        N = len(options)
+        seg_prg = 100 / N
+        rec_sign_counts = [0, 0, 0]
+        for i, (url, label, true_value, old_count, old_acc) in enumerate(options):
             train_params['cfg']['video'] = url
             requests_get(url=api_popmsg)
             result = json.loads(requests.post(url=api_inference, json=train_params).text)
@@ -298,6 +309,7 @@ def group_start_inference(
                     continue
             cur_try = 0
             err_max = 20
+            w_bar.description = 'Progress({:03d}/{:03d}):'.format(i+1, N)
             while cur_try < err_max:
                 result = json.loads(requests_get(url=api_popmsg).text)
                 if len(result) == 0:
@@ -306,8 +318,13 @@ def group_start_inference(
                     continue
                 cur_try = 0
                 result = result[-1]
-                if result['errno'] == 0 and int(result['progress']) == 100:
-                    w_bar.value = prg
+                if result['errno'] == 0:
+                    progress = result['progress']
+                    if progress < 100.0:
+                        w_bar.value = seg_prg * (i + progress / 100)
+                        continue
+                    w_bar.value = (i + 1) * seg_prg
+                    acc_value = 0
                     if 'sumcnt' in result:
                         pred_value = round(result['sumcnt'], 2)
                         if true_value > 0 and pred_value > 0:
@@ -315,16 +332,25 @@ def group_start_inference(
                                 acc_value = round(100 * true_value / pred_value, 2)
                             else:
                                 acc_value = round(100 * pred_value / true_value, 2)
-                    sign = ' '
                     if acc_value > old_acc:
-                        sign = '+'
-                    elif acc_value == old_acc:
-                        sign = '-'
-                    w_out.value += '\n{:^20s} | {:^8.2f} | {:^8d} | {:^8.2f} | {:^8.2f} | {}'.format(
+                        rec_sign_counts[0] += 1
+                        sign = '👍'
+                    elif acc_value < old_acc:
+                        rec_sign_counts[1] += 1
+                        sign = '👎'
+                    else:
+                        rec_sign_counts[2] += 1
+                        sign = '✊'
+                    w_out.value += '\n{:^20s}\t{:>6.2f}\t{:>6.2f}\t{:>6.2f}\t{:>6.2f}\t{}'.format(
                             label, acc_value, true_value, pred_value, old_acc, sign)
                     break
+        w_out.value += '\n\nResult:\n\t 👍: {:>3d} \t{:>4.1f}%\n\t 👎: {:>3d} \t{:>4.1f}%\n\t ✊: {:>3d} \t{:>4.1f}%'.format(
+                rec_sign_counts[0], (100 * rec_sign_counts[0])/len(options),
+                rec_sign_counts[1], (100 * rec_sign_counts[1])/len(options),
+                rec_sign_counts[2], (100 * rec_sign_counts[2])/len(options))
         btn.disabled = False
         single_btn.disabled = False
+        w_bar.description = 'Progress:'
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'single_btn': w_single_start,
@@ -362,6 +388,7 @@ def start_inference(
         grp_btn.disabled = True
         cur_try = 0
         err_max = 60
+        w_bar.description = 'Progress(001/001):'
         while cur_try < err_max:
             result = json.loads(requests_get(url=api_popmsg).text)
             if len(result) == 0:
