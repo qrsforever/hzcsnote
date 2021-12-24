@@ -7,12 +7,16 @@ import requests
 import time
 import threading
 from minio import Minio
+from multiprocessing import Event
 
 import warnings
 warnings.filterwarnings('ignore')
 
 S3_PREFIX = 'https://frepai.s3.didiyunapi.com'
 VOD_PATH = 'datasets/vod'
+
+g_exited = Event()
+
 
 DEVICES = (
     ["00232ee8876d", "机器焊接", "SSAC-292217-AAFFA"],
@@ -21,6 +25,7 @@ DEVICES = (
     ["002b359e3931", "木槌加固", "SSAC-292197-ECFAB"],
     ["00baf49e6f65", "小型冲床", "SSAE-110478-AAFDC"],
     ["00fb00f23a41", "激光印章", "SSAC-233524-DFDCC"],
+    ["0031059d1d11", "坐姿切割", "SSAC-292202-FBDEB"],
     ["00a57548b004", "新版1", "SSAE-110468-AFCBD"],
     ["005cfa60d733", "新版2", "SSAE-110438-CEAAC"],
     ["00d8c273f993", "新版3", "SSAE-110447-DAEED"],
@@ -257,8 +262,18 @@ def _parse_sample_video_path(video_url):
     return f'{VOD_PATH}/{label}'
 
 
+def group_sample_update(context, btn, grpbtn):
+    if hasattr(grpbtn, 'samples'):
+        for label, conf in grpbtn.samples.items():
+            mp4_name = os.path.basename(conf['cfg.video'])
+            sample_path = _parse_sample_video_path(conf['cfg.video'])
+            path = f'{sample_path}/{mp4_name[:-4]}.json'
+            etag = oss_put_jsonconfig(path, conf)
+            context.logger(f'{label}[{path}] oss upload {etag} ok!')
+
+
 def group_start_inference(
-        context, btn, w_raceurl, w_task, w_msgkey, 
+        context, btn, w_raceurl, w_task, w_msgkey,
         w_samples, w_single_start, w_bar, w_out):
     N = len(w_samples.options)
     context.logger(f'group_start_inference count: {N}')
@@ -274,7 +289,8 @@ def group_start_inference(
     w_single_start.disabled = True
 
     w_bar.value = 0.0
-    
+
+    btn.samples = {}
     options = []
     for i, (label, url) in enumerate(w_samples.options, 1):
         mp4_name = os.path.basename(url)
@@ -286,6 +302,7 @@ def group_start_inference(
             conf = json.loads(response.content.decode('utf-8'))
             t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy']
         options.append((url, label, t, p, a))
+        btn.samples[label] = conf
     if N == 0:
         w_out.value = 'Error: 0 Files'
         btn.disabled = False
@@ -295,12 +312,14 @@ def group_start_inference(
 
     def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
         w_bar.value = 0
-        w_out.value = '{:^30s}|{:^12s}|{:^12s}|{:^12s}|{:^12s}|\t{}\n'.format(
-                'ID', 'ACC', 'Pred', 'True', 'PRV ACC', 'SIGN')
+        w_out.value = '{:^24s}|{:^28s}|{:^10s}|{:^10s}|\t{}\n'.format(
+                'ID', 'ACC_N vs ACC_O', 'True', 'Pred', 'SIGN')
         N = len(options)
         seg_prg = 100 / N
         rec_sign_counts = [0, 0, 0]
         for i, (url, label, true_value, old_count, old_acc) in enumerate(options):
+            if g_exited.is_set():
+                break
             train_params['cfg']['video'] = url
             requests_get(url=api_popmsg)
             result = json.loads(requests.post(url=api_inference, json=train_params).text)
@@ -308,9 +327,9 @@ def group_start_inference(
                 if result['errno'] < 0:
                     continue
             cur_try = 0
-            err_max = 20
+            err_max = 60
             w_bar.description = 'Progress({:03d}/{:03d}):'.format(i+1, N)
-            while cur_try < err_max:
+            while not g_exited.is_set() and cur_try < err_max:
                 result = json.loads(requests_get(url=api_popmsg).text)
                 if len(result) == 0:
                     time.sleep(1)
@@ -341,9 +360,14 @@ def group_start_inference(
                     else:
                         rec_sign_counts[2] += 1
                         sign = '✊'
-                    w_out.value += '\n{:^20s}\t{:>6.2f}\t{:>6.2f}\t{:>6.2f}\t{:>6.2f}\t{}'.format(
-                            label, acc_value, true_value, pred_value, old_acc, sign)
+                    w_out.value += '\n{:^20s}\t|{:<6.2f} {:>6.2f}|\t{:>6.2f}\t{:>6.2f}\t{}'.format(
+                            label, acc_value, old_acc, true_value, pred_value, sign) # noqa
+                    btn.samples[label]['_cfg.pred_count'] = pred_value
+                    btn.samples[label]['_cfg.accuracy'] = acc_value
+                    btn.samples[label]['cfg.video'] = url
                     break
+            else:
+                w_out.value += f'\n{label} quit or timeout: {cur_try}'
         w_out.value += '\n\nResult:\n\t 👍: {:>3d} \t{:>4.1f}%\n\t 👎: {:>3d} \t{:>4.1f}%\n\t ✊: {:>3d} \t{:>4.1f}%'.format(
                 rec_sign_counts[0], (100 * rec_sign_counts[0])/len(options),
                 rec_sign_counts[1], (100 * rec_sign_counts[1])/len(options),
@@ -351,6 +375,8 @@ def group_start_inference(
         btn.disabled = False
         single_btn.disabled = False
         w_bar.description = 'Progress:'
+
+    g_exited.clear()
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'single_btn': w_single_start,
@@ -389,7 +415,7 @@ def start_inference(
         cur_try = 0
         err_max = 60
         w_bar.description = 'Progress(001/001):'
-        while cur_try < err_max:
+        while not g_exited.is_set() and cur_try < err_max:
             result = json.loads(requests_get(url=api_popmsg).text)
             if len(result) == 0:
                 time.sleep(1)
@@ -424,6 +450,9 @@ def start_inference(
                     w_sim.value = result['embs_sims']
         btn.disabled = False
         grp_btn.disabled = old_grp_value
+
+
+    g_exited.clear()
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'grp_btn': w_grp,
@@ -440,6 +469,7 @@ def start_inference(
 def stop_inference(context, btn, start_button, grp_start_button):
     start_button.disabled = False
     grp_start_button.disabled = False
+    g_exited.set()
 
 
 def save_jsonconfig(context, btn, w_video, w_load, w_del):
@@ -664,7 +694,7 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, 
     ts = oss_get_bypath(f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/', ignores=['unkown'])
     if len(ts) > 0:
         if len(ts) > 1 and ts[0][0].startswith('nb'):
-            output_path = ts[1][1] # TODO
+            output_path = ts[0][1] # TODO
         else:
             output_path = ts[0][1]
 
@@ -752,6 +782,7 @@ def on_tabpage_envent(context, source, oldval, newval, w_navi, w_grp_start):
 
 EVENTS = {
     'group_start_inference': group_start_inference,
+    'group_sample_update': group_sample_update,
     'start_inference': start_inference,
     'stop_inference': stop_inference,
     'save_jsonconfig': save_jsonconfig,
