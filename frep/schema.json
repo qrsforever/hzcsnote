@@ -112,6 +112,22 @@
                                                             "width": 400,
                                                             "objs": [
                                                                 {
+                                                                    "name": "20211227",
+                                                                    "value": "live/00232ee8876d/20211227"
+                                                                },
+                                                                {
+                                                                    "name": "20211226",
+                                                                    "value": "live/00232ee8876d/20211226"
+                                                                },
+                                                                {
+                                                                    "name": "20211225",
+                                                                    "value": "live/00232ee8876d/20211225"
+                                                                },
+                                                                {
+                                                                    "name": "20211224",
+                                                                    "value": "live/00232ee8876d/20211224"
+                                                                },
+                                                                {
                                                                     "name": "20211223",
                                                                     "value": "live/00232ee8876d/20211223"
                                                                 },
@@ -122,25 +138,9 @@
                                                                 {
                                                                     "name": "20211221",
                                                                     "value": "live/00232ee8876d/20211221"
-                                                                },
-                                                                {
-                                                                    "name": "20211220",
-                                                                    "value": "live/00232ee8876d/20211220"
-                                                                },
-                                                                {
-                                                                    "name": "20211219",
-                                                                    "value": "live/00232ee8876d/20211219"
-                                                                },
-                                                                {
-                                                                    "name": "20211218",
-                                                                    "value": "live/00232ee8876d/20211218"
-                                                                },
-                                                                {
-                                                                    "name": "20211217",
-                                                                    "value": "live/00232ee8876d/20211217"
                                                                 }
                                                             ],
-                                                            "default": "live/00232ee8876d/20211223"
+                                                            "default": "live/00232ee8876d/20211227"
                                                         },
                                                         {
                                                             "_id_": "__cfg.video",
@@ -149,59 +149,63 @@
                                                             "width": 400,
                                                             "objs": [
                                                                 {
-                                                                    "name": "105821.mp4        11.56",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223105821.mp4"
+                                                                    "name": "112438.mp4        14.99",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227112438.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "104317.mp4        12.18",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223104317.mp4"
+                                                                    "name": "110934.mp4        18.53",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227110934.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "102813.mp4        9.4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223102813.mp4"
+                                                                    "name": "105430.mp4        21.31",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227105430.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "101309.mp4        14.46",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223101309.mp4"
+                                                                    "name": "103926.mp4        18.63",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227103926.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "095805.mp4        12.54",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223095805.mp4"
+                                                                    "name": "102422.mp4        19.31",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227102422.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "094301.mp4        12.35",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223094301.mp4"
+                                                                    "name": "100918.mp4        6.79",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227100918.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "092801.mp4        11.71",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223092801.mp4"
+                                                                    "name": "095415.mp4        6.92",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227095415.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "092527.mp4        0.29",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223092527.mp4"
+                                                                    "name": "093911.mp4        11.16",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227093911.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "091516.mp4        7.89",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223091516.mp4"
+                                                                    "name": "092407.mp4        1.6",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227092407.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "090013.mp4        12.58",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223090013.mp4"
+                                                                    "name": "090903.mp4        8.36",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227090903.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "084509.mp4        12.4",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223084509.mp4"
+                                                                    "name": "085359.mp4        23.15",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227085359.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "083005.mp4        10.3",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223083005.mp4"
+                                                                    "name": "083855.mp4        20.94",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227083855.mp4"
                                                                 },
                                                                 {
-                                                                    "name": "081501.mp4        9.45",
-                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223081501.mp4"
+                                                                    "name": "082351.mp4        21.55",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227082351.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "080847.mp4        13.77",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227080847.mp4"
                                                                 }
                                                             ],
-                                                            "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211223/videos/20211223105821.mp4"
+                                                            "default": "https://frepai.s3.didiyunapi.com/live/00232ee8876d/20211227/videos/20211227112438.mp4"
                                                         }
                                                     ]
                                                 },
@@ -871,7 +875,7 @@
                                     "type": "text",
                                     "name": "",
                                     "width": 500,
-                                    "height": 560,
+                                    "height": 550,
                                     "description_width": 0
                                 },
                                 {

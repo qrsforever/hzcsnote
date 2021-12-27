@@ -263,11 +263,15 @@ def _parse_sample_video_path(video_url):
 
 
 def group_sample_update(context, btn, grpbtn):
-    if hasattr(grpbtn, 'samples'):
+    if hasattr(grpbtn, 'samples') and grpbtn.samples is not None:
+        sample_path = None
         for label, conf in grpbtn.samples.items():
             mp4_name = os.path.basename(conf['cfg.video'])
-            sample_path = _parse_sample_video_path(conf['cfg.video'])
+            if sample_path is None:
+                sample_path = _parse_sample_video_path(conf['cfg.video'])
             path = f'{sample_path}/{mp4_name[:-4]}.json'
+            for key in SAVE_IGNORE_WIDS:
+                conf.pop(key, None)
             etag = oss_put_jsonconfig(path, conf)
             context.logger(f'{label}[{path}] oss upload {etag} ok!')
 
@@ -276,14 +280,17 @@ def group_start_inference(
         context, btn, w_raceurl, w_task, w_msgkey,
         w_samples, w_single_start, w_bar, w_out):
     N = len(w_samples.options)
+    if N == 0:
+        w_out.value = 'Error: 0 Files'
+        btn.disabled = False
+        w_single_start.disabled = False
+        return
+    
     context.logger(f'group_start_inference count: {N}')
     raceurl = w_raceurl.value
     msgkey = w_msgkey.value
     api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
     api_inference = f'{raceurl}/raceai/framework/inference'
-    reqdata = context.get_all_json()
-    reqdata['cfg']['save_video'] = False
-    reqdata['cfg']['best_stride_video'] = False
 
     btn.disabled = True
     w_single_start.disabled = True
@@ -292,23 +299,33 @@ def group_start_inference(
 
     btn.samples = {}
     options = []
+    sample_path = None
     for i, (label, url) in enumerate(w_samples.options, 1):
+        t, p, a = 0, 0, 0
         mp4_name = os.path.basename(url)
-        sample_path = _parse_sample_video_path(url)
+        if sample_path is None:
+            sample_path = _parse_sample_video_path(url)
         path = f'{sample_path}/{mp4_name[:-4]}.json'
         response = requests_get(f'{S3_PREFIX}/{path}')
-        t, p, a = 0, 0, 0
         if response.status_code == 200:
             conf = json.loads(response.content.decode('utf-8'))
-            t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy']
+            if conf:
+                t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy'] # noqa
         options.append((url, label, t, p, a))
-        btn.samples[label] = conf
-    if N == 0:
-        w_out.value = 'Error: 0 Files'
+
+    grp_config_file = f'{S3_PREFIX}/{sample_path}/config.json'
+    response = requests_get(grp_config_file)
+    if response.status_code == 200:
+        btn.train_params_kvs = json.loads(response.content.decode('utf-8'))
+        btn.train_params_kvs['cfg.save_video'] = False
+        btn.train_params_kvs['cfg.pigeon'] = {'msgkey': msgkey}
+        btn.train_params_kvs['cfg.best_stride_video'] = False
+    else:
+        w_out.value = f'{grp_config_file} file is not found!'
         btn.disabled = False
         w_single_start.disabled = False
-        w_bar.value = 100
         return
+
 
     def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
         w_bar.value = 0
@@ -317,6 +334,7 @@ def group_start_inference(
         N = len(options)
         seg_prg = 100 / N
         rec_sign_counts = [0, 0, 0]
+
         for i, (url, label, true_value, old_count, old_acc) in enumerate(options):
             if g_exited.is_set():
                 break
@@ -362,6 +380,8 @@ def group_start_inference(
                         sign = '✊'
                     w_out.value += '\n{:^20s}\t|{:<6.2f} {:>6.2f}|\t{:>6.2f}\t{:>6.2f}\t{}'.format(
                             label, acc_value, old_acc, true_value, pred_value, sign) # noqa
+                    btn.samples[label] = btn.train_params_kvs.copy()
+                    btn.samples[label]['_cfg.true_count'] = true_value
                     btn.samples[label]['_cfg.pred_count'] = pred_value
                     btn.samples[label]['_cfg.accuracy'] = acc_value
                     btn.samples[label]['cfg.video'] = url
@@ -380,7 +400,7 @@ def group_start_inference(
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
         'single_btn': w_single_start,
-        'train_params': reqdata,
+        'train_params': context.get_all_json(btn.train_params_kvs),
         'api_popmsg': api_popmsg,
         'api_inference': api_inference,
         'options': options,
