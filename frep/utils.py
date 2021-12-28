@@ -293,7 +293,7 @@ def start_pcaks_test(
                 gconf = json.loads(response.content.decode('utf-8'))
                 scaler = gconf.get('_cfg.pcaks.scaler', 'Normalizer')
                 nc = gconf.get('_cfg.pcaks.nc', 100)
-                reqdata['cfg']['scaler'] = scaler,
+                reqdata['cfg']['scaler'] = scaler
                 reqdata['cfg']['n_components'] = nc
                 reqdata['cfg']['pigeon']['out_path'] = f'{S3_PREFIX}/{sample_path}/pcaks_{scaler}_{nc}.pkl'
             else:
