@@ -262,6 +262,92 @@ def _parse_sample_video_path(video_url):
     return f'{VOD_PATH}/{label}'
 
 
+def start_pcaks_test(
+        context, btn, w_raceurl, w_task, w_msgkey,
+        w_samples, w_single_start, w_bar, w_out):
+    context.logger('start_pcaks_test start')
+
+    raceurl = w_raceurl.value
+    msgkey = w_msgkey.value
+    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/raceai/framework/inference'
+
+    w_single_start.disabled = True
+    w_bar.value = 0.0
+
+    reqdata = {
+        'task': w_task.value,
+        'cfg': {
+            'pigeon': {'msgkey': msgkey},
+            'pcaks': []
+        }
+    }
+    sample_path = None
+    for i, (label, url) in enumerate(w_samples.options, 1):
+        mp4_name = os.path.basename(url)
+        if sample_path is None:
+            sample_path = _parse_sample_video_path(url)
+            grp_config_file = f'{S3_PREFIX}/{sample_path}/config.json'
+            response = requests_get(grp_config_file)
+            if response.status_code == 200:
+                gconf = json.loads(response.content.decode('utf-8'))
+                scaler = gconf.get('_cfg.pcaks.scaler', 'Normalizer')
+                nc = gconf.get('_cfg.pcaks.nc', 100)
+                reqdata['cfg']['scaler'] = scaler,
+                reqdata['cfg']['n_components'] = nc
+                reqdata['cfg']['pigeon']['out_path'] = f'{S3_PREFIX}/{sample_path}/pcaks_{scaler}_{nc}.pkl'
+            else:
+                w_out.value = f'Not found group config file {grp_config_file}'
+                w_single_start.disabled = False
+                w_bar.value = 100.0
+                return
+        path = f'{sample_path}/{mp4_name[:-4]}.json'
+        response = requests_get(f'{S3_PREFIX}/{path}')
+        if response.status_code == 200:
+            conf = json.loads(response.content.decode('utf-8'))
+            if conf and '_cfg.sims_slice' in conf and len(conf['_cfg.sims_slice']) > 0:
+                reqdata['cfg']['pcaks'].append({
+                    'ef_url': f'{S3_PREFIX}/{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/repnet_tf/embs_feat.npy',  # noqa
+                    'slices': conf['_cfg.sims_slice'],
+                })
+
+    def _run_result(btn, params, api_popmsg, api_inference, w_bar, w_out):
+        requests_get(url=api_popmsg)
+        result = json.loads(requests.post(url=api_inference, json=params).text)
+        if 'errno' in result:
+            if result['errno'] < 0:
+                btn.disabled = False
+                w_bar.value = 100.0
+                w_out.value = json.dumps(result, indent=4)
+                return
+        cur_try = 0
+        err_max = 60
+        w_bar.description = 'Progress(pcaks):'
+        while not g_exited.is_set() and cur_try < err_max:
+            result = json.loads(requests_get(url=api_popmsg).text)
+            if len(result) == 0:
+                time.sleep(1)
+                cur_try += 1
+                continue
+            cur_try = 0
+            result = result[-1]
+            if result['errno'] == 0:
+                btn.disabled = False
+                w_bar.value = 100.0
+                w_out.value = json.dumps(result, indent=4, ensure_ascii=False)
+                break
+
+    g_exited.clear()
+    threading.Thread(target=_run_result, kwargs={
+        'btn': w_single_start,
+        'params': reqdata,
+        'api_popmsg': api_popmsg,
+        'api_inference': api_inference,
+        'w_bar': w_bar,
+        'w_out': w_out,
+    }).start()
+
+
 def group_sample_update(context, btn, grpbtn):
     if hasattr(grpbtn, 'samples') and grpbtn.samples is not None:
         sample_path = None
@@ -282,17 +368,15 @@ def group_start_inference(
     N = len(w_samples.options)
     if N == 0:
         w_out.value = 'Error: 0 Files'
-        btn.disabled = False
         w_single_start.disabled = False
         return
-    
+
     context.logger(f'group_start_inference count: {N}')
     raceurl = w_raceurl.value
     msgkey = w_msgkey.value
     api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
     api_inference = f'{raceurl}/raceai/framework/inference'
 
-    btn.disabled = True
     w_single_start.disabled = True
 
     w_bar.value = 0.0
@@ -322,7 +406,6 @@ def group_start_inference(
         btn.train_params_kvs['cfg.best_stride_video'] = False
     else:
         w_out.value = f'{grp_config_file} file is not found!'
-        btn.disabled = False
         w_single_start.disabled = False
         return
 
@@ -392,7 +475,6 @@ def group_start_inference(
                 rec_sign_counts[0], (100 * rec_sign_counts[0])/len(options),
                 rec_sign_counts[1], (100 * rec_sign_counts[1])/len(options),
                 rec_sign_counts[2], (100 * rec_sign_counts[2])/len(options))
-        btn.disabled = False
         single_btn.disabled = False
         w_bar.description = 'Progress:'
 
@@ -411,7 +493,7 @@ def group_start_inference(
 
 def start_inference(
         context, btn, w_raceurl,
-        w_task, w_msgkey, w_true, w_pred, w_acc, w_grp, w_bar, w_out, w_mp4, w_sim):
+        w_task, w_msgkey, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
     raceurl = w_raceurl.value
     # task = w_task.value
     msgkey = w_msgkey.value
@@ -421,7 +503,7 @@ def start_inference(
     video_url = reqdata['cfg']['video']
     requests_get(url=api_popmsg)
     result = json.loads(requests.post(url=api_inference, json=reqdata).text)
-    w_out.value = json.dumps(reqdata, indent=4)
+    w_out.value = json.dumps(reqdata, indent=4, ensure_ascii=False)
     if 'errno' in result:
         if result['errno'] < 0:
             w_out.value = json.dumps(result, indent=4)
@@ -429,12 +511,11 @@ def start_inference(
 
     btn.disabled = True
 
-    def _run_result(btn, grp_btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4, w_sim):
-        old_grp_value = grp_btn.disabled
-        grp_btn.disabled = True
+    def _run_result(btn, w_true, w_pred, w_acc, w_bar, w_out, w_mp4):
         cur_try = 0
         err_max = 60
         w_bar.description = 'Progress(001/001):'
+        ts_token = int(time.time())
         while not g_exited.is_set() and cur_try < err_max:
             result = json.loads(requests_get(url=api_popmsg).text)
             if len(result) == 0:
@@ -451,12 +532,12 @@ def start_inference(
             w_bar.value = int(result['progress'])
             if w_bar.value == 100.0:
                 btn.disabled = False
-                w_out.value = json.dumps(result, indent=4)
+                w_out.value = json.dumps(result, indent=4, ensure_ascii=False)
                 options = []
                 if 'stride_mp4' in result:
-                    options.append(('stride_mp4', result['stride_mp4']))
+                    options.append(('stride_mp4', result['stride_mp4'] + f'?{ts_token}'))
                 if 'target_mp4' in result:
-                    options.append(('target_mp4', result['target_mp4']))
+                    options.append(('target_mp4', result['target_mp4'] + f'?{ts_token}'))
                 w_mp4.options = options
                 if 'vod' in video_url and 'sumcnt' in result:
                     w_pred.value = round(result['sumcnt'], 2)
@@ -466,23 +547,18 @@ def start_inference(
                             w_acc.value = round(100 * w_true.value / w_pred.value, 2)
                         else:
                             w_acc.value = round(100 * w_pred.value / w_true.value, 2)
-                if 'embs_sims' in result:
-                    w_sim.value = result['embs_sims']
         btn.disabled = False
-        grp_btn.disabled = old_grp_value
 
 
     g_exited.clear()
     threading.Thread(target=_run_result, kwargs={
         'btn': btn,
-        'grp_btn': w_grp,
         'w_true': w_true,
         'w_pred': w_pred,
         'w_acc': w_acc,
         'w_bar': w_bar,
         'w_out': w_out,
         'w_mp4': w_mp4,
-        'w_sim': w_sim,
     }).start()
 
 
@@ -496,9 +572,9 @@ def save_jsonconfig(context, btn, w_video, w_load, w_del):
     mp4_name = os.path.basename(w_video.value)
     sample_path = _parse_sample_video_path(w_video.value)
     path = f'{sample_path}/{mp4_name[:-4]}.json'
-    context.logger(f'save_jsonconfig: {path}')
+    context.logger(f'save_jsonconfig: {S3_PREFIX}/{path}')
     data = context.get_all_kv(False)
-    for wid in SAVE_IGNORE_WIDS:
+    for wid in SAVE_IGNORE_WIDS + ['_cfg.pcaks.scaler', '_cfg.pcaks.nc']:
         data.pop(wid, None)
     etag = oss_put_jsonconfig(path, data)
     if etag:
@@ -536,12 +612,9 @@ def save_group_jsonconfig(context, btn_noused, w_video, w_load):
     sample_path = _parse_sample_video_path(w_video.value)
     path = f'{sample_path}/config.json'
     data = context.get_all_kv(False)
-    for wid in SAVE_IGNORE_WIDS:
+    for wid in SAVE_IGNORE_WIDS + ['_cfg.sims_slice', '_cfg.accuracy', '_cfg.true_count', '_cfg.pred_count']:
         data.pop(wid, None)
-    data.pop('_cfg.accuracy')
-    data.pop('_cfg.true_count')
-    data.pop('_cfg.pred_count')
-    context.logger(f'save_group_jsonconfig:{path}')
+    context.logger(f'save_group_jsonconfig: {S3_PREFIX}/{path}')
     etag = oss_put_jsonconfig(path, data)
     if etag:
         w_load.disabled = False
@@ -647,7 +720,7 @@ def black_box_changed(context, source, oldval, newval, target):
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
 
 
-def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, btn_grpconf, w_image, w_mp4, w_sim):
+def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, btn_grpconf, w_image, w_mp4):
     context.logger(f'show_video_frame:{oldval} to {newval}')
     if newval == 'NONE':
         return
@@ -696,6 +769,8 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, 
     # set configure
     if conf:
         context.logger(f'{conf}')
+        if '_cfg.sims_slice' not in conf:
+            conf['_cfg.sims_slice'] = ''
         changed_items = context.set_widget_values(conf)
         context.logger(f'{changed_items}')
         # TODO
@@ -711,22 +786,14 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, 
             )
 
     # output files
-    ts = oss_get_bypath(f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/', ignores=['unkown'])
-    if len(ts) > 0:
-        if len(ts) > 1 and ts[0][0].startswith('nb'):
-            output_path = ts[0][1] # TODO
-        else:
-            output_path = ts[0][1]
-
-        options = []
-        if oss_path_exist(f'{output_path}/target-stride.mp4'):
-            options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target-stride.mp4'))
-        if oss_path_exist(f'{output_path}/target.mp4'):
-            options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target.mp4'))
-        if len(options) > 0:
-            w_mp4.options = options
-        if oss_path_exist(f'{output_path}/embs_sims.npy'):
-            w_sim.value = f'{S3_PREFIX}/{output_path}/embs_sims.npy'
+    ts_token = int(time.time())
+    output_path = f'{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/repnet_tf'
+    options = []
+    if oss_path_exist(f'{output_path}/target-stride.mp4'):
+        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target-stride.mp4?{ts_token}'))
+    if oss_path_exist(f'{output_path}/target.mp4'):
+        options.append(('stride_mp4', f'{S3_PREFIX}/{output_path}/target.mp4?{ts_token}'))
+    w_mp4.options = options
 
 
 def check_video_sample(context, source, oldval, newval, btn_upload, btn_remove):
@@ -801,6 +868,7 @@ def on_tabpage_envent(context, source, oldval, newval, w_navi, w_grp_start):
 
 
 EVENTS = {
+    'start_pcaks_test': start_pcaks_test,
     'group_start_inference': group_start_inference,
     'group_sample_update': group_sample_update,
     'start_inference': start_inference,
