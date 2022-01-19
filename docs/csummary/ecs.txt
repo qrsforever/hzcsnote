@@ -1,0 +1,13 @@
+GPU 计算型 gn6i	ecs.gn6i-c4g1.xlarge	4 vCPU	15 GiB	1 * NVIDIA T4	-	2.5 GHz/2.7 GHz	4 Gbps	250 万 PPS	-	是	￥ 3348.0 /月	Intel Xeon(Skylake) Platinum 8163  (60% 2100)
+
+
+GPU 计算型 gn6i 	ecs.gn6i-c8g1.2xlarge	8 vCPU	31 GiB	1 * NVIDIA T4 (16GB) 	-	2.5 GHz/2.7 GHz	5 Gbps	250 万 PPS	-	是	￥ 4032.0 /月	Intel Xeon(Skylake) Platinum 8163
+GPU计算型 gn5 	ecs.gn5-c4g1.xlarge	4 vCPU	30 GiB	1 * NVIDIA P100	1 (16GB) * 440 GiB	2.5 GHz/-	3 Gbps	30 万 PPS	-	否	￥ 3681.0 /月	Intel Xeon E5-2682v4
+
+
+	GPU计算型GN7	GN7.2XLARGE32	8核	32GB	Intel Xeon Cascade Lake(2.5 GHz)	3Gbps	60万PPS	29个可用区  1 颗 NVIDIA T4	  2250元/月
+    GPU计算型GN7	GN7.2XLARGE32	8核	32GB	Intel Xeon Cascade Lake(2.5 GHz)	3Gbps	60万PPS	29个可用区  1 颗 NVIDIA T4      2500元/
+    
+    
+当前使用GPU
+

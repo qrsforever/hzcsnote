@@ -256,6 +256,11 @@ def _parse_sample_video_path(video_url):
         for dev in DEVICES:
             if dev[0] == mac:
                 label = dev[1]
+    elif 'datasets/factory' in video_url:
+        mac = video_url[8:].split('/')[3]
+        for dev in DEVICES:
+            if dev[0] == mac:
+                label = dev[1]
     elif VOD_PATH in video_url:
         label = video_url.split('/')[-2]
 
@@ -269,8 +274,8 @@ def start_pcaks_test(
 
     raceurl = w_raceurl.value
     msgkey = w_msgkey.value
-    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
-    api_inference = f'{raceurl}/raceai/framework/inference'
+    api_popmsg = f'{raceurl}/frepai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/frepai/framework/inference'
 
     w_single_start.disabled = True
     w_bar.value = 0.0
@@ -374,8 +379,8 @@ def group_start_inference(
     context.logger(f'group_start_inference count: {N}')
     raceurl = w_raceurl.value
     msgkey = w_msgkey.value
-    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
-    api_inference = f'{raceurl}/raceai/framework/inference'
+    api_popmsg = f'{raceurl}/frepai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/frepai/framework/inference'
 
     w_single_start.disabled = True
 
@@ -497,8 +502,8 @@ def start_inference(
     raceurl = w_raceurl.value
     # task = w_task.value
     msgkey = w_msgkey.value
-    api_popmsg = f'{raceurl}/raceai/private/popmsg?key={msgkey}'
-    api_inference = f'{raceurl}/raceai/framework/inference'
+    api_popmsg = f'{raceurl}/frepai/private/popmsg?key={msgkey}'
+    api_inference = f'{raceurl}/frepai/framework/inference'
     reqdata = context.get_all_json()
     video_url = reqdata['cfg']['video']
     requests_get(url=api_popmsg)
