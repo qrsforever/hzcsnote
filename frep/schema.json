@@ -258,20 +258,35 @@
                                                             "width": 250
                                                         },
                                                         {
-                                                            "_id_": "_cfg.pred_count",
-                                                            "type": "float",
-                                                            "name": "Pred Count",
-                                                            "width": 250,
-                                                            "readonly": true
-                                                        },
-                                                        {
-                                                            "_id_": "_cfg.accuracy",
-                                                            "type": "float",
-                                                            "name": "Acc(%)",
-                                                            "width": 250,
-                                                            "readonly": true,
-                                                            "min": 0,
-                                                            "max": 100.0
+                                                            "_id_": "__cfg.select_sample",
+                                                            "type": "multiselect_simple",
+                                                            "name": "GTest",
+                                                            "width": 300,
+                                                            "height": 100,
+                                                            "description_width": 100,
+                                                            "objs": [
+                                                                {
+                                                                    "name": "20220118093227.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20220118093227.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20220112082716.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20220112082716.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20220112080716.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20220112080716.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211221100227.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20211221100227.mp4"
+                                                                },
+                                                                {
+                                                                    "name": "20211220160139.mp4",
+                                                                    "value": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20211220160139.mp4"
+                                                                }
+                                                            ],
+                                                            "default": "https://frepai.s3.didiyunapi.com/datasets/vod/激光印章/20220118093227.mp4"
                                                         }
                                                     ]
                                                 }
@@ -351,7 +366,7 @@
                                                     "default": true
                                                 },
                                                 {
-                                                    "_id_": "_cfg.embs_filter",
+                                                    "_id_": "cfg.ef_is_send",
                                                     "type": "bool-trigger",
                                                     "name": "Embedding Filter",
                                                     "objs": [
@@ -836,9 +851,9 @@
                             "type": "H",
                             "objs": [
                                 {
-                                    "_id_": "__cfg.btn_group_start",
+                                    "_id_": "__cfg.btn_pcaks",
                                     "type": "button",
-                                    "name": "Group Start",
+                                    "name": "PCAKS",
                                     "description_width": 100,
                                     "style": "danger",
                                     "icon": ""
@@ -881,17 +896,25 @@
                                             "type": "H",
                                             "objs": [
                                                 {
-                                                    "_id_": "__cfg.btn_group_update",
+                                                    "_id_": "__cfg.btn_clr_slices",
                                                     "type": "button",
-                                                    "name": "Group Update",
+                                                    "name": "Clear Slices",
                                                     "description_width": 100,
                                                     "style": "danger",
                                                     "icon": ""
                                                 },
                                                 {
-                                                    "_id_": "__cfg.btn_pcaks",
+                                                    "_id_": "__cfg.btn_group_start",
                                                     "type": "button",
-                                                    "name": "PCAKS",
+                                                    "name": "Group Start",
+                                                    "description_width": 100,
+                                                    "style": "danger",
+                                                    "icon": ""
+                                                },
+                                                {
+                                                    "_id_": "__cfg.btn_group_update",
+                                                    "type": "button",
+                                                    "name": "Group Update",
                                                     "description_width": 100,
                                                     "style": "danger",
                                                     "icon": ""
@@ -907,11 +930,42 @@
                                             "description_width": 0
                                         }
                                     ],
-                                    "width": "50%"
+                                    "width": "60%"
                                 },
                                 {
                                     "type": "V",
                                     "objs": [
+                                        {
+                                            "type": "H",
+                                            "objs": [
+                                                {
+                                                    "_id_": "__cfg.true_count",
+                                                    "type": "int",
+                                                    "name": "True Count",
+                                                    "width": 200,
+                                                    "readonly": true,
+                                                    "description_width": 85
+                                                },
+                                                {
+                                                    "_id_": "_cfg.pred_count",
+                                                    "type": "float",
+                                                    "name": "Pred Count",
+                                                    "width": 200,
+                                                    "readonly": true,
+                                                    "description_width": 85
+                                                },
+                                                {
+                                                    "_id_": "_cfg.accuracy",
+                                                    "type": "float",
+                                                    "name": "Acc(%)",
+                                                    "width": 200,
+                                                    "readonly": true,
+                                                    "description_width": 85,
+                                                    "min": 0,
+                                                    "max": 100.0
+                                                }
+                                            ]
+                                        },
                                         {
                                             "type": "H",
                                             "objs": [
@@ -934,7 +988,7 @@
                                                     "type": "bytes",
                                                     "name": "",
                                                     "default": "http://",
-                                                    "width": 550,
+                                                    "width": 500,
                                                     "description_width": 0
                                                 }
                                             ]
@@ -943,7 +997,7 @@
                                             "_id_": "__cfg.play_stride_video",
                                             "type": "video",
                                             "name": "",
-                                            "width": 720,
+                                            "width": 660,
                                             "height": 480,
                                             "description_width": 0,
                                             "format": "url"
@@ -958,7 +1012,7 @@
                                                     "default": [
                                                         0
                                                     ],
-                                                    "width": 500,
+                                                    "width": 480,
                                                     "description_width": 80
                                                 },
                                                 {
@@ -1066,6 +1120,16 @@
                         "__cfg.btn_pcaks",
                         "disabled"
                     ]
+                },
+                {
+                    "source": [
+                        "_cfg.true_count",
+                        "value"
+                    ],
+                    "target": [
+                        "__cfg.true_count",
+                        "value"
+                    ]
                 }
             ]
         },
@@ -1089,7 +1153,8 @@
                         "source": "__cfg.tabpage",
                         "targets": [
                             "__cfg.navigation",
-                            "__cfg.btn_group_start"
+                            "__cfg.btn_group_start",
+                            "__cfg.btn_clr_slices"
                         ]
                     }
                 },
@@ -1116,7 +1181,8 @@
                     "params": {
                         "source": "__cfg.types",
                         "targets": [
-                            "__cfg.sample"
+                            "__cfg.sample",
+                            "__cfg.select_sample"
                         ]
                     }
                 },
@@ -1144,20 +1210,16 @@
                     }
                 },
                 {
-                    "handler": "focus_box_changed",
+                    "handler": "focus_black_box_changed",
                     "params": {
-                        "source": "cfg.focus_box",
+                        "sources": [
+                            "cfg.focus_box",
+                            "cfg.black_box"
+                        ],
                         "targets": [
-                            "__cfg.show_image"
-                        ]
-                    }
-                },
-                {
-                    "handler": "black_box_changed",
-                    "params": {
-                        "source": "cfg.black_box",
-                        "targets": [
-                            "__cfg.show_image"
+                            "__cfg.show_image",
+                            "_cfg.focus_box",
+                            "_cfg.black_box"
                         ]
                     }
                 },
@@ -1228,7 +1290,7 @@
                             "__cfg.race_url",
                             "task",
                             "cfg.pigeon.msgkey",
-                            "__cfg.sample",
+                            "__cfg.select_sample",
                             "__cfg.btn_start",
                             "__cfg.progressbar",
                             "__cfg.result_output"
@@ -1247,6 +1309,15 @@
                             "__cfg.btn_start",
                             "__cfg.progressbar",
                             "__cfg.result_output"
+                        ]
+                    }
+                },
+                {
+                    "handler": "clear_feat_slices",
+                    "params": {
+                        "source": "__cfg.btn_clr_slices",
+                        "targets": [
+                            "__cfg.sample"
                         ]
                     }
                 },

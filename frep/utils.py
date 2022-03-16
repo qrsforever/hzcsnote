@@ -6,6 +6,7 @@ import json
 import requests
 import time
 import threading
+import numpy as np
 from minio import Minio
 from multiprocessing import Event
 
@@ -13,6 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 S3_PREFIX = 'https://frepai.s3.didiyunapi.com'
+S3_PREFIX_COS = 'https://frepai-1301930378.cos.ap-beijing.myqcloud.com'
 VOD_PATH = 'datasets/vod'
 
 g_exited = Event()
@@ -230,19 +232,19 @@ def draw_scale(image, d=50):
     for shift, scale in hor_seq:
         # Left
         cv2.circle(image, ((cx - shift), cy), 3, circ_color, -1)
-        cv2.putText(image, '%.2f' % (0.5 - scale), (cx - shift - 15, cy + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
+        cv2.putText(image, '%.2f' % (0.5 - scale), (cx - shift - 15, cy + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1) # noqa
         # Right
         cv2.circle(image, ((cx + shift), cy), 3, circ_color, -1)
-        cv2.putText(image, '%.2f' % (0.5 + scale), (cx + shift - 15, cy - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
+        cv2.putText(image, '%.2f' % (0.5 + scale), (cx + shift - 15, cy - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1) # noqa
 
     # Vertical
     for shift, scale in ver_seq:
         # Up
         cv2.circle(image, (cx, (cy - shift)), 3, circ_color, -1)
-        cv2.putText(image, '%.2f' % (0.5 - scale), (cx - 40, cy - shift + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
+        cv2.putText(image, '%.2f' % (0.5 - scale), (cx - 40, cy - shift + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1) # noqa
         # Down
         cv2.circle(image, (cx, (cy + shift)), 3, circ_color, -1)
-        cv2.putText(image, '%.2f' % (0.5 + scale), (cx + 4, cy + shift + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1)
+        cv2.putText(image, '%.2f' % (0.5 + scale), (cx + 4, cy + shift + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, font_color, 1) # noqa
 
     return image
 
@@ -265,6 +267,24 @@ def _parse_sample_video_path(video_url):
         label = video_url.split('/')[-2]
 
     return f'{VOD_PATH}/{label}'
+
+
+def clear_feat_slices(context, btn, w_samples):
+    context.logger('clear_feat_slices')
+    sample_path = None
+    btn.disabled = True
+    for i, (label, url) in enumerate(w_samples.options, 1):
+        mp4_name = os.path.basename(url)
+        if sample_path is None:
+            sample_path = _parse_sample_video_path(url)
+        path = f'{sample_path}/{mp4_name[:-4]}.json'
+        response = requests_get(f'{S3_PREFIX}/{path}')
+        if response.status_code == 200:
+            conf = json.loads(response.content.decode('utf-8'))
+            if conf and '_cfg.sims_slice' in conf and len(conf['_cfg.sims_slice']) > 0:
+                del conf['_cfg.sims_slice']
+                oss_put_jsonconfig(path, conf)
+    btn.disabled = False
 
 
 def start_pcaks_test(
@@ -300,7 +320,7 @@ def start_pcaks_test(
                 nc = gconf.get('_cfg.pcaks.nc', 100)
                 reqdata['cfg']['scaler'] = scaler
                 reqdata['cfg']['n_components'] = nc
-                reqdata['cfg']['pigeon']['out_path'] = f'{S3_PREFIX}/{sample_path}/pcaks_{scaler}_{nc}.pkl'
+                reqdata['cfg']['pigeon']['out_path'] = f'{S3_PREFIX_COS}/{sample_path}/pcaks_{scaler}_{nc}.pkl'
             else:
                 w_out.value = f'Not found group config file {grp_config_file}'
                 w_single_start.disabled = False
@@ -312,7 +332,7 @@ def start_pcaks_test(
             conf = json.loads(response.content.decode('utf-8'))
             if conf and '_cfg.sims_slice' in conf and len(conf['_cfg.sims_slice']) > 0:
                 reqdata['cfg']['pcaks'].append({
-                    'ef_url': f'{S3_PREFIX}/{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/repnet_tf/embs_feat.npy',  # noqa
+                    'ef_url': f'{S3_PREFIX_COS}/{os.path.dirname(sample_path)}/outputs/{mp4_name[:-4]}/repnet_tf/embs_feat.npy',  # noqa
                     'slices': conf['_cfg.sims_slice'],
                 })
 
@@ -370,7 +390,7 @@ def group_sample_update(context, btn, grpbtn):
 def group_start_inference(
         context, btn, w_raceurl, w_task, w_msgkey,
         w_samples, w_single_start, w_bar, w_out):
-    N = len(w_samples.options)
+    N = len(w_samples.value)
     if N == 0:
         w_out.value = 'Error: 0 Files'
         w_single_start.disabled = False
@@ -389,14 +409,15 @@ def group_start_inference(
     btn.samples = {}
     options = []
     sample_path = None
-    for i, (label, url) in enumerate(w_samples.options, 1):
+    for i, url in enumerate(w_samples.value, 1):
         t, p, a = 0, 0, 0
+        label = os.path.basename(url)
         mp4_name = os.path.basename(url)
         if sample_path is None:
             sample_path = _parse_sample_video_path(url)
         path = f'{sample_path}/{mp4_name[:-4]}.json'
         response = requests_get(f'{S3_PREFIX}/{path}')
-        if response.status_code == 200:
+        if response and response.status_code == 200:
             conf = json.loads(response.content.decode('utf-8'))
             if conf:
                 t, p, a = conf['_cfg.true_count'], conf['_cfg.pred_count'], conf['_cfg.accuracy'] # noqa
@@ -417,12 +438,14 @@ def group_start_inference(
 
     def _run_result(btn, single_btn, train_params, api_popmsg, api_inference, options, w_bar, w_out):
         w_bar.value = 0
-        w_out.value = '{:^24s}|{:^28s}|{:^10s}|{:^10s}|\t{}\n'.format(
-                'ID', 'ACC_N vs ACC_O', 'True', 'Pred', 'SIGN')
+        w_out.value = '{:^16s} | {} | {} | {} | {}\n'.format(
+                'MP4', 'ACC_N vs ACC_O', 'True', 'Pred', 'SIGN')
         N = len(options)
         seg_prg = 100 / N
         rec_sign_counts = [0, 0, 0]
+        all_acc = []
 
+        requests_get(url=api_popmsg)
         for i, (url, label, true_value, old_count, old_acc) in enumerate(options):
             if g_exited.is_set():
                 break
@@ -451,12 +474,14 @@ def group_start_inference(
                     w_bar.value = (i + 1) * seg_prg
                     acc_value = 0
                     if 'sumcnt' in result:
-                        pred_value = round(result['sumcnt'], 2)
+                        pred_value = np.ceil(result['sumcnt'])
                         if true_value > 0 and pred_value > 0:
                             if pred_value > true_value:
                                 acc_value = round(100 * true_value / pred_value, 2)
                             else:
                                 acc_value = round(100 * pred_value / true_value, 2)
+                    if true_value > 0:
+                        all_acc.append(acc_value)
                     if acc_value > old_acc:
                         rec_sign_counts[0] += 1
                         sign = '👍'
@@ -466,20 +491,29 @@ def group_start_inference(
                     else:
                         rec_sign_counts[2] += 1
                         sign = '✊'
-                    w_out.value += '\n{:^20s}\t|{:<6.2f} {:>6.2f}|\t{:>6.2f}\t{:>6.2f}\t{}'.format(
-                            label, acc_value, old_acc, true_value, pred_value, sign) # noqa
+                    w_out.value += '\n{:^20s}|{:<6.2f} {:>6.2f}|{:>6d}{:>6d}\t{}'.format(
+                            label, acc_value, old_acc, int(true_value), int(pred_value), sign) # noqa
                     btn.samples[label] = btn.train_params_kvs.copy()
                     btn.samples[label]['_cfg.true_count'] = true_value
                     btn.samples[label]['_cfg.pred_count'] = pred_value
                     btn.samples[label]['_cfg.accuracy'] = acc_value
                     btn.samples[label]['cfg.video'] = url
                     break
+                else:
+                    w_out.value += f'\n  {label} innernal error: {result["errno"]}'
+                    break
             else:
                 w_out.value += f'\n{label} quit or timeout: {cur_try}'
-        w_out.value += '\n\nResult:\n\t 👍: {:>3d} \t{:>4.1f}%\n\t 👎: {:>3d} \t{:>4.1f}%\n\t ✊: {:>3d} \t{:>4.1f}%'.format(
+        w_out.value += '\n\nResult:\n\t👍: {:>3d} \t{:>4.1f}%\n\t👎: {:>3d} \t{:>4.1f}%\n\t✊: {:>3d}\t{:>4.1f}%'.format( # noqa
                 rec_sign_counts[0], (100 * rec_sign_counts[0])/len(options),
                 rec_sign_counts[1], (100 * rec_sign_counts[1])/len(options),
                 rec_sign_counts[2], (100 * rec_sign_counts[2])/len(options))
+        if len(all_acc) > 0:
+            w_out.value += '\n\n\tMean Acc: {:>3.2f}'.format(sum(all_acc) / len(all_acc))
+
+        cfg = train_params.pop('cfg')
+        del cfg['video'], cfg['pigeon']
+        w_out.value += '\n\n\nParams:{}'.format(json.dumps(cfg, indent=4))
         single_btn.disabled = False
         w_bar.description = 'Progress:'
 
@@ -544,8 +578,10 @@ def start_inference(
                 if 'target_mp4' in result:
                     options.append(('target_mp4', result['target_mp4'] + f'?{ts_token}'))
                 w_mp4.options = options
+                if len(options) > 0:
+                    w_mp4.value = options[0][1]
                 if 'vod' in video_url and 'sumcnt' in result:
-                    w_pred.value = round(result['sumcnt'], 2)
+                    w_pred.value = np.ceil(result['sumcnt'])
                     context.logger(f'inference result: {w_pred.value}')
                     if w_true.value > 0 and w_pred.value > 0:
                         if w_pred.value > w_true.value:
@@ -662,10 +698,11 @@ def get_video_list(context, source, oldval, newval, target):
     context.logger(f'get_video_list:{oldval} {newval} {target.value}')
 
 
-def get_sample_list(context, source, oldval, newval, target):
-    target.options = oss_get_video_samples(newval)
-    target.value = target.options[0][1]
-    context.logger(f'get_sample_list:{oldval} {newval} {target.value}')
+def get_sample_list(context, source, oldval, newval, sample, gtest):
+    sample.options = oss_get_video_samples(newval)
+    sample.value = sample.options[0][1]
+    gtest.options = sample.options
+    context.logger(f'get_sample_list:{oldval} {newval} {sample.value}')
 
 
 def focus_center_changed(context, source, oldval, newval, target):
@@ -725,6 +762,33 @@ def black_box_changed(context, source, oldval, newval, target):
         target.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
 
 
+def focus_black_box_changed(context, source, oldval, newval, img_wid, is_focus_wid, is_black_wid):
+    context.logger(f'focus_black_box_changed: {oldval} to {newval}')
+
+    def _get_points(val):
+        val = val if val.strip()[0] == '[' else '[' + val + ']'
+        points = json.loads(val)
+        if len(points) == 4:
+            h, w, _ = img.shape
+            if isinstance(points[0], float):
+                fx1, fy1 = int(points[0] * w), int(points[1] * h)
+                fx2, fy2 = int(points[2] * w), int(points[3] * h)
+            else:
+                fx1, fy1 = points[0], points[1]
+                fx2, fy2 = points[2], points[3]
+        return fx1, fy1, fx2, fy2
+
+    if img_wid.value:
+        img = img_wid.image.copy()
+        if is_focus_wid.value:
+            fx1, fy1, fx2, fy2 = _get_points(context.get_widget_byid('cfg.focus_box').value)
+            cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 255, 0), 2)
+        if is_black_wid.value:
+            fx1, fy1, fx2, fy2 = _get_points(context.get_widget_byid('cfg.black_box').value)
+            cv2.rectangle(img, (fx1, fy1), (fx2, fy2), (0, 0, 0), 2)
+        img_wid.value = io.BytesIO(cv2.imencode('.png', img)[1]).getvalue()
+
+
 def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, btn_grpconf, w_image, w_mp4):
     context.logger(f'show_video_frame:{oldval} to {newval}')
     if newval == 'NONE':
@@ -732,10 +796,15 @@ def show_video_frame(context, source, oldval, newval, btn_mp4conf, btn_delconf, 
 
     cap = cv2.VideoCapture(newval)
     if cap.isOpened():
-        _, frame_bgr = cap.read()
-        frame_bgr = draw_scale(frame_bgr)
-        w_image.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
-        w_image.image = frame_bgr
+        for _ in range(3):
+            ret, frame_bgr = cap.read()
+            context.logger(f'{ret} type(frame_bgr) = {type(frame_bgr)}')
+            if ret:
+                frame_bgr = draw_scale(frame_bgr)
+                w_image.value = io.BytesIO(cv2.imencode('.png', frame_bgr)[1]).getvalue()
+                w_image.image = frame_bgr
+                break
+            time.sleep(1)
 
     mp4_name = os.path.basename(newval)
     sample_path = _parse_sample_video_path(newval)
@@ -865,14 +934,17 @@ def update_rep_count(context, source, oldval, newval, w_sample, w_pred, w_acc):
         context.logger(f'w_acc: {w_acc.value}')
 
 
-def on_tabpage_envent(context, source, oldval, newval, w_navi, w_grp_start):
+def on_tabpage_envent(context, source, oldval, newval, w_navi, w_grp_start, w_clr):
     if w_navi.value != 1:
         w_grp_start.disabled = True
+        w_clr.disabled = True
     else:
         w_grp_start.disabled = False
+        w_clr.disabled = False
 
 
 EVENTS = {
+    'clear_feat_slices': clear_feat_slices,
     'start_pcaks_test': start_pcaks_test,
     'group_start_inference': group_start_inference,
     'group_sample_update': group_sample_update,
@@ -887,9 +959,7 @@ EVENTS = {
     'get_video_list': get_video_list,
     'get_sample_list': get_sample_list,
     'show_video_frame': show_video_frame,
-    'focus_center_changed': focus_center_changed,
-    'focus_box_changed': focus_box_changed,
-    'black_box_changed': black_box_changed,
+    'focus_black_box_changed': focus_black_box_changed,
     'check_video_sample': check_video_sample,
     'upload_sample': upload_sample,
     'remove_sample': remove_sample,
