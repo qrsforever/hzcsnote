@@ -63,23 +63,27 @@ CORS(app, supports_credentials=True)
 g_queue = None
 g_result_process = None
 g_contexts = {}
+g_use_consul = False
 
 
 def get_host_ip():
-    ip = ''
-    try:
-        s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8',80))
-        ip = s.getsockname()[0]
-    finally:
-        s.close()
+    ip = os.environ.get('HOST_IP', None)
+    if ip is None:
+        try:
+            s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8',80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
     return ip
 
 def get_net_ip():
-    result = os.popen('curl -s http://txt.go.sohu.com/ip/soip| grep -P -o -i "(\d+\.\d+.\d+.\d+)"', 'r') # noqa
-    if result:
-        return result.read().strip('\n')
-    return None
+    ip = os.environ.get('NET_IP', None)
+    if ip is None:
+        result = os.popen('curl -s http://txt.go.sohu.com/ip/soip| grep -P -o -i "(\d+\.\d+.\d+.\d+)"', 'r') # noqa
+        if result:
+            return result.read().strip('\n')
+    return ip
 
 host = get_host_ip()
 port = 8119
@@ -103,11 +107,12 @@ K12AI_HOST_ADDR = host
 K12AI_WLAN_ADDR = consul_addr
 
 ## DIR
-K12AI_DATASETS_ROOT = '/data/datasets'
-K12AI_USERS_ROOT = '/data/users'
-K12AI_TBLOG_ROOT = '/data/tblogs'
-K12AI_PRETRAINED_ROOT = '/data/pretrained'
-K12AI_NBDATA_ROOT = '/data/nb_data'
+DATA_ROOT = '/data/k12-nfs'
+K12AI_DATASETS_ROOT = f'{DATA_ROOT}/datasets'
+K12AI_USERS_ROOT = f'{DATA_ROOT}/users'
+K12AI_TBLOG_ROOT = f'{DATA_ROOT}/tblogs'
+K12AI_PRETRAINED_ROOT = f'{DATA_ROOT}/pretrained'
+K12AI_NBDATA_ROOT = f'{DATA_ROOT}/nb_data'
 
 ## RACE
 
@@ -330,61 +335,73 @@ def k12ai_post_request(uri, data):
         return requests.post(url=api, json=data).text
     return None
 
+def k12ai_pop_data(key, subkey):
+    api = 'http://%s:%d/k12ai/private/popmsg?key=%s.%s' % (host, port, uri, key, subkey)
+    data = requests.get(url=api).text
+    print(data)
+
 def k12ai_get_data(key, subkey=None, num=1, waitcnt=1, rm=False, http=False):
-    if subkey:
-        key = '%s/%s' % (key, subkey)
-    if waitcnt < 0:
-        waitcnt = 999999
-    if http:
-        result = os.popen('curl http://{}:{}/v1/kv/{}'.format(consul_addr, consul_port, key), 'r')
-        try:
-            body = json.loads(result.read())
-            data = base64.b64decode(body[0]['Value'])
-            return json.loads(data)
-        except json.decoder.JSONDecodeError:
+    if g_use_consul:
+        if subkey:
+            key = '%s/%s' % (key, subkey)
+        if waitcnt < 0:
+            waitcnt = 999999
+        if http:
+            result = os.popen('curl http://{}:{}/v1/kv/{}'.format(consul_addr, consul_port, key), 'r')
+            try:
+                body = json.loads(result.read())
+                data = base64.b64decode(body[0]['Value'])
+                return json.loads(data)
+            except json.decoder.JSONDecodeError:
+                return None
+            except Exception as err:
+                raise err
+        else:
+            client = consul.Consul(consul_addr, consul_port)
+            i = 0
+            try:
+                out = []
+                while i < waitcnt and num > 0:
+                    _, data = client.kv.get(key, recurse=True)
+                    if not data:
+                        i = i + 1
+                        time.sleep(1)
+                        continue
+                    if len(data) < num:
+                        cur_num = len(data)
+                    else:
+                        cur_num = num
+                    num = num - cur_num
+                    for item in data[-cur_num:]:
+                        if rm:
+                            client.kv.delete(item['Key'], recurse=True)
+                        out.append({
+                            'key': item['Key'],
+                            'value': json.loads(str(item['Value'], encoding='utf-8'))
+                            })
+                return out
+            except KeyboardInterrupt:
+                print("Interrupted!")
             return None
-        except Exception as err:
-            raise err
     else:
-        client = consul.Consul(consul_addr, consul_port)
-        i = 0
-        try:
-            out = []
-            while i < waitcnt and num > 0:
-                _, data = client.kv.get(key, recurse=True)
-                if not data:
-                    i = i + 1
-                    time.sleep(1)
-                    continue
-                if len(data) < num:
-                    cur_num = len(data)
-                else:
-                    cur_num = num
-                num = num - cur_num
-                for item in data[-cur_num:]:
-                    if rm:
-                        client.kv.delete(item['Key'], recurse=True)
-                    out.append({
-                        'key': item['Key'],
-                        'value': json.loads(str(item['Value'], encoding='utf-8'))
-                        })
-            return out
-        except KeyboardInterrupt:
-            print("Interrupted!")
-        return None
+        api = 'http://%s:%d/k12ai/private/popmsg?key=talentai.%s' % (host, port, subkey)
+        return json.loads(requests.get(url=api).text)
 
 def k12ai_del_data(key, http=False):
-    if http:
-        result = os.popen('curl --request DELETE http://{}:{}/v1/kv/{}'.format(
-            consul_addr, consul_port, key), 'r')
-        if result:
-            if json.loads(result.read()):
-                return 'success'
-        return 'fail'
+    if g_use_consul:
+        if http:
+            result = os.popen('curl --request DELETE http://{}:{}/v1/kv/{}'.format(
+                consul_addr, consul_port, key), 'r')
+            if result:
+                if json.loads(result.read()):
+                    return 'success'
+            return 'fail'
+        else:
+            client = consul.Consul(consul_addr, consul_port)
+            client.kv.delete(key, recurse=True)
+            return 'success'
     else:
-        client = consul.Consul(consul_addr, consul_port)
-        client.kv.delete(key, recurse=True)
-        return 'success'
+        pass
 
 def k12ai_get_error_data(datakey, num=1):
     return k12ai_get_data(datakey, 'error', num)
@@ -425,6 +442,7 @@ def k12ai_post_cv_request(uri, op, user, uuid, params=None):
         params = json.dumps(params)
     data = json.loads('''{
         "token": "123456",
+        "appId": "talentai",
         "op":"%s",
         "user": "%s",
         "service_name": "k12cv",
@@ -482,7 +500,8 @@ def _start_work_process(context):
         while True:
             try:
                 tag, key, flag = g_queue.get(True, timeout=timeout)
-                context = g_contexts.get(tag, None)
+                if context is None:
+                    context = g_contexts.get(tag, None)
                 active_time = time.time()
                 if flag == 1:
                     with context.progress.output:
@@ -516,8 +535,8 @@ def _start_work_process(context):
                     timeout = 3
             except Empty:
                 timeout = min(1 + int((time.time() - active_time) / 2), 50)
-            except AttributeError:
-                pass
+            except AttributeError as err:
+                context._output(f'err: {err}')
 
             if not context or not key:
                 continue
@@ -535,7 +554,10 @@ def _start_work_process(context):
                 # error
                 data = k12ai_get_data(key, 'error', num=1, rm=True)
                 if data:
-                    result['error'] = data[0]['value']
+                    if g_use_consul:
+                        result['error'] = data[0]['value']
+                    else:
+                        result['error'] = data[0]
                     code = result['error']['data']['code']
                     # 100003: finish 100004: stop
                     if code == 100003 or code == 100004 or code > 100100:
@@ -546,7 +568,10 @@ def _start_work_process(context):
                     data = k12ai_get_data(key, 'metrics', num=100, rm=True)
                     result['data'] = data
                     if data:
-                        result['metrics'] = data[-1]['value']
+                        if g_use_consul:
+                            result['metrics'] = data[-1]['value']
+                        else:
+                            result['metrics'] = data[-1]
                         if context.framework == 'k12ml':
                             context.progress.value = 1.0
                         else:
@@ -555,21 +580,31 @@ def _start_work_process(context):
                                     if 'progress' in obj['data']['title']:
                                         progress = obj['data']['payload']['y'][0]['value']
                                         context.progress.value = progress
+                                elif obj['type'] == 'text':
+                                    if 'progress' in obj['data']['title']:
+                                        progress = obj['data']['payload']
+                                        context.progress.value = float(progress)
                 else: # context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=100, rm=True)
                     if data:
-                        result['metrics'] = data[-1]['value']
-                        context.progress.value = result['metrics']['data']['progress']
-            except Exception:
-                pass
+                        if g_use_consul:
+                            result['metrics'] = data[-1]['value']
+                        else:
+                            result['metrics'] = data[-1]
+                        context.progress.value = float(result['metrics']['data']['progress'])
+            except Exception as err:
+                context._output(f'err:{err}', clear=0)
 
             if 'error' in result and len(result['error']) > 0:
-                context._output(result['error'])
+                context._output(result['error'], clear=1)
             if 'metrics' in result and len(result['metrics']) > 0:
                 with context.progress.output:
                     clear_output(wait=True)
-                    k12ai_print(result['metrics'])
-                    context.traindata['metrics'].extend([x['value'] for x in result['data']])
+                    # k12ai_print(result['metrics'])
+                    if g_use_consul:
+                        context.traindata['metrics'].extend([x['value'] for x in result['data']])
+                    else:
+                        context.traindata['metrics'].extend(result['data'])
 
     if not g_result_process or not g_result_process.is_alive():
         g_result_process = threading.Thread(target=_queue_work, args=())
@@ -580,7 +615,7 @@ def _start_work_process(context):
 def _init_project_schema(context, params):
     context._output('----------Generate Project Schema (take a monment: 5s)--------------')
     context._output(params, 0)
-    context.user = params.get('project.user', '16601548608')
+    context.user = params.get('project.user', '166')
     context.framework = params.get('project.framework', None)
     context.task = params.get('project.task', None)
     context.network = params.get('project.network', None)
@@ -635,7 +670,6 @@ def _on_project_trainstart(wdg):
     if not hasattr(wdg, 'progress'):
         return
     context = wdg.progress.context
-
     if not hasattr(wdg.progress, 'running'):
         wdg.progress.value = 0
 
@@ -663,8 +697,9 @@ def _on_project_trainstart(wdg):
 
     op = f'{wdg.phase}.start'
     data = {
-        'token': '123456',
+        'token': '{"fake_id": "%s_%s"}' % (context.network, context.dataset),
         'op': op,
+        'appId': 'talentai',
         'user': context.user,
         'service_name': context.framework,
         'service_uuid': context.uuid,
@@ -677,7 +712,8 @@ def _on_project_trainstart(wdg):
     context._output(response)
     if response['code'] != 100000:
         return
-    k12ai_start_tensorboard(context.tb_port, context.tb_logdir, clear=True, display=False)
+    if context.tb_port:
+        k12ai_start_tensorboard(context.tb_port, context.tb_logdir, clear=True, display=False)
     context.progress = wdg.progress
     key = 'framework/%s/%s/%s' % (context.user, context.uuid, wdg.phase)
     k12ai_del_data(key)
@@ -811,7 +847,7 @@ def k12ai_get_tooltips(framework, task, network, dataset):
     return context.parse_schema(k12ai_get_schema(framework, task, network, dataset), tooltips=True)
 
 
-def k12ai_train_execute(user='15801310416', framework='k12cv', task='cls', network='resnet50',
+def k12ai_train_execute(user='158', framework='k12cv', task='cls', network='resnet50',
         dataset='Boats', batchsize=32, inputsize=32, epoch_num=1, log_iters=None, test_iters=None, run_num=1):
     config = k12ai_get_config(framework, task, network, dataset)
     if framework == 'k12cv':
@@ -833,7 +869,8 @@ def k12ai_train_execute(user='15801310416', framework='k12cv', task='cls', netwo
     for i in range(run_num):
         uuid = f'{tag}-{i}'
         data = {
-            'token': tag,
+            'token': '{"fake_id": "%s_%s"}' % (network, dataset),
+            'appId': 'talentai',
             'op': 'train.start',
             'user': user,
             'service_name': framework,
