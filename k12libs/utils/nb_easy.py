@@ -335,11 +335,6 @@ def k12ai_post_request(uri, data):
         return requests.post(url=api, json=data).text
     return None
 
-def k12ai_pop_data(key, subkey):
-    api = 'http://%s:%d/k12ai/private/popmsg?key=%s.%s' % (host, port, uri, key, subkey)
-    data = requests.get(url=api).text
-    print(data)
-
 def k12ai_get_data(key, subkey=None, num=1, waitcnt=1, rm=False, http=False):
     if g_use_consul:
         if subkey:
@@ -521,12 +516,12 @@ def _start_work_process(context):
                     context.progress.value = 100.0
                     context.progress.description = '100.0%'
                     timeout = 300
-                    if len(context.traindata['metrics']) > 0:
-                        with context.progress.output:
-                            clear_output(wait=True)
-                            with open(context.traindata['tmpfile'], 'w') as fw:
-                                json.dump(context.traindata['metrics'], fw, ensure_ascii=False)
-                            print(f'Download full metrics: {W3URL}/cache/metrics_{tag}.json')
+                    # if len(context.traindata['metrics']) > 0:
+                    #     with context.progress.output:
+                    #         clear_output(wait=True)
+                    #         with open(context.traindata['tmpfile'], 'w') as fw:
+                    #             json.dump(context.traindata['metrics'], fw, ensure_ascii=False)
+                    #         print(f'Download full metrics: {W3URL}/cache/metrics_{tag}.json')
                     continue
                 elif flag == 9:
                     timeout = 1
@@ -553,6 +548,7 @@ def _start_work_process(context):
                 result['metrics'] = {}
                 # error
                 data = k12ai_get_data(key, 'error', num=1, rm=True)
+                # k12ai_print(data)
                 if data:
                     if g_use_consul:
                         result['error'] = data[0]['value']
@@ -566,6 +562,7 @@ def _start_work_process(context):
                 # metrics
                 if context.progress.phase == 'train':
                     data = k12ai_get_data(key, 'metrics', num=100, rm=True)
+                    # k12ai_print(data)
                     result['data'] = data
                     if data:
                         if g_use_consul:
