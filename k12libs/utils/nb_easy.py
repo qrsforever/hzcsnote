@@ -562,7 +562,6 @@ def _start_work_process(context):
                 # metrics
                 if context.progress.phase == 'train':
                     data = k12ai_get_data(key, 'metrics', num=100, rm=True)
-                    # k12ai_print(data)
                     result['data'] = data
                     if data:
                         if g_use_consul:
@@ -583,6 +582,7 @@ def _start_work_process(context):
                                         context.progress.value = float(progress)
                 else: # context.progress.phase == 'evaluate':
                     data = k12ai_get_data(key, 'metrics', num=100, rm=True)
+                    # k12ai_print(data)
                     if data:
                         if g_use_consul:
                             result['metrics'] = data[-1]['value']
@@ -593,11 +593,13 @@ def _start_work_process(context):
                 context._output(f'err:{err}', clear=0)
 
             if 'error' in result and len(result['error']) > 0:
-                context._output(result['error'], clear=1)
+                clear = 1 if context.progress.phase == 'train' else 0
+                context._output(result['error'], clear=clear)
             if 'metrics' in result and len(result['metrics']) > 0:
                 with context.progress.output:
-                    clear_output(wait=True)
-                    # k12ai_print(result['metrics'])
+                    if context.progress.phase == 'train':
+                        clear_output(wait=True)
+                    k12ai_print(result['metrics'])
                     if g_use_consul:
                         context.traindata['metrics'].extend([x['value'] for x in result['data']])
                     else:
@@ -692,7 +694,11 @@ def _on_project_trainstart(wdg):
             context._output(f'op {op} is running, please stop!')
             return
 
-    op = f'{wdg.phase}.start'
+    kvs = context.get_all_kv()
+    if kvs['network.resume_continue']:
+        op = f'{wdg.phase}.resume'
+    else:
+        op = f'{wdg.phase}.start'
     data = {
         'token': '{"fake_id": "%s_%s"}' % (context.network, context.dataset),
         'op': op,
@@ -700,7 +706,7 @@ def _on_project_trainstart(wdg):
         'user': context.user,
         'service_name': context.framework,
         'service_uuid': context.uuid,
-        'service_params': context.get_all_kv()
+        'service_params': kvs
     }
 
     response = json.loads(k12ai_post_request(uri='k12ai/framework/execute', data=data))
